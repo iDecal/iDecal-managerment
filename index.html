@@ -550,8 +550,8 @@ function orders(){
   const list=db.orders.filter(o=>filter==='Tất cả'||o.status===filter).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
   return`<div class="row sp"><h2>Đơn hàng</h2><button class="btn" data-a="newOrder">${ic('plus')} Đơn mới</button></div>
   ${stageBar()}
-  ${list.length?list.map(o=>{const c=cust(o.cid);return`<div class="card">
-    <div class="row sp"><b>${o.code} · ${esc(c?c.name:'Khách lẻ')}</b><b>${vnd(total(o))}</b></div>
+  ${list.length?list.map(o=>{const c=cust(o.cid);const customerLabel=(c&&c.name)||o.cname||'Chưa có tên khách hàng';return`<div class="card">
+    <div class="row sp"><b>${esc(o.code)} - ${esc(customerLabel)}</b><b>${vnd(total(o))}</b></div>
     <div class="mut">${o.date} · ${o.items.map(i=>esc(i.name)+' ×'+fq(i.qty)).join(', ')}</div>
     <div style="margin-top:6px">${orderSupplierName(o)?`<span class="badge vendor-badge">${ic('store')} NCC chính: ${esc(orderSupplierName(o))}</span>`:'<span class="badge vendor-missing">Chưa gắn NCC</span>'}</div>
     <div class="row" style="gap:14px;margin-top:6px"><span class="mut">Giá vốn tham khảo: <b>${vnd(cogs(o))}</b></span><span class="mut">Chi phí đã gắn: <b>${vnd(orderActualCosts(o))}</b></span><span class="${orderCostBreakdown(o).count===0?'mut':orderRevenue(o)-orderActualCosts(o)<0?'neg':'pos'}">${orderCostBreakdown(o).count===0?'Chưa đủ chi phí để tính lãi':'Chênh lệch theo khoản đã ghi: '+vnd(orderRevenue(o)-orderActualCosts(o))}</span></div>
@@ -961,6 +961,9 @@ function supplierForm(id){
   const o=(db.suppliers||[]).find(x=>x.id===id)||{name:'',address:'',phone:'',email:'',taxCode:'',contact:'',note:''};
   const m=modal(id?'Sửa nhà cung cấp':'Thêm nhà cung cấp',`
     ${fld('Tên nhà cung cấp / cửa hàng','name',o.name,'text','required')}
+    <label>Phân loại nhà cung cấp<select name="category" required>
+      ${[['in-an','In ấn'],['shop-decal','Shop Decal'],['film-noi-that','Film nội thất'],['film-cach-nhiet','Film cách nhiệt']].map(([v,l])=>`<option value="${v}" ${(o.category||'in-an')===v?'selected':''}>${l}</option>`).join('')}
+    </select></label>
     ${fld('Người liên hệ','contact',o.contact||'')}
     ${fld('Số điện thoại','phone',o.phone||'','tel')}
     ${fld('Email','email',o.email||'','email')}
@@ -968,7 +971,7 @@ function supplierForm(id){
     <label>Địa chỉ<textarea name="address" rows="2">${esc(o.address||'')}</textarea></label>
     <label>Ghi chú<textarea name="note" rows="2">${esc(o.note||'')}</textarea></label>`,fd=>{
       const name=String(fd.get('name')||'').trim();if(!name){alert('Vui lòng nhập tên nhà cung cấp.');return false}
-      const data={name,contact:String(fd.get('contact')||'').trim(),phone:String(fd.get('phone')||'').trim(),email:String(fd.get('email')||'').trim(),taxCode:String(fd.get('taxCode')||'').trim(),address:String(fd.get('address')||'').trim(),note:String(fd.get('note')||'').trim()};
+      const data={name,category:String(fd.get('category')||'in-an'),contact:String(fd.get('contact')||'').trim(),phone:String(fd.get('phone')||'').trim(),email:String(fd.get('email')||'').trim(),taxCode:String(fd.get('taxCode')||'').trim(),address:String(fd.get('address')||'').trim(),note:String(fd.get('note')||'').trim()};
       if(id)Object.assign(o,data);else (db.suppliers||(db.suppliers=[])).push({id:uid(),...data});
       save();render();
     });
@@ -1064,7 +1067,7 @@ function suppliersView(){
   const sup=[...(db.suppliers||[])].sort((a,b)=>String(a.name).localeCompare(String(b.name),'vi'));
   return`<div class="row sp"><div><h2>Nhà cung cấp</h2><div class="mut">Danh bạ và thông tin liên hệ nhà cung cấp.</div></div><button class="btn" data-a="newSupplier">${ic('plus')} Thêm NCC</button></div>
     <div class="grid"><div class="card kpi"><small>Tổng nhà cung cấp</small><b>${sup.length}</b></div></div>
-    ${sup.length?sup.map(s=>`<div class="card"><div class="row sp"><div><b>${esc(s.name)}</b><div class="mut">${esc(s.phone||'Chưa có SĐT')}${s.contact?' · '+esc(s.contact):''}</div><div class="mut">${esc(s.address||'Chưa có địa chỉ')}${s.email?' · '+esc(s.email):''}</div>${s.taxCode?`<div class="mut">MST: ${esc(s.taxCode)}</div>`:''}${s.note?`<div class="mut">${esc(s.note)}</div>`:''}</div><button class="btn gh sm" data-a="editSupplier" data-id="${s.id}">Sửa</button></div></div>`).join(''):'<div class="empty">Chưa có nhà cung cấp. Bấm “Thêm NCC” để nhập thông tin.</div>'}`;
+    ${sup.length?sup.map(s=>`<div class="card"><div class="row sp"><div><b>${esc(s.name)}</b><div class="mut">${esc(s.phone||'Chưa có SĐT')}${s.contact?' · '+esc(s.contact):''}</div><div class="mut">${esc(s.address||'Chưa có địa chỉ')}${s.email?' · '+esc(s.email):''}</div><div style="margin:5px 0"><span class="badge">${ic('store')} ${esc(({ 'in-an':'In ấn','shop-decal':'Shop Decal','film-noi-that':'Film nội thất','film-cach-nhiet':'Film cách nhiệt' })[s.category]||'In ấn')}</span></div>${s.taxCode?`<div class="mut">MST: ${esc(s.taxCode)}</div>`:''}${s.note?`<div class="mut">${esc(s.note)}</div>`:''}</div><div class="row"><button class="btn gh sm" data-a="editSupplier" data-id="${s.id}">Sửa</button><button class="btn dg sm" data-a="delSupplier" data-id="${s.id}">${ic('ban')} Xóa</button></div></div></div>`).join(''):'<div class="empty">Chưa có nhà cung cấp. Bấm “Thêm NCC” để nhập thông tin.</div>'}`;
 }
 function expensesView(){
   const mk=today().slice(0,7),expenses=[...db.expenses].sort((a,b)=>b.date.localeCompare(a.date));
@@ -1169,6 +1172,7 @@ const acts={
   closeNav:()=>setNav(false),
   toOrder:id=>convertQuote(db.quotes.find(x=>x.id===id)),viewOrder:()=>{filter='Tất cả';view='orders';setNav(false);render();scrollTo(0,0)},
   newPurchase:()=>purchaseForm(),editPurchase:id=>purchaseForm(id),newPurchaseForOrder:id=>purchaseForm('',id),newExpForOrder:id=>expForm(id),newSupplier:()=>supplierForm(),editSupplier:id=>supplierForm(id),
+  delSupplier:id=>{const supplier=(db.suppliers||[]).find(x=>x.id===id);if(!supplier)return;const linked=(db.orders||[]).filter(o=>o.supplierId===id).length;if(!confirm('Xóa nhà cung cấp “'+supplier.name+'” khỏi danh bạ?'+(linked?' '+linked+' đơn hàng đang liên kết sẽ được bỏ liên kết NCC.':'')+' Phiếu mua hàng cũ vẫn được giữ nguyên.'))return;db.suppliers=db.suppliers.filter(x=>x.id!==id);db.orders.forEach(o=>{if(o.supplierId===id)o.supplierId=''});save();render()},
   ppay:id=>{const p=db.purchases.find(x=>x.id===id);p.paid=!p.paid;save();render()},
   delPurchase:id=>{if(!confirm('Xoá phiếu mua hàng này? Chi phí liên kết với đơn hàng sẽ được tính lại.'))return;db.purchases=db.purchases.filter(x=>x.id!==id);save();render()},
   login:()=>login(),
