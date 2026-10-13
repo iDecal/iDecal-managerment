@@ -1222,5 +1222,15 @@ document.addEventListener('change',e=>{
 $('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.orders)throw 0;if(confirm('Ghi đè dữ liệu hiện tại bằng file sao lưu?')){db=Object.assign(blank(),d);save();render()}}catch(_){alert('File không hợp lệ')}};r.readAsText(f);e.target.value=''};
 if(CLOUD)initCloud();else render();
 </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then((reg) => console.log('Service Worker registered', reg))
+        .catch((err) => console.log('Service Worker registration failed', err));
+    });
+  }
+</script>
+
 </body>
 </html>
