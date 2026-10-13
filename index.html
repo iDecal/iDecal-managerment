@@ -173,14 +173,6 @@ button .i, a .i, .btn .i { vertical-align: middle; }
   color: #fff;
 }
 
-
-/* Modern dashboard + profit report */
-.dash-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:22px 24px;border-radius:20px;color:#fff;background:linear-gradient(120deg,#123a70,#0879c9 65%,#38bdf8);margin-bottom:16px;box-shadow:0 12px 28px #0879c925}
-.dash-head h2{color:#fff!important;text-shadow:none!important;margin:0 0 4px;font-size:24px}.dash-head .mut{color:#e0f2fe}.dash-chip{background:#ffffff20;border:1px solid #ffffff35;border-radius:12px;padding:9px 13px;font-size:13px}
-.dash-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}.dash-kpi{position:relative;overflow:hidden;border:1px solid var(--bd);border-radius:17px;background:var(--card);padding:17px;box-shadow:0 6px 18px #183b5b08}.dash-kpi:after{content:"";position:absolute;width:74px;height:74px;border-radius:50%;right:-22px;top:-22px;background:var(--wash,#e0f2fe)}.dash-kpi .dk-icon{width:39px;height:39px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--wash,#e0f2fe);color:var(--tone,#0879c9);margin-bottom:12px}.dash-kpi .dk-icon .i{width:21px;height:21px}.dash-kpi small{display:block;color:var(--mut);font-size:12px;margin-bottom:5px}.dash-kpi b{font-size:clamp(16px,1.8vw,22px);letter-spacing:-.4px;overflow-wrap:anywhere}.dash-layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(250px,1fr);gap:14px}.dash-panel{background:var(--card);border:1px solid var(--bd);border-radius:17px;padding:18px;margin-bottom:14px}.dash-panel-title{font-weight:800;margin-bottom:4px}.dash-sub{font-size:12px;color:var(--mut)}.dash-detail{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.dash-detail>div{background:var(--bg);border-radius:12px;padding:12px}.dash-detail small{display:block;color:var(--mut);font-size:12px}.dash-detail b{display:block;margin-top:4px}.profit-head{padding:18px 20px;border-radius:17px;background:linear-gradient(120deg,#eff6ff,#f5f3ff);border:1px solid #dbeafe;margin-bottom:14px}.profit-head h2{margin:0 0 4px}.profit-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}.profit-kpi{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;min-width:0}.profit-kpi small{display:block;color:var(--mut);font-size:12px;min-height:34px}.profit-kpi b{display:block;font-size:clamp(15px,1.6vw,20px);overflow-wrap:anywhere;margin-top:5px}.profit-note{border-left:3px solid #60a5fa;background:var(--bg);padding:11px 13px;border-radius:0 10px 10px 0;font-size:12px;color:var(--mut);margin-bottom:14px}.supplier-report{padding:16px}.supplier-report-row{padding:13px 0;border-bottom:1px solid var(--bd)}.supplier-report-row:last-child{border-bottom:0}.supplier-report-metrics{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.supplier-report-metrics span{font-size:12px;color:var(--mut);background:var(--bg);padding:5px 8px;border-radius:7px}
-@media(max-width:800px){.dash-kpis,.profit-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-layout{grid-template-columns:1fr}}
-@media(max-width:420px){.dash-head{padding:17px}.dash-head h2{font-size:20px}.dash-kpi{padding:13px}.dash-kpi b{font-size:16px}.profit-kpi{padding:11px}}
-
 </style>
 </head>
 <body>
@@ -517,25 +509,24 @@ function homeMgr(){
   const mk=today().slice(0,7);
   const ords=db.orders.filter(o=>valid(o)&&o.date.startsWith(mk));
   const rev=ords.reduce((s,o)=>s+orderRevenue(o),0),cg=ords.reduce((s,o)=>s+cogs(o),0);
-  const ex=ords.reduce((s,o)=>s+orderActualCosts(o),0),profit=rev-ex;
+  const ex=ords.reduce((s,o)=>s+orderActualCosts(o),0);
+  const profit=rev-ex;
   const noCost=ords.filter(o=>orderCostBreakdown(o).count===0).length;
   const debt=db.orders.filter(o=>valid(o)&&!o.paid).reduce((s,o)=>s+total(o),0);
   const months=[];const d=new Date();d.setDate(1);
   for(let i=5;i>=0;i--){const x=new Date(d.getFullYear(),d.getMonth()-i,1);months.push(x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0'))}
   const rv=months.map(m=>db.orders.filter(o=>valid(o)&&o.date.startsWith(m)).reduce((s,o)=>s+orderRevenue(o),0));
-  const mx=Math.max(...rv,1),pend=openJobs(statusCounts());
-  const monthBuy=db.purchases.filter(p=>p.date.startsWith(mk)).reduce((s,p)=>s+ptotal(p),0);
-  const supplierDebt=db.purchases.filter(p=>!p.paid).reduce((s,p)=>s+ptotal(p),0);
-  return`<div class="dash-head"><div><div class="dash-sub" style="color:#dbeafe">BẢNG ĐIỀU KHIỂN KINH DOANH</div><h2>Tổng quan tháng ${mk.slice(5)}/${mk.slice(0,4)}</h2><div class="mut">Theo dõi nhanh doanh thu, công nợ và tiến độ đơn hàng</div></div><div class="dash-chip">${ic('calendar')} ${new Date().toLocaleDateString('vi-VN')}</div></div>
-  <div class="dash-kpis">
-    <div class="dash-kpi" style="--wash:#dbeafe;--tone:#2563eb"><div class="dk-icon">${ic('chart')}</div><small>Doanh thu tháng</small><b>${vnd(rev)}</b></div>
-    <div class="dash-kpi" style="--wash:#dcfce7;--tone:#15803d"><div class="dk-icon">${ic('trendingUp')}</div><small>Lãi theo chi phí đã ghi</small><b class="${profit>=0?'pos':'neg'}">${vnd(profit)}</b></div>
-    <div class="dash-kpi" style="--wash:#fee2e2;--tone:#dc2626"><div class="dk-icon">${ic('wallet')}</div><small>Công nợ khách hàng</small><b class="${debt?'neg':''}">${vnd(debt)}</b></div>
-    <div class="dash-kpi" style="--wash:#fef3c7;--tone:#b45309"><div class="dk-icon">${ic('clipboard')}</div><small>Đơn đang xử lý</small><b>${pend}</b><div class="dash-sub">${ords.length} đơn phát sinh trong tháng</div></div>
+  const mx=Math.max(...rv,1);
+  const pend=openJobs(statusCounts());
+  return`<h2>Tháng ${mk.slice(5)}/${mk.slice(0,4)}</h2>
+  <div class="grid">
+    <div class="card kpi"><small>Doanh thu</small><b>${vnd(rev)}</b></div>
+    <div class="card kpi"><small>Lãi theo chi phí đã ghi nhận</small><b class="${profit>=0?'pos':'neg'}">${vnd(profit)}</b></div>
+    <div class="card kpi"><small>Công nợ</small><b class="${debt?'neg':''}">${vnd(debt)}</b></div>
+    <div class="card kpi"><small>Đơn đang xử lý</small><b>${pend}</b></div>
   </div>
-  <div class="dash-layout"><div class="dash-panel"><div class="dash-panel-title">${ic('chart')} Doanh thu 6 tháng gần nhất</div><div class="dash-sub">So sánh doanh thu theo tháng</div><div class="bars">${rv.map((v,i)=>`<div><span>${v?Math.round(v/1000).toLocaleString('vi-VN')+'k':''}</span><i style="height:${Math.max(v?3:0,v/mx*90)}%"></i>T${months[i].slice(5)}</div>`).join('')}</div></div>
-  <div class="dash-panel"><div class="dash-panel-title">Tình hình tài chính</div><div class="dash-sub">Các khoản ghi nhận trong tháng</div><div class="dash-detail"><div><small>Chi phí đã gắn đơn</small><b>${vnd(ex)}</b></div><div><small>Giá vốn tham khảo</small><b>${vnd(cg)}</b></div><div><small>Mua hàng trong tháng</small><b>${vnd(monthBuy)}</b></div><div><small>Nợ nhà cung cấp</small><b class="${supplierDebt?'neg':''}">${vnd(supplierDebt)}</b></div></div></div></div>
-  ${noCost?`<div class="profit-note">${ic('info')} Có <b>${noCost} đơn</b> trong tháng chưa có giao dịch chi phí gắn đơn; số lãi hiện tại có thể chưa phản ánh đủ chi phí.</div>`:''}`;
+  <div class="card"><b>Doanh thu 6 tháng</b><div class="bars">${rv.map((v,i)=>`<div><span>${v?Math.round(v/1000)+'k':''}</span><i style="height:${v/mx*90}%"></i>T${months[i].slice(5)}</div>`).join('')}</div></div>
+  <div class="card"><b>Chi tiết tháng</b><div class="mut">Chi phí đã gắn với đơn: ${vnd(ex)} · Giá vốn tham khảo từ danh mục: ${vnd(cg)} · ${ords.length} đơn</div><div class="mut">Mua hàng trong tháng: ${vnd(db.purchases.filter(p=>p.date.startsWith(mk)).reduce((s,p)=>s+ptotal(p),0))} · Nợ nhà cung cấp: ${vnd(db.purchases.filter(p=>!p.paid).reduce((s,p)=>s+ptotal(p),0))}</div>${noCost?`<div class="badge wr" style="margin-top:8px">${noCost} đơn chưa có giao dịch chi phí gắn đơn; số lãi có thể chưa phản ánh đủ chi phí.</div>`:''}</div>`;
 }
 function home(){return isMgr()?ownerAlert()+homeMgr():homeStaff()}
 function ownerAlert(){
@@ -761,7 +752,7 @@ function orderMaterials(o){
   });
   return [...grouped.values()].sort((a,b)=>a.name.localeCompare(b.name,'vi'));
 }
-function orderCustomerName(o){const c=cust(o.cid);return c?c.name:(o.cname||'Chưa có tên khách hàng')}
+function orderCustomerName(o){const c=cust(o.cid);return c?c.name:(o.cname||'Khách lẻ')}
 function downloadText(filename,text,mime='text/csv;charset=utf-8;'){
   const blob=new Blob(['\ufeff',text],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
@@ -1110,9 +1101,9 @@ function profitView(){
     g.orders++;g.revenue+=orderRevenue(o);g.buys+=bd.buys;g.expenses+=bd.exp;g.profit+=orderRevenue(o)-bd.buys-bd.exp;
   });
   const bySupplier=[...supplierGroups.values()].sort((a,b)=>a.name==='Chưa gắn NCC'?1:b.name==='Chưa gắn NCC'?-1:a.name.localeCompare(b.name,'vi'));
-  return `<div class="profit-head"><h2>${ic('chart')} Báo cáo lãi lỗ đơn hàng</h2><div class="mut">Tổng hợp doanh thu, chi phí đã ghi nhận và chênh lệch theo từng đơn.</div></div>
-  <div class="profit-kpis"><div class="profit-kpi"><small>Doanh thu trước VAT</small><b>${vnd(rev)}</b></div><div class="profit-kpi"><small>Chi phí đã gắn đơn</small><b>${vnd(actual)}</b></div><div class="profit-kpi"><small>Chênh lệch sau chi phí đã ghi</small><b class="${rev-actual<0?'neg':'pos'}">${vnd(rev-actual)}</b></div><div class="profit-kpi"><small>Giá vốn tham khảo</small><b>${vnd(estimated)}</b></div></div>
-  <div class="profit-note">${ic('info')} Chênh lệch = doanh thu trước VAT − tiền mua hàng gắn đơn − chi phí gắn đơn. Đây chưa phải lợi nhuận cuối cùng nếu còn thiếu chi phí. Giá vốn tham khảo không cộng vào chi phí thực tế để tránh tính trùng. Đơn chưa có giao dịch chi phí sẽ được đánh dấu riêng.</div>
+  return `<div class="row sp"><div><h2>Lãi lỗ đơn hàng</h2><div class="mut">Tổng hợp doanh thu trước VAT, NCC/xưởng chính, tiền mua hàng và chi phí đã gắn mã đơn.</div></div></div>
+  <div class="grid"><div class="card kpi"><small>Doanh thu trước VAT</small><b>${vnd(rev)}</b></div><div class="card kpi"><small>Chi phí đã gắn đơn</small><b>${vnd(actual)}</b></div><div class="card kpi"><small>Chênh lệch sau khoản chi đã ghi nhận</small><b class="${rev-actual<0?'neg':'pos'}">${vnd(rev-actual)}</b></div><div class="card kpi"><small>Giá vốn tham khảo từ sản phẩm</small><b>${vnd(estimated)}</b></div></div>
+  <div class="card"><b>Cách đọc số liệu</b><p class="mut">“Chênh lệch sau chi phí đã ghi nhận” = doanh thu trước VAT − phiếu mua hàng gắn đơn − chi phí gắn đơn. Đây chưa phải lợi nhuận cuối cùng nếu còn thiếu hóa đơn xưởng, giao hàng hoặc phí khác. Những đơn chưa có giao dịch chi phí sẽ được ghi rõ là chưa đủ dữ liệu.</p><p class="mut">“Giá vốn tham khảo” lấy từ trường giá vốn trong danh mục sản phẩm để so sánh nhanh; không cộng vào chi phí thực tế nhằm tránh tính trùng với tiền xưởng đã ghi ở Mua hàng. Báo cáo theo NCC nhóm doanh thu/lãi của đơn theo NCC chính đã chọn; mọi phiếu mua gắn với đơn vẫn được cộng vào chi phí của đơn để không bỏ sót nhà cung cấp phụ.</p></div>
   <div class="card supplier-report"><div class="row sp"><b>Lãi lỗ theo nhà cung cấp chính</b><span class="mut">${bySupplier.length} nhóm</span></div>
   ${bySupplier.length?bySupplier.map(g=>`<div class="supplier-report-row"><div class="row sp"><b>${esc(g.name)}</b><span class="badge ${g.profit<0?'bd':'ok'}">${vnd(g.profit)}</span></div><div class="supplier-report-metrics"><span>${g.orders} đơn</span><span>Doanh thu ${vnd(g.revenue)}</span><span>Mua hàng/xưởng ${vnd(g.buys)}</span><span>Chi phí khác ${vnd(g.expenses)}</span></div></div>`).join(''):'<div class="empty">Chưa có dữ liệu</div>'}</div>
   ${active.length?active.map(o=>{const rev=orderRevenue(o),bd=orderCostBreakdown(o),profit=rev-bd.buys-bd.exp,est=cogs(o),custName=orderCustomerName(o),supplierName=orderSupplierName(o);return `<div class="card"><div class="row sp"><div><b>${esc(o.code)} · ${esc(custName)}</b><div class="mut">${esc(o.date)} · ${esc(o.status||'Mới')}</div><div style="margin-top:5px">${supplierName?`<span class="badge vendor-badge">${ic('store')} NCC chính: ${esc(supplierName)}</span>`:'<span class="badge vendor-missing">Chưa gắn NCC chính</span>'}</div></div><span class="badge ${profit<0?'bd':bd.count?'ok':'wr'}">${bd.count?'Đã ghi '+bd.count+' khoản':'Chưa ghi chi phí'}</span></div><div class="grid" style="margin-top:10px"><div><small class="mut">Doanh thu trước VAT</small><div><b>${vnd(rev)}</b></div></div><div><small class="mut">Mua hàng / xưởng</small><div><b>${vnd(bd.buys)}</b></div></div><div><small class="mut">Chi phí khác</small><div><b>${vnd(bd.exp)}</b></div></div><div><small class="mut">Lãi theo khoản đã ghi</small><div><b class="${bd.count===0?'mut':profit<0?'neg':'pos'}">${bd.count===0?'Chưa đủ dữ liệu':vnd(profit)}</b></div></div></div><div class="mut" style="margin-top:8px">Giá vốn tham khảo trong danh mục: ${vnd(est)} · ${bd.count?'Đã ghi '+bd.count+' giao dịch liên quan':'Chưa có giao dịch mua hàng/chi phí gắn với đơn này'}.</div><div class="row" style="margin-top:8px"><button class="btn gh sm" data-a="newPurchaseForOrder" data-id="${o.id}">＋ Ghi tiền xưởng</button><button class="btn gh sm" data-a="newExpForOrder" data-id="${o.id}">＋ Ghi chi phí</button><button class="btn gh sm" data-a="editOrder" data-id="${o.id}">Xem / sửa đơn</button></div></div>`}).join(''):'<div class="empty">Chưa có đơn hàng để tính lãi lỗ.</div>'}`;
