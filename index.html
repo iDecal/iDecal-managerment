@@ -24,7 +24,7 @@ header{background:linear-gradient(115deg,#052a59,#0879c9);color:#fff;padding:16p
 .i{width:1.15em;height:1.15em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.2em;flex:none}
 .logo{display:flex;align-items:center;gap:8px}.logo .i{width:22px;height:22px}
 h1,h2,h3{color:#1557a6;letter-spacing:.1px}h2{font-weight:800;text-shadow:0 1px 0 #dbeafe}h3{color:#6d28d9}.row.sp>h2{background:linear-gradient(90deg,#e0f2fe,#f3e8ff);padding:7px 12px;border-radius:10px;border-left:4px solid #0ea5e9}
-.btn .i,.navi .i{filter:drop-shadow(0 1px 1px #00000014)}.btn:not(.gh):not(.dg){background:linear-gradient(135deg,#0879c9,#2563eb);box-shadow:0 3px 8px #0879c925}.navi .ni{width:37px;height:37px;border-radius:11px}.navi .ni .i{width:21px;height:21px;stroke-width:2.1}.ni-sky{background:#c7ecff;color:#0369a1}.ni-green{background:#bbf7d0;color:#15803d}.ni-purple{background:#e9d5ff;color:#7e22ce}.ni-orange{background:#fed7aa;color:#c2410c}.ni-teal{background:#99f6e4;color:#0f766e}.ni-amber{background:#fde68a;color:#92400e}.ni-rose{background:#fecdd3;color:#be123c}.ni-indigo{background:#c7d2fe;color:#4338ca}.ni-slate{background:#e2e8f0;color:#334155}
+.btn .i,.navi .i{filter:drop-shadow(0 1px 1px #00000014)}.btn:not(.gh):not(.dg){background:linear-gradient(135deg,#0879c9,#2563eb);box-shadow:0 3px 8px #0879c925}.navi .ni{width:37px;height:37px;border-radius:11px}.navi .ni .i{width:21px;height:21px;stroke-width:2.1}
 .quote-calc{margin-top:10px;background:linear-gradient(135deg,#eff6ff,#faf5ff);border-color:#bfdbfe}.quote-calc .row{padding:3px 0}.quote-calc .tot{border-top:1px solid #c4b5fd;padding-top:9px;margin-top:6px;color:#5b21b6}
 .bigic{color:var(--pri);margin-bottom:4px}.bigic.neg{color:var(--bad)}.bigic .i{width:44px;height:44px;stroke-width:1.5}
 .toast{display:flex;align-items:center;gap:8px}.toast .i{width:18px;height:18px}.toast.ok .i{color:#4ade80}.toast.err .i{color:#fca5a5}
@@ -44,9 +44,7 @@ nav{position:fixed;top:var(--hh);bottom:0;left:0;width:270px;background:var(--ca
 .navi .count{margin-left:auto;border-radius:99px;min-width:25px;padding:2px 7px;text-align:center;background:#e0f2fe;color:#075985;font-size:12px;font-weight:700}
 .navi.on{background:#eff6ff;border-color:#bfdbfe;color:#075985;font-weight:700}
 .navi.on .ni{box-shadow:inset 0 0 0 1.5px currentColor}
-.ni-sky{background:#e0f2fe;color:#0284c7}.ni-green{background:#dcfce7;color:#16a34a}.ni-purple{background:#f3e8ff;color:#9333ea}
-.ni-orange{background:#ffedd5;color:#ea580c}.ni-teal{background:#ccfbf1;color:#0f766e}.ni-amber{background:#fef3c7;color:#b45309}
-.ni-rose{background:#ffe4e6;color:#e11d48}.ni-indigo{background:#e0e7ff;color:#4f46e5}.ni-slate{background:#f1f5f9;color:#475569}
+
 .burger{display:none;flex:none;width:44px;height:44px;align-items:center;justify-content:center;border:0;background:transparent;color:#fff;border-radius:10px;cursor:pointer}
 .burger .i{width:24px;height:24px}
 .htitle{display:none}
@@ -118,6 +116,63 @@ h2{margin:6px 0 12px;font-size:18px}
 .pbody{flex:1;min-width:0}
 .toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:8px 16px;border-radius:99px;z-index:50;font-size:14px}
 .module-search{position:relative;margin:0 0 14px}.module-search input{padding:12px 44px 12px 42px;border-radius:12px;background:var(--card);box-shadow:0 3px 12px #183b5b08}.module-search .search-ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--mut);pointer-events:none}.module-search button{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:var(--mut);padding:7px;cursor:pointer}.module-search .search-help{font-size:11px;color:var(--mut);margin:4px 2px 0}.search-no-results{display:none;text-align:center;padding:22px;color:var(--mut)}
+
+/* Navigation icons: clean, consistent monochrome style */
+.navi .ni{
+  background:#eaf2fb;
+  color:#1756a9;
+  border:1px solid #d6e4f5;
+  box-shadow:none;
+}
+.navi .ni .i{
+  color:inherit;
+  stroke:currentColor;
+  stroke-width:2;
+  filter:none;
+}
+.navi.on .ni{
+  background:#1756a9;
+  color:#fff;
+  border-color:#1756a9;
+  box-shadow:none;
+}
+.navi.on{
+  background:#edf4ff;
+  border-color:#c9dcf7;
+  color:#174a8b;
+}
+h2{color:#174ea6;text-shadow:none}
+.row.sp>h2{
+  background:#edf4ff;
+  border-left-color:#2563eb;
+  color:#123f88;
+  box-shadow:none;
+}
+
+/* iDecal visual refinement: Roboto + clean, consistent line icons */
+html, body, button, input, select, textarea {
+  font-family: 'Roboto', Arial, sans-serif;
+}
+svg.i {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  filter: none;
+  flex-shrink: 0;
+}
+button .i, a .i, .btn .i { vertical-align: middle; }
+.navi .ni {
+  background: #eaf3fb;
+  color: #1769aa;
+}
+.navi .ni .i { width: 19px; height: 19px; stroke-width: 1.8; }
+.navi.active .ni, .navi[aria-current="page"] .ni {
+  background: #0879c9;
+  color: #fff;
+}
+
 </style>
 </head>
 <body>
@@ -129,6 +184,8 @@ h2{margin:6px 0 12px;font-size:18px}
 <script>
 const KEY='idecal_v1';
 const ICONS={
+  chart:'<path d="M3 3v18h18"/><path d="m7 14 4-4 4 3 6-7"/><path d="M17 6h4v4"/>',
+
   dash:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
   clipboard:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h4"/>',
   filetext:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/>',
@@ -281,6 +338,23 @@ let db=load(),view='home',filter='Tất cả',moduleSearch='';
 
 function blank(){return{orders:[],customers:[],products:[],expenses:[],quotes:[],purchases:[],suppliers:[],seq:0,qseq:0,pseq:0,shop:{}}}
 function load(){try{if(LS){const d=JSON.parse(LS.getItem(KEY));if(d)return Object.assign(blank(),d)}}catch(e){}return blank()}
+function orderSupplierName(o){
+  if(!o)return '';
+  const linked=(db.suppliers||[]).find(s=>s.id===o.supplierId);
+  return String(o.supplierName||linked?.name||'').trim();
+}
+function supplierChoices(){
+  db.suppliers=db.suppliers||[];
+  const choices=db.suppliers.map(s=>({...s}));
+  const seen=new Set(choices.map(s=>String(s.name||'').trim().toLocaleLowerCase('vi')));
+  const legacyNames=[...(db.purchases||[]).map(p=>p.supplier),...(db.orders||[]).map(o=>o.supplierName)];
+  for(const raw of legacyNames){
+    const name=String(raw||'').trim(),key=name.toLocaleLowerCase('vi');
+    if(!name||name==='Khách lẻ'||seen.has(key))continue;
+    seen.add(key);choices.push({id:'legacy-'+name,name,legacy:true});
+  }
+  return choices.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'vi'));
+}
 function save(){
   if(CLOUD){cloudSave();return}
   if(!LS)return;try{LS.setItem(KEY,JSON.stringify(db))}catch(e){toast('Không lưu được dữ liệu (bộ nhớ trình duyệt đầy?). Hãy xuất sao lưu.')}
@@ -315,9 +389,13 @@ const fld=(label,name,val='',type='text',extra='')=>`<label>${label}<input name=
 /* ---------- Order form ---------- */
 function orderForm(id){
   const o=db.orders.find(x=>x.id===id)||{date:today(),status:'Mới',items:[{}],paid:false};
+  const supplierOpts=supplierChoices();
+  const currentSupplier=supplierOpts.find(x=>x.id===o.supplierId)||supplierOpts.find(x=>String(x.name).toLocaleLowerCase('vi')===String(o.supplierName||'').toLocaleLowerCase('vi'));
   const m=modal(id?'Sửa đơn '+o.code:'Đơn mới',`
     <label>Khách hàng<select name="cid"><option value="">Khách lẻ</option>${db.customers.map(c=>`<option value="${c.id}" ${c.id===o.cid?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
     ${fld('Ngày','date',o.date,'date','required')}
+    <label>Xưởng / Nhà cung cấp chính<select name="supplierId"><option value="">— Chưa chọn NCC —</option>${supplierOpts.map(x=>`<option value="${esc(x.id)}" ${currentSupplier&&currentSupplier.id===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>
+    <div class="mut">Chọn xưởng/NCC thực hiện đơn này để nhóm báo cáo lãi lỗ theo NCC. Nếu chưa có trong danh sách, thêm ở menu Nhà cung cấp hoặc tạo phiếu mua hàng trước.</div>
     <label>Hàng hoá</label><div id="items"></div>
     <button type="button" class="btn gh sm" id="addI" style="margin-top:8px">${ic('plus')} Thêm dòng</button>
     <label>Trạng thái<select name="status">${STATUS.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select></label>
@@ -330,7 +408,11 @@ function orderForm(id){
       return{pid,name:p?p.name:r.querySelector('.n').value.trim(),qty:+r.querySelector('.q').value||0,price:+r.querySelector('.pr').value||0,cost:p?p.cost:0,unit:(r.querySelector('.u')?.value||'').trim()||(p?p.unit:'cái')};
     }).filter(i=>i.name&&i.qty>0);
     if(!items.length){alert('Cần ít nhất 1 dòng hàng hợp lệ');return false}
-    const data={cid:fd.get('cid'),date:fd.get('date'),status:fd.get('status'),paid:fd.get('paid')==='on',note:fd.get('note'),items};
+    const pickedSupplier=String(fd.get('supplierId')||'');
+    const picked=supplierOpts.find(x=>x.id===pickedSupplier);
+    const supplierId=picked&&!picked.legacy?picked.id:'';
+    const supplierName=picked?picked.name:'';
+    const data={cid:fd.get('cid'),date:fd.get('date'),status:fd.get('status'),paid:fd.get('paid')==='on',note:fd.get('note'),items,supplierId,supplierName};
     if(id)Object.assign(o,data);else db.orders.push({id:uid(),code:'DH'+String(++db.seq).padStart(4,'0'),...data});
     save();render();
   });
@@ -471,6 +553,7 @@ function orders(){
   ${list.length?list.map(o=>{const c=cust(o.cid);return`<div class="card">
     <div class="row sp"><b>${o.code} · ${esc(c?c.name:'Khách lẻ')}</b><b>${vnd(total(o))}</b></div>
     <div class="mut">${o.date} · ${o.items.map(i=>esc(i.name)+' ×'+fq(i.qty)).join(', ')}</div>
+    <div style="margin-top:6px">${orderSupplierName(o)?`<span class="badge vendor-badge">${ic('store')} NCC chính: ${esc(orderSupplierName(o))}</span>`:'<span class="badge vendor-missing">Chưa gắn NCC</span>'}</div>
     <div class="row" style="gap:14px;margin-top:6px"><span class="mut">Giá vốn tham khảo: <b>${vnd(cogs(o))}</b></span><span class="mut">Chi phí đã gắn: <b>${vnd(orderActualCosts(o))}</b></span><span class="${orderCostBreakdown(o).count===0?'mut':orderRevenue(o)-orderActualCosts(o)<0?'neg':'pos'}">${orderCostBreakdown(o).count===0?'Chưa đủ chi phí để tính lãi':'Chênh lệch theo khoản đã ghi: '+vnd(orderRevenue(o)-orderActualCosts(o))}</span></div>
     ${o.note?`<div class="mut">${ic('pencil')} ${esc(o.note)}</div>`:''}
     <div class="row" style="margin-top:8px;flex-wrap:wrap">
@@ -853,7 +936,7 @@ function convertQuote(q){
   const items=q.items.map(i=>({...i}));
   if(q.discount)items.push({pid:'',name:'Giảm giá',qty:1,price:-q.discount,cost:0});
   const vatAmount=qvat(q);if(vatAmount)items.push({pid:'',name:'VAT '+qvatRate(q)+'%',qty:1,price:vatAmount,cost:0});
-  const o={id:uid(),code:'DH'+String(++db.seq).padStart(4,'0'),cid:q.cid,date:today(),status:'Mới',paid:false,note:'Từ '+q.code+(!q.cid&&q.cname?' · '+q.cname:''),items};
+  const o={id:uid(),code:'DH'+String(++db.seq).padStart(4,'0'),cid:q.cid,date:today(),status:'Mới',paid:false,supplierId:'',supplierName:'',note:'Từ '+q.code+(!q.cid&&q.cname?' · '+q.cname:''),items};
   db.orders.push(o);q.orderId=o.id;q.status='Chấp nhận';save();render();toast('Đã chuyển '+q.code+' thành đơn '+o.code,'ok');
 }
 function quotes(){
@@ -893,10 +976,10 @@ function supplierForm(id){
 /* ---------- Mua hàng ---------- */
 const ptotal=p=>p.items.reduce((s,i)=>s+lineCost(i),0);
 function purchaseForm(id, presetOrderId=''){
-  const o=db.purchases.find(x=>x.id===id)||{date:today(),paid:true,items:[{}],supplier:'',orderId:presetOrderId};
+  const presetOrder=db.orders.find(x=>x.id===presetOrderId);
+  const o=db.purchases.find(x=>x.id===id)||{date:today(),paid:true,items:[{}],supplier:presetOrder?orderSupplierName(presetOrder):'',supplierId:presetOrder?.supplierId||'',orderId:presetOrderId};
   db.suppliers=db.suppliers||[];
-  const legacy=[...new Set(db.purchases.map(p=>p.supplier).filter(s=>s&&s!=='Khách lẻ'&&!(db.suppliers||[]).some(x=>x.name===s)))].map(name=>({id:'legacy-'+name,name}));
-  const sups=[...db.suppliers,...legacy];
+  const sups=supplierChoices();
   const retail=o.supplier==='Khách lẻ'||o.sourceType==='retail';
   const known=sups.find(x=>x.id===o.supplierId||x.name===o.supplier);
   const m=modal(id?'Sửa phiếu '+o.code:'Phiếu mua hàng',`
@@ -942,6 +1025,11 @@ function purchaseForm(id, presetOrderId=''){
     }
     const data={supplier,supplierId,supplierInfo,sourceType,date:fd.get('date'),orderId:fd.get('orderId')||'',paid:fd.get('paid')==='on',note:fd.get('note'),items};
     if(id)Object.assign(o,data);else db.purchases.push({id:uid(),code:'MH'+String(++db.pseq).padStart(4,'0'),...data});
+    const linkedOrder=db.orders.find(x=>x.id===data.orderId);
+    if(linkedOrder&&!orderSupplierName(linkedOrder)&&supplier&&supplier!=='Khách lẻ'){
+      const registered=(db.suppliers||[]).find(x=>x.id===supplierId||x.name.toLocaleLowerCase('vi')===supplier.toLocaleLowerCase('vi'));
+      linkedOrder.supplierId=registered?.id||'';linkedOrder.supplierName=supplier;
+    }
     save();render();
   });
   const sourceTypeEl=m.querySelector('#sourceType'),supplierSelectEl=m.querySelector('#supplierSelect'),supplierFields=m.querySelector('#supplierFields'),newSupplierWrap=m.querySelector('#newSupplierWrap');
@@ -1002,10 +1090,20 @@ function orderCostBreakdown(o){
 function profitView(){
   const active=db.orders.filter(o=>valid(o)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
   const rev=active.reduce((s,o)=>s+orderRevenue(o),0),actual=active.reduce((s,o)=>s+orderActualCosts(o),0),estimated=active.reduce((s,o)=>s+cogs(o),0);
-  return `<div class="row sp"><div><h2>Lãi lỗ đơn hàng</h2><div class="mut">Tổng hợp doanh thu trước VAT và các khoản mua hàng/chi phí đã gắn mã đơn.</div></div></div>
+  const supplierGroups=new Map();
+  active.forEach(o=>{
+    const name=orderSupplierName(o)||'Chưa gắn NCC';
+    if(!supplierGroups.has(name))supplierGroups.set(name,{name,orders:0,revenue:0,buys:0,expenses:0,profit:0});
+    const g=supplierGroups.get(name),bd=orderCostBreakdown(o);
+    g.orders++;g.revenue+=orderRevenue(o);g.buys+=bd.buys;g.expenses+=bd.exp;g.profit+=orderRevenue(o)-bd.buys-bd.exp;
+  });
+  const bySupplier=[...supplierGroups.values()].sort((a,b)=>a.name==='Chưa gắn NCC'?1:b.name==='Chưa gắn NCC'?-1:a.name.localeCompare(b.name,'vi'));
+  return `<div class="row sp"><div><h2>Lãi lỗ đơn hàng</h2><div class="mut">Tổng hợp doanh thu trước VAT, NCC/xưởng chính, tiền mua hàng và chi phí đã gắn mã đơn.</div></div></div>
   <div class="grid"><div class="card kpi"><small>Doanh thu trước VAT</small><b>${vnd(rev)}</b></div><div class="card kpi"><small>Chi phí đã gắn đơn</small><b>${vnd(actual)}</b></div><div class="card kpi"><small>Chênh lệch sau khoản chi đã ghi nhận</small><b class="${rev-actual<0?'neg':'pos'}">${vnd(rev-actual)}</b></div><div class="card kpi"><small>Giá vốn tham khảo từ sản phẩm</small><b>${vnd(estimated)}</b></div></div>
-  <div class="card"><b>Cách đọc số liệu</b><p class="mut">“Chênh lệch sau chi phí đã ghi nhận” = doanh thu trước VAT − phiếu mua hàng gắn đơn − chi phí gắn đơn. Đây chưa phải lợi nhuận cuối cùng nếu còn thiếu hóa đơn xưởng, giao hàng hoặc phí khác. Những đơn chưa có giao dịch chi phí sẽ được ghi rõ là chưa đủ dữ liệu.</p><p class="mut">“Giá vốn tham khảo” lấy từ trường giá vốn trong danh mục sản phẩm để so sánh nhanh; không cộng vào chi phí thực tế nhằm tránh tính trùng với tiền xưởng đã ghi ở Mua hàng.</p></div>
-  ${active.length?active.map(o=>{const rev=orderRevenue(o),bd=orderCostBreakdown(o),profit=rev-bd.buys-bd.exp,est=cogs(o),custName=orderCustomerName(o);return `<div class="card"><div class="row sp"><div><b>${esc(o.code)} · ${esc(custName)}</b><div class="mut">${esc(o.date)} · ${esc(o.status||'Mới')}</div></div><span class="badge ${profit<0?'bd':bd.count?'ok':'wr'}">${bd.count?'Đã ghi '+bd.count+' khoản':'Chưa ghi chi phí'}</span></div><div class="grid" style="margin-top:10px"><div><small class="mut">Doanh thu trước VAT</small><div><b>${vnd(rev)}</b></div></div><div><small class="mut">Mua hàng / xưởng</small><div><b>${vnd(bd.buys)}</b></div></div><div><small class="mut">Chi phí khác</small><div><b>${vnd(bd.exp)}</b></div></div><div><small class="mut">Lãi theo khoản đã ghi</small><div><b class="${bd.count===0?'mut':profit<0?'neg':'pos'}">${bd.count===0?'Chưa đủ dữ liệu':vnd(profit)}</b></div></div></div><div class="mut" style="margin-top:8px">Giá vốn tham khảo trong danh mục: ${vnd(est)} · ${bd.count?'Đã ghi '+bd.count+' giao dịch liên quan':'Chưa có giao dịch mua hàng/chi phí gắn với đơn này'}.</div><div class="row" style="margin-top:8px"><button class="btn gh sm" data-a="newPurchaseForOrder" data-id="${o.id}">＋ Ghi tiền xưởng</button><button class="btn gh sm" data-a="newExpForOrder" data-id="${o.id}">＋ Ghi chi phí</button><button class="btn gh sm" data-a="editOrder" data-id="${o.id}">Xem / sửa đơn</button></div></div>`}).join(''):'<div class="empty">Chưa có đơn hàng để tính lãi lỗ.</div>'}`;
+  <div class="card"><b>Cách đọc số liệu</b><p class="mut">“Chênh lệch sau chi phí đã ghi nhận” = doanh thu trước VAT − phiếu mua hàng gắn đơn − chi phí gắn đơn. Đây chưa phải lợi nhuận cuối cùng nếu còn thiếu hóa đơn xưởng, giao hàng hoặc phí khác. Những đơn chưa có giao dịch chi phí sẽ được ghi rõ là chưa đủ dữ liệu.</p><p class="mut">“Giá vốn tham khảo” lấy từ trường giá vốn trong danh mục sản phẩm để so sánh nhanh; không cộng vào chi phí thực tế nhằm tránh tính trùng với tiền xưởng đã ghi ở Mua hàng. Báo cáo theo NCC nhóm doanh thu/lãi của đơn theo NCC chính đã chọn; mọi phiếu mua gắn với đơn vẫn được cộng vào chi phí của đơn để không bỏ sót nhà cung cấp phụ.</p></div>
+  <div class="card supplier-report"><div class="row sp"><b>Lãi lỗ theo nhà cung cấp chính</b><span class="mut">${bySupplier.length} nhóm</span></div>
+  ${bySupplier.length?bySupplier.map(g=>`<div class="supplier-report-row"><div class="row sp"><b>${esc(g.name)}</b><span class="badge ${g.profit<0?'bd':'ok'}">${vnd(g.profit)}</span></div><div class="supplier-report-metrics"><span>${g.orders} đơn</span><span>Doanh thu ${vnd(g.revenue)}</span><span>Mua hàng/xưởng ${vnd(g.buys)}</span><span>Chi phí khác ${vnd(g.expenses)}</span></div></div>`).join(''):'<div class="empty">Chưa có dữ liệu</div>'}</div>
+  ${active.length?active.map(o=>{const rev=orderRevenue(o),bd=orderCostBreakdown(o),profit=rev-bd.buys-bd.exp,est=cogs(o),custName=orderCustomerName(o),supplierName=orderSupplierName(o);return `<div class="card"><div class="row sp"><div><b>${esc(o.code)} · ${esc(custName)}</b><div class="mut">${esc(o.date)} · ${esc(o.status||'Mới')}</div><div style="margin-top:5px">${supplierName?`<span class="badge vendor-badge">${ic('store')} NCC chính: ${esc(supplierName)}</span>`:'<span class="badge vendor-missing">Chưa gắn NCC chính</span>'}</div></div><span class="badge ${profit<0?'bd':bd.count?'ok':'wr'}">${bd.count?'Đã ghi '+bd.count+' khoản':'Chưa ghi chi phí'}</span></div><div class="grid" style="margin-top:10px"><div><small class="mut">Doanh thu trước VAT</small><div><b>${vnd(rev)}</b></div></div><div><small class="mut">Mua hàng / xưởng</small><div><b>${vnd(bd.buys)}</b></div></div><div><small class="mut">Chi phí khác</small><div><b>${vnd(bd.exp)}</b></div></div><div><small class="mut">Lãi theo khoản đã ghi</small><div><b class="${bd.count===0?'mut':profit<0?'neg':'pos'}">${bd.count===0?'Chưa đủ dữ liệu':vnd(profit)}</b></div></div></div><div class="mut" style="margin-top:8px">Giá vốn tham khảo trong danh mục: ${vnd(est)} · ${bd.count?'Đã ghi '+bd.count+' giao dịch liên quan':'Chưa có giao dịch mua hàng/chi phí gắn với đơn này'}.</div><div class="row" style="margin-top:8px"><button class="btn gh sm" data-a="newPurchaseForOrder" data-id="${o.id}">＋ Ghi tiền xưởng</button><button class="btn gh sm" data-a="newExpForOrder" data-id="${o.id}">＋ Ghi chi phí</button><button class="btn gh sm" data-a="editOrder" data-id="${o.id}">Xem / sửa đơn</button></div></div>`}).join(''):'<div class="empty">Chưa có đơn hàng để tính lãi lỗ.</div>'}`;
 }
 const views={home,orders,quote:quotes,cust:custs,prod:prods,purchases:buys,suppliers:suppliersView,exp:expensesView,profit:profitView,more,team};
 function whoHTML(){
