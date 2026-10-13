@@ -32,13 +32,22 @@ header{background:linear-gradient(115deg,#052a59,#0879c9);color:#fff;padding:16p
 .pv{margin:6px 0;min-height:24px}
 .pv img{max-width:100%;max-height:180px;border-radius:10px;border:1px solid var(--bd)}
 main{max-width:1080px;margin:0 auto;padding:22px 18px}
-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--bd);display:flex;z-index:5;overflow-x:auto}
-nav button{flex:1 0 auto;min-width:62px;border:0;background:none;color:var(--mut);padding:10px 4px;font-size:10px;cursor:pointer}
-nav button b{display:block;width:max-content;margin:0 auto 2px;padding:4px 16px;border-radius:99px;font-weight:400;line-height:0;transition:background .15s}
-nav button .i{width:22px;height:22px;stroke-width:1.7}
-nav button.on b{background:color-mix(in srgb,var(--pri) 15%,transparent)}
-nav button.on .i{stroke-width:2.1}
-nav button.on{color:var(--pri);font-weight:700}
+nav{position:fixed;top:57px;bottom:auto;left:0;right:0;background:var(--card);border-bottom:1px solid var(--bd);box-shadow:0 5px 16px #183b5b0c;display:flex;align-items:center;gap:5px;padding:7px 12px;z-index:6;overflow-x:auto;scrollbar-width:thin;white-space:nowrap}
+nav button{flex:0 0 auto;border:1px solid transparent;background:transparent;color:var(--mut);padding:8px 12px;border-radius:11px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:7px;white-space:nowrap}
+nav button b{display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;margin:0;padding:0;border-radius:8px;background:#eef2ff;font-weight:400;line-height:1;transition:background .15s}
+nav button .i{width:19px;height:19px;stroke-width:1.9}
+nav button:nth-child(1) b{background:#e0f2fe;color:#0284c7}
+nav button:nth-child(2) b{background:#dcfce7;color:#16a34a}
+nav button:nth-child(3) b{background:#f3e8ff;color:#9333ea}
+nav button:nth-child(4) b{background:#ffedd5;color:#ea580c}
+nav button:nth-child(5) b{background:#ccfbf1;color:#0f766e}
+nav button:nth-child(6) b{background:#fef3c7;color:#b45309}
+nav button:nth-child(7) b{background:#ffe4e6;color:#e11d48}
+nav button:nth-child(8) b{background:#e0e7ff;color:#4f46e5}
+nav button.on{background:#eff6ff;border-color:#bfdbfe;color:#075985;font-weight:700}
+nav button.on b{filter:saturate(1.2);box-shadow:inset 0 0 0 1px currentColor}
+@media(max-width:560px){nav{top:55px;padding:6px 8px;gap:3px}nav button{padding:7px 9px;font-size:12px}nav button b{width:23px;height:23px}main{padding-top:78px;padding-bottom:18px}}
+main{padding-top:78px;padding-bottom:20px}
 .card{background:var(--card);border:1px solid #e3ebf3;border-radius:16px;padding:16px 18px;margin-bottom:14px;box-shadow:0 5px 18px #183b5b08}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 @media(min-width:700px){.grid{grid-template-columns:repeat(4,1fr)}}
@@ -65,7 +74,8 @@ label.chk{display:flex;gap:8px;align-items:center;color:var(--tx)}
 label.chk input{width:auto}
 .ov{position:fixed;inset:0;background:#0008;z-index:20;display:flex;align-items:flex-end;justify-content:center}
 .md{background:var(--card);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px}
-@media(min-width:700px){.ov{align-items:center}.md{border-radius:16px}}\n@media(max-width:560px){.it{grid-template-columns:minmax(0,1fr) 62px 88px 82px 26px}.it .n{grid-column:1/-1}main{padding:14px 10px}.card{padding:13px}}
+@media(min-width:700px){.ov{align-items:center}.md{border-radius:16px}}
+@media(max-width:560px){.it{grid-template-columns:minmax(0,1fr) 62px 88px 82px 26px}.it .n{grid-column:1/-1}main{padding:78px 10px 18px}.card{padding:13px}}
 .md h3{margin:0 0 4px}
 .it{display:grid;grid-template-columns:minmax(130px,1.5fr) 70px 100px 105px 30px;gap:7px;margin-top:10px;align-items:center}.it .u{min-width:0}.it .n{grid-column:1/-1}
 .it .n{grid-column:1/-1}
@@ -182,7 +192,7 @@ function sub(q,fn,key){
 }
 function startSync(){
   if(unsubs.length)return;
-  need=0;loaded={};synced={counters:JSON.stringify({seq:0,qseq:0,pseq:0}),shop:'{}'};
+  need=0;loaded={};synced={counters:JSON.stringify({seq:0,qseq:0,pseq:0}),shop:'{}',suppliers:'[]'};
   COLS.filter(c=>isMgr()||!MGR_COLS.includes(c)).forEach(c=>sub(fs.collection(c),s=>{
     db[c]=s.docs.map(d=>d.data());
     synced[c]=Object.fromEntries(db[c].map(x=>[x.id,JSON.stringify(x)]));
@@ -190,6 +200,7 @@ function startSync(){
   sub(fs.collection('meta'),s=>{s.docs.forEach(d=>{
     if(d.id==='counters'){const v=d.data();db.seq=v.seq||0;db.qseq=v.qseq||0;db.pseq=v.pseq||0;synced.counters=JSON.stringify(cntObj())}
     if(d.id==='shop'){db.shop=d.data();synced.shop=JSON.stringify(db.shop)}
+    if(d.id==='suppliers'){db.suppliers=d.data().items||[];synced.suppliers=JSON.stringify(db.suppliers)}
   })},'meta');
   if(isOwner())sub(fs.collection('users'),s=>{usersList=s.docs.map(d=>({uid:d.id,...d.data()}))},'users');
 }
@@ -208,6 +219,8 @@ function cloudSave(){
   if(synced.counters!==cj){synced.counters=cj;ops.push(['set',fs.collection('meta').doc('counters'),cntObj()])}
   const sj=JSON.stringify(db.shop||{});
   if(isMgr()&&synced.shop!==sj){synced.shop=sj;ops.push(['set',fs.collection('meta').doc('shop'),strip(db.shop||{})])}
+  const suj=JSON.stringify(db.suppliers||[]);
+  if(isMgr()&&synced.suppliers!==suj){synced.suppliers=suj;ops.push(['set',fs.collection('meta').doc('suppliers'),{items:strip(db.suppliers||[])}])}
   for(let i=0;i<ops.length;i+=400){
     const b=fs.batch();
     ops.slice(i,i+400).forEach(o=>o[0]==='set'?b.set(o[1],o[2]):b.delete(o[1]));
@@ -219,7 +232,7 @@ const STATUS=['Mới','Đang thiết kế','Đang in','Hoàn thành','Đã giao'
 const TABS=[['home','dash','Tổng quan'],['orders','clipboard','Đơn hàng'],['quote','filetext','Báo giá'],['cust','users','Khách'],['prod','box','Sản phẩm'],['finance','wallet','Chi phí & Mua hàng'],['more','sliders','Khác']];
 let db=load(),view='home',filter='Tất cả';
 
-function blank(){return{orders:[],customers:[],products:[],expenses:[],quotes:[],purchases:[],seq:0,qseq:0,pseq:0,shop:{}}}
+function blank(){return{orders:[],customers:[],products:[],expenses:[],quotes:[],purchases:[],suppliers:[],seq:0,qseq:0,pseq:0,shop:{}}}
 function load(){try{if(LS){const d=JSON.parse(LS.getItem(KEY));if(d)return Object.assign(blank(),d)}}catch(e){}return blank()}
 function save(){
   if(CLOUD){cloudSave();return}
@@ -789,18 +802,44 @@ function quotes(){
     </div></div>`).join(''):'<div class="empty">Chưa có báo giá</div>'}`;
 }
 
+/* ---------- Nhà cung cấp ---------- */
+function supplierForm(id){
+  const o=(db.suppliers||[]).find(x=>x.id===id)||{name:'',address:'',phone:'',email:'',taxCode:'',contact:'',note:''};
+  const m=modal(id?'Sửa nhà cung cấp':'Thêm nhà cung cấp',`
+    ${fld('Tên nhà cung cấp / cửa hàng','name',o.name,'text','required')}
+    ${fld('Người liên hệ','contact',o.contact||'')}
+    ${fld('Số điện thoại','phone',o.phone||'','tel')}
+    ${fld('Email','email',o.email||'','email')}
+    ${fld('Mã số thuế','taxCode',o.taxCode||'')}
+    <label>Địa chỉ<textarea name="address" rows="2">${esc(o.address||'')}</textarea></label>
+    <label>Ghi chú<textarea name="note" rows="2">${esc(o.note||'')}</textarea></label>`,fd=>{
+      const name=String(fd.get('name')||'').trim();if(!name){alert('Vui lòng nhập tên nhà cung cấp.');return false}
+      const data={name,contact:String(fd.get('contact')||'').trim(),phone:String(fd.get('phone')||'').trim(),email:String(fd.get('email')||'').trim(),taxCode:String(fd.get('taxCode')||'').trim(),address:String(fd.get('address')||'').trim(),note:String(fd.get('note')||'').trim()};
+      if(id)Object.assign(o,data);else (db.suppliers||(db.suppliers=[])).push({id:uid(),...data});
+      save();render();
+    });
+}
 /* ---------- Mua hàng ---------- */
 const ptotal=p=>p.items.reduce((s,i)=>s+lineCost(i),0);
 function purchaseForm(id){
   const o=db.purchases.find(x=>x.id===id)||{date:today(),paid:true,items:[{}],supplier:''};
-  const sups=[...new Set(db.purchases.map(p=>p.supplier).filter(s=>s&&s!=='Khách lẻ'))];
+  db.suppliers=db.suppliers||[];
+  const legacy=[...new Set(db.purchases.map(p=>p.supplier).filter(s=>s&&s!=='Khách lẻ'&&!(db.suppliers||[]).some(x=>x.name===s)))].map(name=>({id:'legacy-'+name,name}));
+  const sups=[...db.suppliers,...legacy];
   const retail=o.supplier==='Khách lẻ'||o.sourceType==='retail';
-  const known=sups.includes(o.supplier)?o.supplier:'';
+  const known=sups.find(x=>x.id===o.supplierId||x.name===o.supplier);
   const m=modal(id?'Sửa phiếu '+o.code:'Phiếu mua hàng',`
     <label>Loại bên bán<select name="sourceType" id="sourceType"><option value="retail" ${retail?'selected':''}>Khách lẻ</option><option value="supplier" ${!retail?'selected':''}>Nhà cung cấp (NCC)</option></select></label>
     <div id="supplierFields" style="${retail?'display:none':''}">
-      <label>Chọn nhà cung cấp<select name="supplierSelect" id="supplierSelect"><option value="">— Chọn NCC —</option>${sups.map(s=>`<option value="${esc(s)}" ${known===s?'selected':''}>${esc(s)}</option>`).join('')}<option value="__new__" ${!known&&!retail?'selected':''}>＋ Thêm NCC mới…</option></select></label>
-      <div id="newSupplierWrap" style="${!known&&!retail?'':'display:none'}">${fld('Tên nhà cung cấp mới','supplierNew',!known&&!retail?o.supplier:'','text','')}</div>
+      <label>Chọn nhà cung cấp<select name="supplierSelect" id="supplierSelect"><option value="">— Chọn NCC —</option>${sups.map(s=>`<option value="${esc(s.id)}" ${known&&known.id===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}<option value="__new__" ${!known&&!retail?'selected':''}>＋ Nhập NCC mới…</option></select></label>
+      <div id="newSupplierWrap" style="${!known&&!retail?'':'display:none'}">
+        ${fld('Tên nhà cung cấp mới','supplierNew',!known&&!retail&&o.supplier!=='Khách lẻ'?o.supplier:'','text','')}
+        ${fld('Số điện thoại','supplierPhone',o.supplierInfo?.phone||'','tel')}
+        ${fld('Email','supplierEmail',o.supplierInfo?.email||'','email')}
+        ${fld('Mã số thuế','supplierTax',o.supplierInfo?.taxCode||'')}
+        <label>Địa chỉ<textarea name="supplierAddress" rows="2">${esc(o.supplierInfo?.address||'')}</textarea></label>
+        <label>Người liên hệ<input name="supplierContact" value="${esc(o.supplierInfo?.contact||'')}"></label>
+      </div>
     </div>
     ${fld('Ngày','date',o.date,'date','required')}
     <label>Hàng nhập</label><div id="items"></div>
@@ -817,9 +856,23 @@ function purchaseForm(id){
       if(!id&&fd.get('upd')==='on'){const base=Math.max(p.stock,0);p.cost=(base+i.qty)>0?Math.round((base*p.cost+i.qty*i.cost)/(base+i.qty)):i.cost}
       p.stock+=i.qty});
     const sourceType=fd.get('sourceType')||'supplier';
-    const supplier=sourceType==='retail'?'Khách lẻ':(fd.get('supplierSelect')==='__new__'?String(fd.get('supplierNew')||'').trim():String(fd.get('supplierSelect')||'').trim());
-    if(!supplier){alert('Vui lòng chọn nhà cung cấp hoặc nhập tên NCC mới.');return false}
-    const data={supplier,sourceType,date:fd.get('date'),paid:fd.get('paid')==='on',note:fd.get('note'),items};
+    let supplier='Khách lẻ',supplierId='',supplierInfo=null;
+    if(sourceType!=='retail'){
+      const sid=String(fd.get('supplierSelect')||'');
+      if(sid==='__new__'){
+        supplier=String(fd.get('supplierNew')||'').trim();
+        if(!supplier){alert('Vui lòng nhập tên nhà cung cấp.');return false}
+        supplierInfo={name:supplier,phone:String(fd.get('supplierPhone')||'').trim(),email:String(fd.get('supplierEmail')||'').trim(),taxCode:String(fd.get('supplierTax')||'').trim(),address:String(fd.get('supplierAddress')||'').trim(),contact:String(fd.get('supplierContact')||'').trim(),note:''};
+        let saved=(db.suppliers||[]).find(x=>x.name.toLowerCase()===supplier.toLowerCase());
+        if(!saved){saved={id:uid(),...supplierInfo};(db.suppliers||(db.suppliers=[])).push(saved)}else Object.assign(saved,supplierInfo);
+        supplierId=saved.id;
+      }else{
+        const saved=(db.suppliers||[]).find(x=>x.id===sid)||sups.find(x=>x.id===sid);
+        if(!saved){alert('Vui lòng chọn nhà cung cấp hoặc nhập NCC mới.');return false}
+        supplier=saved.name;supplierId=saved.id.startsWith('legacy-')?'':saved.id;supplierInfo={name:saved.name,address:saved.address||'',phone:saved.phone||'',email:saved.email||'',taxCode:saved.taxCode||'',contact:saved.contact||''};
+      }
+    }
+    const data={supplier,supplierId,supplierInfo,sourceType,date:fd.get('date'),paid:fd.get('paid')==='on',note:fd.get('note'),items};
     if(id)Object.assign(o,data);else db.purchases.push({id:uid(),code:'MH'+String(++db.pseq).padStart(4,'0'),...data});
     save();render();
   });
@@ -861,6 +914,8 @@ function finance(){
     <div class="grid"><div class="card kpi"><small>Mua hàng tháng này</small><b>${vnd(mon)}</b></div><div class="card kpi"><small>Chi phí tháng này</small><b>${vnd(expMon)}</b></div><div class="card kpi"><small>Nợ NCC</small><b class="${debt?'neg':''}">${vnd(debt)}</b></div></div>
     <div class="row sp" style="margin-top:18px"><h3>🛒 Mua hàng</h3><button class="btn" data-a="newPurchase">${ic('plus')} Phiếu mua</button></div>
     ${list.length?list.map(p=>`<div class="card"><div class="row sp"><div><b>${p.code} · ${esc(p.supplier==='Khách lẻ'?'Khách lẻ':p.supplier||'Nhà cung cấp')}</b><div class="mut">${p.date} · ${(p.items||[]).map(i=>esc(i.name)+' ×'+fq(i.qty)).join(', ')}</div></div><b>${vnd(ptotal(p))}</b></div>${p.note?`<div class="mut">${ic('pencil')} ${esc(p.note)}</div>`:''}<div class="row" style="margin-top:8px;flex-wrap:wrap"><span class="badge ${p.paid?'ok':'wr'}" data-a="ppay" data-id="${p.id}" style="cursor:pointer">${p.paid?'Đã trả':'Chưa trả'}</span><button class="btn sm" data-a="pdfPurchase" data-id="${p.id}">${ic('pdf')} PDF</button><button class="btn gh sm" data-a="printPurchase" data-id="${p.id}">${ic('printer')} In</button><button class="btn gh sm" data-a="editPurchase" data-id="${p.id}">Sửa</button><button class="btn dg sm" data-a="delPurchase" data-id="${p.id}">Xoá</button></div></div>`).join(''):'<div class="empty">Chưa có phiếu mua hàng</div>'}
+    <div class="row sp" style="margin-top:24px"><h3>🏢 Nhà cung cấp</h3><button class="btn" data-a="newSupplier">${ic('plus')} Thêm NCC</button></div>
+    ${(db.suppliers||[]).length?(db.suppliers||[]).map(s=>`<div class="card"><div class="row sp"><div><b>${esc(s.name)}</b><div class="mut">${esc(s.phone||'Chưa có SĐT')}${s.contact?' · '+esc(s.contact):''}</div><div class="mut">${esc(s.address||'Chưa có địa chỉ')}${s.email?' · '+esc(s.email):''}</div>${s.taxCode?`<div class="mut">MST: ${esc(s.taxCode)}</div>`:''}</div><button class="btn gh sm" data-a="editSupplier" data-id="${s.id}">Sửa</button></div></div>`).join(''):'<div class="empty">Chưa có nhà cung cấp. Bấm “Thêm NCC” để nhập thông tin.</div>'}
     <div class="row sp" style="margin-top:24px"><h3>💳 Chi phí khác</h3><button class="btn" data-a="newExp">${ic('plus')} Thêm chi phí</button></div>
     ${expenses.length?expenses.map(e=>`<div class="card row sp"><div><b>${esc(e.cat)}</b> <span class="mut">${e.date}</span><div class="mut">${esc(e.note||'')}</div></div><div class="row"><b>${vnd(e.amount)}</b><button class="btn dg sm" data-a="delExp" data-id="${e.id}">×</button></div></div>`).join(''):'<div class="empty">Chưa có chi phí</div>'}`;
 }
@@ -903,7 +958,7 @@ const acts={
   newQuote:()=>quoteForm(),editQuote:id=>quoteForm(id),previewQuote:id=>previewQuote(id),printQuote:id=>printQuote(id),pdfQuote:id=>pdfQuote(id),printPurchase:id=>printPurchase(id),pdfPurchase:id=>pdfPurchase(id),shop:()=>shopForm(),tpl:()=>{if(isMgr())tplForm()},
   delQuote:id=>{if(confirm('Xoá báo giá này?')){db.quotes=db.quotes.filter(q=>q.id!==id);save();render()}},
   toOrder:id=>convertQuote(db.quotes.find(x=>x.id===id)),viewOrder:()=>{filter='Tất cả';view='orders';render();scrollTo(0,0)},
-  newPurchase:()=>purchaseForm(),editPurchase:id=>purchaseForm(id),
+  newPurchase:()=>purchaseForm(),editPurchase:id=>purchaseForm(id),newSupplier:()=>supplierForm(),editSupplier:id=>supplierForm(id),
   ppay:id=>{const p=db.purchases.find(x=>x.id===id);p.paid=!p.paid;save();render()},
   delPurchase:id=>{if(!confirm('Xoá phiếu này? Tồn kho sẽ được trừ lại số đã nhập.'))return;const o=db.purchases.find(x=>x.id===id);o.items.forEach(i=>{const p=prod(i.pid);if(p)p.stock-=i.qty});db.purchases=db.purchases.filter(x=>x.id!==id);save();render()},
   login:()=>login(),
