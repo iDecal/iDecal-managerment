@@ -181,21 +181,6 @@ button .i, a .i, .btn .i { vertical-align: middle; }
 @media(max-width:800px){.dash-kpis,.profit-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-layout{grid-template-columns:1fr}}
 @media(max-width:420px){.dash-head{padding:17px}.dash-head h2{font-size:20px}.dash-kpi{padding:13px}.dash-kpi b{font-size:16px}.profit-kpi{padding:11px}}
 
-
-/* Giao diện gọn, rõ ràng cho các module chính */
-.navi{min-height:46px;border-radius:12px;font-weight:550;transition:background .16s,border-color .16s,transform .16s}
-.navi:hover{background:var(--bg);border-color:var(--bd);transform:translateX(2px)}
-.navi.on{box-shadow:inset 3px 0 0 var(--pri);background:linear-gradient(90deg,#eaf4ff,#f7fbff);border-color:#d5e7fb}
-.card{border-radius:18px;padding:18px 20px;box-shadow:0 4px 16px #183b5b07;transition:box-shadow .18s,border-color .18s}
-.card:hover{border-color:#c9dcf7;box-shadow:0 8px 24px #183b5b0d}
-.row.sp{gap:12px;flex-wrap:wrap}
-.row.sp h2{margin:0;font-size:19px}
-.orders-view .card,.customers-view .card,.products-view .card{border-left:3px solid #dbeafe}
-.badge{padding:4px 10px;font-weight:600}
-.btn{border-radius:11px;font-weight:600;gap:7px}
-input,select,textarea{border-radius:11px}
-@media(max-width:700px){.card{padding:14px;border-radius:14px}.row.sp h2{font-size:17px}.navi{min-height:44px}}
-
 </style>
 </head>
 <body>
@@ -343,12 +328,12 @@ function cloudSave(){
   }
 }
 const hasLocal=()=>{try{const d=JSON.parse(LS.getItem(KEY));return !!d&&COLS.some(k=>(d[k]||[]).length)}catch(e){return false}};
-const STATUS=['Mới','Đang thiết kế','Đang in','Hoàn thành','Huỷ'];
+const STATUS=['Mới','Đang thiết kế','Đang in','Hoàn thành','Đã giao','Huỷ'];
 const TABS=[
   {id:'home',icon:'dash',label:'Tổng quan',group:'',req:'all',color:'sky'},
   {id:'orders',icon:'clipboard',label:'Đơn hàng',group:'Bán hàng',req:'all',color:'green'},
   {id:'quote',icon:'filetext',label:'Báo giá',group:'Bán hàng',req:'all',color:'purple'},
-  {id:'cust',icon:'users',label:'Khách hàng',group:'Bán hàng',req:'all',color:'orange'},
+  {id:'cust',icon:'users',label:'Khách',group:'Bán hàng',req:'all',color:'orange'},
   {id:'prod',icon:'box',label:'Sản phẩm',group:'Danh mục',req:'all',color:'teal'},
   {id:'purchases',icon:'cart',label:'Mua hàng',group:'Mua hàng & Chi phí',req:'mgr',color:'amber'},
   {id:'suppliers',icon:'store',label:'Nhà cung cấp',group:'Mua hàng & Chi phí',req:'mgr',color:'teal'},
@@ -360,7 +345,7 @@ const TABS=[
 let db=load(),view='home',filter='Tất cả',moduleSearch='';
 
 function blank(){return{orders:[],customers:[],products:[],expenses:[],quotes:[],purchases:[],suppliers:[],seq:0,qseq:0,pseq:0,shop:{}}}
-function load(){try{if(LS){const d=JSON.parse(LS.getItem(KEY));if(d){const state=Object.assign(blank(),d);state.orders.forEach(o=>{if(o.status==='Đã giao')o.status='Hoàn thành'});return state}}}catch(e){}return blank()}
+function load(){try{if(LS){const d=JSON.parse(LS.getItem(KEY));if(d)return Object.assign(blank(),d)}}catch(e){}return blank()}
 function orderSupplierName(o){
   if(!o)return '';
   const linked=(db.suppliers||[]).find(s=>s.id===o.supplierId);
@@ -394,7 +379,7 @@ const cogs=o=>o.items.reduce((s,i)=>s+lineCost(i),0);
 const cust=id=>db.customers.find(c=>c.id===id);
 const prod=id=>db.products.find(p=>p.id===id);
 const valid=o=>o.status!=='Huỷ';
-const STEPS=['Mới','Đang thiết kế','Đang in','Hoàn thành'];
+const STEPS=['Mới','Đang thiết kế','Đang in','Hoàn thành','Đã giao'];
 const statusCounts=()=>{const c={};for(const s of STATUS)c[s]=0;for(const o of db.orders)c[o.status]=(c[o.status]||0)+1;return c};
 const openJobs=c=>(c['Mới']||0)+(c['Đang thiết kế']||0)+(c['Đang in']||0);
 
@@ -415,8 +400,7 @@ function orderForm(id){
   const supplierOpts=supplierChoices();
   const currentSupplier=supplierOpts.find(x=>x.id===o.supplierId)||supplierOpts.find(x=>String(x.name).toLocaleLowerCase('vi')===String(o.supplierName||'').toLocaleLowerCase('vi'));
   const m=modal(id?'Sửa đơn '+o.code:'Đơn mới',`
-    <label>Khách hàng<select name="cid" id="orderCid"><option value="">Khách lẻ</option>${db.customers.map(c=>`<option value="${c.id}" ${c.id===o.cid?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
-    <div id="retailNameWrap" style="display:${o.cid?'none':'block'}">${fld('Tên khách (nếu khách lẻ)','cname',o.cname||'')}</div>
+    <label>Khách hàng<select name="cid"><option value="">Khách lẻ</option>${db.customers.map(c=>`<option value="${c.id}" ${c.id===o.cid?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
     ${fld('Ngày','date',o.date,'date','required')}
     <label>Xưởng / Nhà cung cấp chính<select name="supplierId"><option value="">— Chưa chọn NCC —</option>${supplierOpts.map(x=>`<option value="${esc(x.id)}" ${currentSupplier&&currentSupplier.id===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>
     <div class="mut">Chọn xưởng/NCC thực hiện đơn này để nhóm báo cáo lãi lỗ theo NCC. Nếu chưa có trong danh sách, thêm ở menu Nhà cung cấp hoặc tạo phiếu mua hàng trước.</div>
@@ -436,13 +420,10 @@ function orderForm(id){
     const picked=supplierOpts.find(x=>x.id===pickedSupplier);
     const supplierId=picked&&!picked.legacy?picked.id:'';
     const supplierName=picked?picked.name:'';
-    const cid=String(fd.get('cid')||'');
-    const data={cid,cname:cid?'':String(fd.get('cname')||'').trim(),date:fd.get('date'),status:fd.get('status'),paid:fd.get('paid')==='on',note:fd.get('note'),items,supplierId,supplierName};
+    const data={cid:fd.get('cid'),date:fd.get('date'),status:fd.get('status'),paid:fd.get('paid')==='on',note:fd.get('note'),items,supplierId,supplierName};
     if(id)Object.assign(o,data);else db.orders.push({id:uid(),code:'DH'+String(++db.seq).padStart(4,'0'),...data});
     save();render();
   });
-  const customerSelect=m.querySelector('#orderCid');
-  customerSelect.onchange=()=>{m.querySelector('#retailNameWrap').style.display=customerSelect.value?'none':'block'};
   const box=m.querySelector('#items');
   const calc=()=>{let t=0;box.querySelectorAll('.it').forEach(r=>t+=Math.round((+r.querySelector('.q').value||0)*(+r.querySelector('.pr').value||0)));m.querySelector('#tot').textContent=vnd(t)};
   const addRow=(it={})=>{
@@ -576,9 +557,9 @@ function stageBar(){
 }
 function orders(){
   const list=db.orders.filter(o=>filter==='Tất cả'||o.status===filter).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
-  return`<div class="row sp"><h2>${ic('clipboard')} Đơn hàng</h2><button class="btn" data-a="newOrder">${ic('plus')} Đơn mới</button></div>
+  return`<div class="row sp"><h2>Đơn hàng</h2><button class="btn" data-a="newOrder">${ic('plus')} Đơn mới</button></div>
   ${stageBar()}
-  ${list.length?list.map(o=>{const customerLabel=orderCustomerName(o);return`<div class="card">
+  ${list.length?list.map(o=>{const c=cust(o.cid);const customerLabel=(c&&c.name)||o.cname||'Chưa có tên khách hàng';return`<div class="card">
     <div class="row sp"><b>${esc(o.code)} - ${esc(customerLabel)}</b><b>${vnd(total(o))}</b></div>
     <div class="mut">${o.date} · ${o.items.map(i=>esc(i.name)+' ×'+fq(i.qty)).join(', ')}</div>
     <div style="margin-top:6px">${orderSupplierName(o)?`<span class="badge vendor-badge">${ic('store')} NCC chính: ${esc(orderSupplierName(o))}</span>`:'<span class="badge vendor-missing">Chưa gắn NCC</span>'}</div>
@@ -646,8 +627,6 @@ function readItems(m){
   }).filter(i=>i.name&&i.qty>0);
 }
 function itemEditor(m,items){
-  const customerSelect=m.querySelector('#orderCid');
-  customerSelect.onchange=()=>{m.querySelector('#retailNameWrap').style.display=customerSelect.value?'none':'block'};
   const box=m.querySelector('#items');
   const calc=()=>{let t=0;box.querySelectorAll('.it').forEach(r=>t+=Math.round((+r.querySelector('.q').value||0)*(+r.querySelector('.pr').value||0)));const d=+(m.querySelector('[name=discount]')||{}).value||0,base=Math.max(0,t-d),rate=+((m.querySelector('[name=vatRate]')||{}).value??8)||0,vat=Math.round(base*rate/100);const sub=m.querySelector('#sub'),v=m.querySelector('#vat'),vl=m.querySelector('#vatLabel');if(sub)sub.textContent=vnd(t);if(v)v.textContent=vnd(vat);if(vl)vl.textContent=rate;m.querySelector('#tot').textContent=vnd(base+vat)};
   const addRow=(it={})=>{
@@ -782,7 +761,7 @@ function orderMaterials(o){
   });
   return [...grouped.values()].sort((a,b)=>a.name.localeCompare(b.name,'vi'));
 }
-function orderCustomerName(o){const c=cust(o.cid);if(c)return c.name;const own=String(o.cname||'').trim();if(own)return own;const q=(db.quotes||[]).find(x=>x.orderId===o.id);const qc=q&&cust(q.cid);return qc?qc.name:(String(q&&q.cname||'').trim()||'Khách lẻ')}
+function orderCustomerName(o){const c=cust(o.cid);return c?c.name:(o.cname||'Chưa có tên khách hàng')}
 function downloadText(filename,text,mime='text/csv;charset=utf-8;'){
   const blob=new Blob(['\ufeff',text],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
@@ -966,7 +945,7 @@ function convertQuote(q){
   const items=q.items.map(i=>({...i}));
   if(q.discount)items.push({pid:'',name:'Giảm giá',qty:1,price:-q.discount,cost:0});
   const vatAmount=qvat(q);if(vatAmount)items.push({pid:'',name:'VAT '+qvatRate(q)+'%',qty:1,price:vatAmount,cost:0});
-  const o={id:uid(),code:'DH'+String(++db.seq).padStart(3,'0'),cid:q.cid,cname:String(q.cname||'').trim(),date:today(),status:'Mới',paid:false,supplierId:'',supplierName:'',note:'Từ '+q.code,items};
+  const o={id:uid(),code:'DH'+String(++db.seq).padStart(4,'0'),cid:q.cid,date:today(),status:'Mới',paid:false,supplierId:'',supplierName:'',note:'Từ '+q.code+(!q.cid&&q.cname?' · '+q.cname:''),items};
   db.orders.push(o);q.orderId=o.id;q.status='Chấp nhận';save();render();toast('Đã chuyển '+q.code+' thành đơn '+o.code,'ok');
 }
 function quotes(){
