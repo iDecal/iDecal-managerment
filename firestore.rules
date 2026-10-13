@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ====== SỬA DÒNG NÀY: Gmail của chủ cửa hàng (viết thường, giống ownerEmail trong config.js) ======
+    function ownerEmail() { return 'ten-cua-ban@gmail.com'; }
+
+    function signedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    function hasProfile() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    function myRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    function isOwner() { return signedIn() && hasProfile() && myRole() == 'owner'; }
+    function isMgr()   { return signedIn() && hasProfile() && myRole() in ['owner', 'manager']; }
+    function isStaff() { return signedIn() && hasProfile() && myRole() in ['owner', 'manager', 'staff']; }
+
+    // ---- Hồ sơ thành viên ----
+    match /users/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || isOwner());
+      allow list: if isOwner();
+      // Tự tạo hồ sơ của chính mình: mặc định "chờ duyệt"; chỉ đúng Gmail của chủ mới được là "owner"
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['email', 'name', 'photo', 'role', 'createdAt'])
+        && request.resource.data.email == request.auth.token.email.lower()
+        && (request.resource.data.role == 'pending'
+            || (request.resource.data.role == 'owner'
+                && request.auth.token.email.lower() == ownerEmail()));
+      // Chủ đổi cấp cho người khác (chỉ đổi trường role)
+      allow update: if isOwner()
+        && uid != request.auth.uid
+        && resource.data.role != 'owner'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role'])
+        && request.resource.data.role in ['pending', 'staff', 'manager', 'blocked'];
+      allow delete: if isOwner() && uid != request.auth.uid;
+    }
+
+    // ---- Khách hàng, đơn hàng, báo giá: nhân viên tạo/sửa; chỉ quản lý trở lên được xoá ----
+    match /customers/{id} {
+      allow read: if isStaff();
+      allow create, update: if isStaff();
+      allow delete: if isMgr();
+    }
+    match /orders/{id} {
+      allow read: if isStaff();
+      allow create, update: if isStaff();
+      allow delete: if isMgr();
+    }
+    match /quotes/{id} {
+      allow read: if isStaff();
+      allow create, update: if isStaff();
+      allow delete: if isMgr();
+    }
+
+    // ---- Sản phẩm: nhân viên chỉ được đổi tồn kho (khi bán hàng) ----
+    match /products/{id} {
+      allow read: if isStaff();
+      allow create, delete: if isMgr();
+      allow update: if isMgr()
+        || (isStaff() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock']));
+    }
+
+    // ---- Mua hàng, chi phí: chỉ quản lý trở lên ----
+    match /purchases/{id} {
+      allow read, write: if isMgr();
+    }
+    match /expenses/{id} {
+      allow read, write: if isMgr();
+    }
+
+    // ---- Bộ đếm mã đơn (nhân viên được ghi) và thông tin cửa hàng (quản lý được ghi) ----
+    match /meta/{doc} {
+      allow read: if isStaff();
+      allow write: if isMgr() || (isStaff() && doc == 'counters');
+    }
+  }
+}
