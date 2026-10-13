@@ -1,15 +1,12 @@
-// Cấu hình đăng nhập Gmail + lưu dữ liệu chung (Firebase).
-// Để TRỐNG apiKey thì app chạy ở "chế độ một máy" (không đăng nhập, dữ liệu lưu trong trình duyệt).
-// Cách điền: xem README.md (mục "Bật đăng nhập Gmail").
 window.IDECAL_CONFIG = {
-  // Gmail của CHỦ cửa hàng (viết thường). Người này đăng nhập đầu tiên sẽ tự thành "Chủ".
-  ownerEmail: "",
-
-  // Dán các giá trị từ Firebase Console → Project settings → Your apps → Web app
   firebase: {
-    apiKey: "",
-    authDomain: "",
-    projectId: "",
-    appId: ""
-  }
+    apiKey: "AIzaSyDffwon4yBpYSpWs2vxTgVJlaM8KWhKDWI",
+    authDomain: "register-app-3c0ec.firebaseapp.com",
+    projectId: "register-app-3c0ec",
+    storageBucket: "register-app-3c0ec.firebasestorage.app",
+    messagingSenderId: "892263262499",
+    appId: "1:892263262499:web:3e7ae8e42429f6853dc496"
+  },
+  // Điền đúng địa chỉ Gmail của bạn để có quyền Chủ / Quản lý cao nhất
+  ownerEmail: "idecals.net@gmail.com"
 };
