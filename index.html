@@ -344,6 +344,7 @@ body[data-view=home] .module-search{display:none}
 <script>
 const KEY='idecal_v1';
 const ICONS={
+  banknote:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/>',
   home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/>',
   settings:'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
   barchart:'<path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/>',
@@ -493,6 +494,7 @@ const TABS=[
   {id:'orders',icon:'clipboard',label:'Đơn hàng',group:'Bán hàng',req:'all',color:'green'},
   {id:'quote',icon:'filetext',label:'Báo giá',group:'Bán hàng',req:'all',color:'purple'},
   {id:'cust',icon:'users',label:'Khách',group:'Bán hàng',req:'all',color:'orange'},
+  {id:'deposits',icon:'banknote',label:'Tạm ứng',group:'Bán hàng',req:'all',color:'green'},
   {id:'prod',icon:'box',label:'Sản phẩm',group:'Danh mục',req:'all',color:'teal'},
   {id:'purchases',icon:'cart',label:'Mua hàng',group:'Mua hàng & Chi phí',req:'mgr',color:'amber'},
   {id:'suppliers',icon:'store',label:'Nhà cung cấp',group:'Mua hàng & Chi phí',req:'mgr',color:'teal'},
@@ -680,7 +682,7 @@ function homeMgr(){
   const ex=ords.reduce((s,o)=>s+orderActualCosts(o),0);
   const profit=rev-ex;
   const noCost=ords.filter(o=>orderCostBreakdown(o).count===0).length;
-  const debt=db.orders.filter(o=>valid(o)&&!o.paid).reduce((s,o)=>s+total(o),0);
+  const debt=db.orders.filter(o=>valid(o)).reduce((s,o)=>s+orderDue(o),0);
   const months=[];const d=new Date();d.setDate(1);
   for(let i=5;i>=0;i--){const x=new Date(d.getFullYear(),d.getMonth()-i,1);months.push(x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0'))}
   const rv=months.map(m=>db.orders.filter(o=>valid(o)&&o.date.startsWith(m)).reduce((s,o)=>s+orderRevenue(o),0));
@@ -742,9 +744,11 @@ function orders(){
     <div style="margin-top:6px">${orderSupplierName(o)?`<span class="badge vendor-badge">${ic('store')} NCC chính: ${esc(orderSupplierName(o))}</span>`:'<span class="badge vendor-missing">Chưa gắn NCC</span>'}</div>
     <div class="row" style="gap:14px;margin-top:6px"><span class="mut">Giá vốn tham khảo: <b>${vnd(cogs(o))}</b></span><span class="mut">Chi phí đã gắn: <b>${vnd(orderActualCosts(o))}</b></span><span class="${orderCostBreakdown(o).count===0?'mut':orderRevenue(o)-orderActualCosts(o)<0?'neg':'pos'}">${orderCostBreakdown(o).count===0?'Chưa đủ chi phí để tính lãi':'Chênh lệch theo khoản đã ghi: '+vnd(orderRevenue(o)-orderActualCosts(o))}</span></div>
     ${o.note?`<div class="mut">${ic('pencil')} ${esc(o.note)}</div>`:''}
+    ${dep(o)?`<div class="row" style="gap:8px;margin-top:6px"><span class="badge ok">${ic('banknote')} Đã tạm ứng ${vnd(dep(o))}</span><span class="badge ${orderDue(o)?'wr':'ok'}">${orderDue(o)?'Còn phải thu '+vnd(orderDue(o)):'Đã thu đủ'}</span></div>`:''}
     <div class="row" style="margin-top:8px;flex-wrap:wrap">
       <select class="st" data-id="${o.id}" style="width:auto">${STATUS.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select>
       <span class="badge ${o.paid?'ok':'wr'}" data-a="pay" data-id="${o.id}" style="cursor:pointer">${o.paid?'Đã thu':'Chưa thu'}</span>
+      ${o.paid?'':`<button class="btn gh sm" data-a="depositOrder" data-id="${o.id}">${ic('banknote')} Tạm ứng</button>`}
       <button class="btn gh sm" data-a="previewOrder" data-id="${o.id}">👁 Xem trực tiếp</button>
       <button class="btn gh sm" data-a="editOrder" data-id="${o.id}">Sửa</button>
       <button class="btn sm" data-a="materialsCSV" data-id="${o.id}">Xuất vật tư Excel</button>
@@ -754,7 +758,7 @@ function orders(){
 }
 function custs(){
   return`<div class="row sp"><h2>Khách hàng</h2><button class="btn" data-a="newCust">${ic('plus')} Khách mới</button></div>
-  ${db.customers.length?db.customers.map(c=>{const os=db.orders.filter(o=>o.cid===c.id&&valid(o));const sp=os.reduce((s,o)=>s+total(o),0),db_=os.filter(o=>!o.paid).reduce((s,o)=>s+total(o),0);return`<div class="card">
+  ${db.customers.length?db.customers.map(c=>{const os=db.orders.filter(o=>o.cid===c.id&&valid(o));const sp=os.reduce((s,o)=>s+total(o),0),db_=os.reduce((s,o)=>s+orderDue(o),0);return`<div class="card">
     <div class="row sp"><b>${esc(c.name)}</b><span class="mut">${os.length} đơn · ${vnd(sp)}</span></div>
     <div class="mut">${c.phone?`<a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>`:''} ${esc(c.addr||'')}</div>
     ${db_?`<div class="neg">Còn nợ: ${vnd(db_)}</div>`:''}
@@ -938,6 +942,62 @@ function orderMaterials(o){
   });
   return [...grouped.values()].sort((a,b)=>a.name.localeCompare(b.name,'vi'));
 }
+const DEP_METHODS=['Tiền mặt','Chuyển khoản','Khác'];
+const dep=o=>(o.deposits||[]).reduce((s,d)=>s+(+d.amount||0),0);
+const orderDue=o=>o.paid?0:Math.max(0,total(o)-dep(o));
+function depositForm(orderId){
+  const open=db.orders.filter(o=>valid(o)&&(!o.paid||o.id===orderId)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
+  if(!open.length){toast('Chưa có đơn hàng nào để thu tạm ứng','err');return}
+  const cur=open.find(o=>o.id===orderId)||open[0];
+  const m=modal('Thu tạm ứng khách hàng',`
+    <label>Đơn hàng<select name="oid">${open.map(o=>`<option value="${o.id}" ${o.id===cur.id?'selected':''}>${esc(o.code)} · ${esc(orderCustomerName(o))} · còn ${vnd(orderDue(o))}</option>`).join('')}</select></label>
+    <div class="card quote-calc" id="depInfo"></div>
+    ${fld('Ngày thu','date',today(),'date','required')}
+    ${fld('Số tiền tạm ứng (đ)','amount','','number','min=1 step=any required inputmode="decimal"')}
+    <button type="button" class="btn gh sm" id="depFull" style="margin-top:6px">Điền số còn lại</button>
+    <label>Hình thức<select name="method">${DEP_METHODS.map(x=>`<option>${x}</option>`).join('')}</select></label>
+    ${fld('Ghi chú','note','')}
+    <div id="depList"></div>`,
+  (fd)=>{
+    const o=db.orders.find(x=>x.id===fd.get('oid')),amount=+fd.get('amount')||0;
+    if(!o||amount<=0){alert('Nhập số tiền tạm ứng lớn hơn 0');return false}
+    (o.deposits=o.deposits||[]).push({id:uid(),date:fd.get('date'),amount,method:fd.get('method'),note:String(fd.get('note')||'').trim()});
+    let msg='Đã ghi nhận tạm ứng '+vnd(amount);
+    if(!o.paid&&dep(o)>=total(o)){o.paid=true;msg+=' · đơn đã thu đủ'}
+    save();render();toast(msg,'ok');
+  });
+  const sel=m.querySelector('[name=oid]'),amt=m.querySelector('[name=amount]');
+  const upd=()=>{
+    const o=db.orders.find(x=>x.id===sel.value);if(!o)return;
+    m.querySelector('#depInfo').innerHTML=`<div class="row sp"><span>Tổng đơn</span><b>${vnd(total(o))}</b></div><div class="row sp"><span>Đã tạm ứng</span><b>${vnd(dep(o))}</b></div><div class="row sp"><span>Còn phải thu</span><b class="${orderDue(o)?'neg':'pos'}">${vnd(orderDue(o))}</b></div>`;
+    amt.placeholder=orderDue(o)?String(orderDue(o)):'';
+    m.querySelector('#depList').innerHTML=(o.deposits||[]).length?'<label>Các lần đã thu</label>'+o.deposits.map(d=>`<div class="row sp" style="padding:6px 0;border-top:1px solid var(--bd)"><span>${esc(d.date)} · ${esc(d.method||'')}${d.note?' · '+esc(d.note):''}</span><span><b>${vnd(d.amount)}</b> <button type="button" class="btn dg sm" data-del="${d.id}">Xoá</button></span></div>`).join(''):'';
+  };
+  m.addEventListener('click',e=>{
+    const b=e.target.closest('[data-del]');if(!b)return;
+    const o=db.orders.find(x=>x.id===sel.value);if(!o||!confirm('Xoá khoản tạm ứng này?'))return;
+    o.deposits=(o.deposits||[]).filter(d=>d.id!==b.dataset.del);save();render();upd();
+  });
+  sel.onchange=upd;upd();
+  m.querySelector('#depFull').onclick=()=>{const o=db.orders.find(x=>x.id===sel.value);if(o)amt.value=orderDue(o)||''};
+}
+function depositsView(){
+  const withDep=db.orders.filter(o=>valid(o)&&dep(o)>0).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
+  const openDep=withDep.filter(o=>!o.paid);
+  const held=openDep.reduce((s,o)=>s+Math.min(dep(o),total(o)),0);
+  const due=openDep.reduce((s,o)=>s+orderDue(o),0);
+  const month=today().slice(0,7);
+  const monthIn=db.orders.flatMap(o=>(o.deposits||[]).filter(d=>String(d.date||'').startsWith(month))).reduce((s,d)=>s+(+d.amount||0),0);
+  const hist=db.orders.flatMap(o=>(o.deposits||[]).map(d=>({...d,o}))).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  return`<div class="row sp"><div><h2>Tạm ứng khách hàng</h2><div class="mut">Ghi nhận tiền khách đặt cọc / ứng trước theo từng đơn hàng. Khi tạm ứng đủ tổng đơn, đơn tự chuyển sang "Đã thu".</div></div><button class="btn" data-a="newDeposit">${ic('plus')} Thu tạm ứng</button></div>
+  <div class="grid"><div class="card kpi"><small>Đang giữ (đơn chưa thu đủ)</small><b>${vnd(held)}</b></div><div class="card kpi"><small>Còn phải thu</small><b class="${due?'neg':''}">${vnd(due)}</b></div><div class="card kpi"><small>Thu tạm ứng tháng này</small><b>${vnd(monthIn)}</b></div><div class="card kpi"><small>Đơn đang tạm ứng</small><b>${openDep.length}</b></div></div>
+  <h3>Theo đơn hàng</h3>
+  ${withDep.length?withDep.map(o=>`<div class="card"><div class="row sp"><b>${esc(o.code)} · ${esc(orderCustomerName(o))}</b><span class="badge ${o.paid?'ok':'wr'}">${o.paid?'Đã thu đủ':'Còn '+vnd(orderDue(o))}</span></div>
+    <div class="mut">Tổng đơn ${vnd(total(o))} · Đã tạm ứng <b>${vnd(dep(o))}</b> (${(o.deposits||[]).length} lần)</div>
+    <div class="row" style="margin-top:8px"><button class="btn sm" data-a="newDeposit" data-id="${o.id}">${ic('plus')} Thu thêm</button></div></div>`).join(''):'<div class="empty">Chưa có khoản tạm ứng nào</div>'}
+  <h3 style="margin-top:20px">Lịch sử thu tạm ứng</h3>
+  ${hist.length?hist.slice(0,50).map(d=>`<div class="card"><div class="row sp"><b>${vnd(d.amount)}</b><span class="mut">${esc(d.date)}</span></div><div class="mut">${esc(d.o.code)} · ${esc(orderCustomerName(d.o))} · ${esc(d.method||'')}${d.note?' · '+esc(d.note):''}</div></div>`).join(''):'<div class="empty">Chưa có lịch sử</div>'}`;
+}
 function orderCustomerName(o){const c=cust(o.cid);if(c)return c.name;if(o.cname)return o.cname;const q=(db.quotes||[]).find(x=>x.orderId===o.id);return(q&&q.cname)||'Khách lẻ'}
 function downloadText(filename,text,mime='text/csv;charset=utf-8;'){
   const blob=new Blob(['\ufeff',text],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -1014,7 +1074,7 @@ function orderHTML(o,t){
   return `${shopHead(t)}<h2>CHI TIẾT ĐƠN HÀNG</h2><div class="c">MÃ ĐƠN · ${esc(o.code)}</div>
   <div class="meta"><div><small>Khách hàng</small><b>${esc(orderCustomerName(o))}</b></div><div><small>Ngày tạo</small><b>${esc(o.date||'—')}</b></div><div><small>Trạng thái</small><b>${esc(o.status||'Mới')}</b></div></div>
   <table><thead><tr><th>#</th><th>Hàng hóa / dịch vụ</th><th>ĐVT</th><th class="r">SL</th><th class="r">Đơn giá</th><th class="r">Thành tiền</th></tr></thead><tbody>${rows}</tbody></table>
-  <table class="summary"><tbody><tr class="grand"><td>TỔNG ĐƠN HÀNG</td><td class="r">${vnd(total(o))}</td></tr></tbody></table>
+  <table class="summary"><tbody><tr class="grand"><td>TỔNG ĐƠN HÀNG</td><td class="r">${vnd(total(o))}</td></tr>${dep(o)?`<tr><td>Đã tạm ứng</td><td class="r">${vnd(dep(o))}</td></tr><tr><td><b>Còn phải thu</b></td><td class="r"><b>${vnd(orderDue(o))}</b></td></tr>`:''}</tbody></table>
   <p style="margin-top:14px"><b>Thanh toán:</b> ${o.paid?'Đã thanh toán':'Chưa thanh toán'}</p>
   ${o.note?`<div class="terms"><b>Ghi chú:</b><br>${nl(esc(o.note))}</div>`:''}
   <div class="sig"><div><b>Người lập đơn</b><br><i>(Ký, ghi rõ họ tên)</i></div><div><b>Khách hàng</b><br><i>(Xác nhận đơn hàng)</i></div></div>`;
@@ -1294,7 +1354,7 @@ function profitView(){
   ${bySupplier.length?bySupplier.map(g=>`<div class="supplier-report-row"><div class="row sp"><b>${esc(g.name)}</b><span class="badge ${g.profit<0?'bd':'ok'}">${vnd(g.profit)}</span></div><div class="supplier-report-metrics"><span>${g.orders} đơn</span><span>Doanh thu ${vnd(g.revenue)}</span><span>Mua hàng/xưởng ${vnd(g.buys)}</span><span>Chi phí khác ${vnd(g.expenses)}</span></div></div>`).join(''):'<div class="empty">Chưa có dữ liệu</div>'}</div>
   ${active.length?active.map(o=>{const rev=orderRevenue(o),bd=orderCostBreakdown(o),profit=rev-bd.buys-bd.exp,est=cogs(o),custName=orderCustomerName(o),supplierName=orderSupplierName(o);return `<div class="card"><div class="row sp"><div><b>${esc(o.code)} · ${esc(custName)}</b><div class="mut">${esc(o.date)} · ${esc(o.status||'Mới')}</div><div style="margin-top:5px">${supplierName?`<span class="badge vendor-badge">${ic('store')} NCC chính: ${esc(supplierName)}</span>`:'<span class="badge vendor-missing">Chưa gắn NCC chính</span>'}</div></div><span class="badge ${profit<0?'bd':bd.count?'ok':'wr'}">${bd.count?'Đã ghi '+bd.count+' khoản':'Chưa ghi chi phí'}</span></div><div class="grid" style="margin-top:10px"><div><small class="mut">Doanh thu trước VAT</small><div><b>${vnd(rev)}</b></div></div><div><small class="mut">Mua hàng / xưởng</small><div><b>${vnd(bd.buys)}</b></div></div><div><small class="mut">Chi phí khác</small><div><b>${vnd(bd.exp)}</b></div></div><div><small class="mut">Lãi theo khoản đã ghi</small><div><b class="${bd.count===0?'mut':profit<0?'neg':'pos'}">${bd.count===0?'Chưa đủ dữ liệu':vnd(profit)}</b></div></div></div><div class="mut" style="margin-top:8px">Giá vốn tham khảo trong danh mục: ${vnd(est)} · ${bd.count?'Đã ghi '+bd.count+' giao dịch liên quan':'Chưa có giao dịch mua hàng/chi phí gắn với đơn này'}.</div><div class="row" style="margin-top:8px"><button class="btn gh sm" data-a="newPurchaseForOrder" data-id="${o.id}">＋ Ghi tiền xưởng</button><button class="btn gh sm" data-a="newExpForOrder" data-id="${o.id}">＋ Ghi chi phí</button><button class="btn gh sm" data-a="editOrder" data-id="${o.id}">Xem / sửa đơn</button></div></div>`}).join(''):'<div class="empty">Chưa có đơn hàng để tính lãi lỗ.</div>'}`;
 }
-const views={home,orders,quote:quotes,cust:custs,prod:prods,purchases:buys,suppliers:suppliersView,exp:expensesView,profit:profitView,more,team};
+const views={home,deposits:depositsView,orders,quote:quotes,cust:custs,prod:prods,purchases:buys,suppliers:suppliersView,exp:expensesView,profit:profitView,more,team};
 function whoHTML(){
   if(!CLOUD||!me||session==='out')return'';
   return`<span class="who-txt">${esc(me.name||me.email)} · ${ROLE_NAME[me.role]||''}</span> <button class="btn" data-a="logout">Thoát</button>`;
@@ -1352,6 +1412,7 @@ const acts={
   filter:id=>{filter=id;render()},
   newOrder:()=>orderForm(),editOrder:id=>orderForm(id),previewOrder:id=>previewOrder(id),printOrder:id=>printOrder(id),pdfOrder:id=>pdfOrder(id),materialsCSV:id=>materialsCSV(id),materialsPDF:id=>materialsPDF(id),
   delOrder:id=>{const linkedBuys=db.purchases.filter(p=>p.orderId===id).length,linkedCosts=db.expenses.filter(e=>e.orderId===id).length;const linked=linkedBuys+linkedCosts;const warning=linked?`\n\nĐơn này có ${linkedBuys} phiếu mua và ${linkedCosts} khoản chi liên kết. Các giao dịch sẽ được giữ nguyên nhưng bỏ liên kết đơn để không biến mất khỏi danh sách.`:'';if(!confirm('Xoá đơn này?'+warning))return;if(linked){db.purchases.forEach(p=>{if(p.orderId===id)p.orderId=''});db.expenses.forEach(e=>{if(e.orderId===id)e.orderId=''})}db.quotes.forEach(q=>{if(q.orderId===id){q.orderId='';q.status='Đã gửi'}});db.orders=db.orders.filter(x=>x.id!==id);save();render()},
+  newDeposit:id=>depositForm(id),depositOrder:id=>depositForm(id),
   pay:id=>{const o=db.orders.find(x=>x.id===id);o.paid=!o.paid;save();render()},
   newCust:()=>custForm(),editCust:id=>custForm(id),
   delCust:id=>{if(confirm('Xoá khách này? (đơn cũ vẫn giữ)')){db.customers=db.customers.filter(c=>c.id!==id);save();render()}},
