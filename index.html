@@ -377,6 +377,9 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
 <script>
 const KEY='idecal_v1';
 const ICONS={
+  archive:'<rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/>',
+  trash:'<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/>',
+  undo:'<path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 8"/>',
   filter:'<path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"/>',
   banknote:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/>',
   home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/>',
@@ -531,6 +534,7 @@ const TABS=[
   {id:'quote',icon:'filetext',label:'Báo giá',group:'Bán hàng',req:'all',color:'purple'},
   {id:'cust',icon:'users',label:'Khách hàng',group:'Bán hàng',req:'all',color:'orange'},
   {id:'deposits',icon:'banknote',label:'Tạm ứng',group:'Bán hàng',req:'all',color:'green'},
+  {id:'archive',icon:'archive',label:'Lưu trữ',group:'Bán hàng',req:'all',color:'slate'},
   {id:'prod',icon:'box',label:'Sản phẩm',group:'Danh mục',req:'all',color:'teal'},
   {id:'purchases',icon:'cart',label:'Mua hàng',group:'Mua hàng & Chi phí',req:'mgr',color:'amber'},
   {id:'suppliers',icon:'store',label:'Nhà cung cấp',group:'Mua hàng & Chi phí',req:'mgr',color:'teal'},
@@ -577,7 +581,7 @@ const cust=id=>db.customers.find(c=>c.id===id);
 const prod=id=>db.products.find(p=>p.id===id);
 const valid=o=>o.status!=='Huỷ';
 const STEPS=['Mới','Đang thiết kế','Đang in','Hoàn thành','Đã giao'];
-const statusCounts=()=>{const c={};for(const s of STATUS)c[s]=0;for(const o of db.orders)c[o.status]=(c[o.status]||0)+1;return c};
+const statusCounts=()=>{const c={};for(const s of STATUS)c[s]=0;for(const o of db.orders)if(!o.archived)c[o.status]=(c[o.status]||0)+1;return c};
 const openJobs=c=>(c['Mới']||0)+(c['Đang thiết kế']||0)+(c['Đang in']||0);
 
 /* ---------- Modal ---------- */
@@ -704,7 +708,7 @@ function prodForm(id){
   showPv();
 }
 function expForm(presetOrderId=''){
-  const options=db.orders.filter(o=>o.status!=='Huỷ').sort((a,b)=>b.date.localeCompare(a.date)).map(o=>`<option value="${o.id}" ${o.id===presetOrderId?'selected':''}>${esc(o.code)} · ${esc(orderCustomerName(o))}</option>`).join('');
+  const options=db.orders.filter(o=>o.status!=='Huỷ'&&(!o.archived||o.id===presetOrderId)).sort((a,b)=>b.date.localeCompare(a.date)).map(o=>`<option value="${o.id}" ${o.id===presetOrderId?'selected':''}>${esc(o.code)} · ${esc(orderCustomerName(o))}</option>`).join('');
   modal('Chi phí mới',fld('Ngày','date',today(),'date','required')+`<label>Loại chi phí<select name="cat" required><option>Thuê xưởng / gia công</option><option>Vận chuyển / giao hàng</option><option>Đóng gói</option><option>Phí thanh toán</option><option>Phí sàn / quảng cáo</option><option>Vật tư phát sinh</option><option>Khác</option></select></label>`+fld('Số tiền','amount','','number','min=0 step=any required')+`<label>Đơn hàng liên quan<select name="orderId"><option value="">— Chưa gắn đơn / chi phí chung —</option>${options}</select></label><div class="mut">Lưu ý: nếu đã ghi tiền xưởng trong Mua hàng, không ghi lại chính khoản đó ở Chi phí để tránh tính trùng.</div>`+fld('Ghi chú','note'),fd=>{
     db.expenses.push({id:uid(),date:fd.get('date'),cat:fd.get('cat'),amount:+fd.get('amount'),orderId:fd.get('orderId')||'',note:fd.get('note')});save();render();
   });
@@ -767,13 +771,13 @@ function homeStaff(){
 function stageBar(){
   const c=statusCounts();
   const bar=STEPS.map((s,i)=>`<button class="stage${s===filter?' on':''}" data-a="filter" data-id="${esc(s)}" aria-pressed="${s===filter}"><span class="stage-n">${c[s]||0}</span><span class="stage-l">${esc(s)}</span></button>`+(i<STEPS.length-1?'<span class="stage-sep" aria-hidden="true">›</span>':'')).join('');
-  const tail=`<span class="stage-sep" aria-hidden="true">│</span><button class="stage all${filter==='Tất cả'?' on':''}" data-a="filter" data-id="Tất cả" aria-pressed="${filter==='Tất cả'}"><span class="stage-n">${db.orders.length}</span><span class="stage-l">Tất cả</span></button><button class="stage cancel${filter==='Huỷ'?' on':''}" data-a="filter" data-id="Huỷ" aria-pressed="${filter==='Huỷ'}"><span class="stage-n">${c['Huỷ']||0}</span><span class="stage-l">Huỷ</span></button>`;
+  const tail=`<span class="stage-sep" aria-hidden="true">│</span><button class="stage all${filter==='Tất cả'?' on':''}" data-a="filter" data-id="Tất cả" aria-pressed="${filter==='Tất cả'}"><span class="stage-n">${db.orders.filter(o=>!o.archived).length}</span><span class="stage-l">Tất cả</span></button><button class="stage cancel${filter==='Huỷ'?' on':''}" data-a="filter" data-id="Huỷ" aria-pressed="${filter==='Huỷ'}"><span class="stage-n">${c['Huỷ']||0}</span><span class="stage-l">Huỷ</span></button>`;
   return`<div class="stagebar" role="group" aria-label="Các bước xử lý đơn hàng">${bar}${tail}</div>`;
 }
 function orders(){
-  const base=db.orders.filter(o=>filter==='Tất cả'||o.status===filter).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
+  const base=db.orders.filter(o=>!o.archived&&(filter==='Tất cả'||o.status===filter)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
   const list=fapply('orders',base);
-  return`<div class="row sp"><h2>Đơn hàng</h2><button class="btn" data-a="newOrder">${ic('plus')} Đơn mới</button></div>
+  return`<div class="row sp"><h2>Đơn hàng</h2><div class="row">${(()=>{const n=db.orders.filter(o=>!o.archived&&o.paid&&DONE_ST.includes(o.status)).length;return n?`<button class="btn gh" data-a="archiveDone">${ic('archive')} Lưu trữ đơn xong (${n})</button>`:''})()}<button class="btn" data-a="newOrder">${ic('plus')} Đơn mới</button></div></div>
   ${stageBar()}
   ${fbar('orders',base)}
   ${list.length?list.map(o=>{const customerLabel=orderCustomerName(o);return`<div class="card">
@@ -789,6 +793,7 @@ function orders(){
       ${o.paid?'':`<button class="btn gh sm" data-a="depositOrder" data-id="${o.id}">${ic('banknote')} Tạm ứng</button>`}
       <button class="btn gh sm" data-a="previewOrder" data-id="${o.id}">👁 Xem trực tiếp</button>
       <button class="btn gh sm" data-a="editOrder" data-id="${o.id}">Sửa</button>
+      ${['Hoàn thành','Đã giao','Huỷ'].includes(o.status)?`<button class="btn gh sm" data-a="archiveOrder" data-id="${o.id}">${ic('archive')} Lưu trữ</button>`:''}
       ${isMgr()?`<button class="btn dg sm" data-a="delOrder" data-id="${o.id}">Xoá</button>`:''}
     </div></div>`}).join(''):emp(base.length,'Chưa có đơn nào')}`;
 }
@@ -989,7 +994,7 @@ const DEP_METHODS=['Tiền mặt','Chuyển khoản','Khác'];
 const dep=o=>(o.deposits||[]).reduce((s,d)=>s+(+d.amount||0),0);
 const orderDue=o=>o.paid?0:Math.max(0,total(o)-dep(o));
 function depositForm(orderId){
-  const open=db.orders.filter(o=>valid(o)&&(!o.paid||o.id===orderId)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
+  const open=db.orders.filter(o=>valid(o)&&(!o.paid||o.id===orderId)&&(!o.archived||o.id===orderId)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
   if(!open.length){toast('Chưa có đơn hàng nào để thu tạm ứng','err');return}
   const cur=open.find(o=>o.id===orderId)||open[0];
   const m=modal('Thu tạm ứng khách hàng',`
@@ -1027,19 +1032,20 @@ function depositForm(orderId){
 function depositsView(){
   const withDepAll=db.orders.filter(o=>valid(o)&&dep(o)>0).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
   const openDep=withDepAll.filter(o=>!o.paid);
-  const withDep=fapply('deposits',withDepAll);
+  const withDepShown=withDepAll.filter(o=>!o.archived);
+  const withDep=fapply('deposits',withDepShown);
   const held=openDep.reduce((s,o)=>s+Math.min(dep(o),total(o)),0);
   const due=openDep.reduce((s,o)=>s+orderDue(o),0);
   const month=today().slice(0,7);
   const monthIn=db.orders.flatMap(o=>(o.deposits||[]).filter(d=>String(d.date||'').startsWith(month))).reduce((s,d)=>s+(+d.amount||0),0);
-  const hist=db.orders.flatMap(o=>(o.deposits||[]).map(d=>({...d,o}))).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  const hist=db.orders.filter(o=>!o.archived).flatMap(o=>(o.deposits||[]).map(d=>({...d,o}))).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   return`<div class="row sp"><div><h2>Tạm ứng khách hàng</h2><div class="mut">Ghi nhận tiền khách đặt cọc / ứng trước theo từng đơn hàng. Khi tạm ứng đủ tổng đơn, đơn tự chuyển sang "Đã thu".</div></div><button class="btn" data-a="newDeposit">${ic('plus')} Thu tạm ứng</button></div>
   <div class="grid"><div class="card kpi"><small>Đang giữ (đơn chưa thu đủ)</small><b>${vnd(held)}</b></div><div class="card kpi"><small>Còn phải thu</small><b class="${due?'neg':''}">${vnd(due)}</b></div><div class="card kpi"><small>Thu tạm ứng tháng này</small><b>${vnd(monthIn)}</b></div><div class="card kpi"><small>Đơn đang tạm ứng</small><b>${openDep.length}</b></div></div>
   <h3>Theo đơn hàng</h3>
-  ${fbar('deposits',withDepAll)}
+  ${fbar('deposits',withDepShown)}
   ${withDep.length?withDep.map(o=>`<div class="card"><div class="row sp"><b>${esc(o.code)} · ${esc(orderCustomerName(o))}</b><span class="badge ${o.paid?'ok':'wr'}">${o.paid?'Đã thu đủ':'Còn '+vnd(orderDue(o))}</span></div>
     <div class="mut">Tổng đơn ${vnd(total(o))} · Đã tạm ứng <b>${vnd(dep(o))}</b> (${(o.deposits||[]).length} lần)</div>
-    <div class="row" style="margin-top:8px"><button class="btn sm" data-a="newDeposit" data-id="${o.id}">${ic('plus')} Thu thêm</button></div></div>`).join(''):emp(withDepAll.length,'Chưa có khoản tạm ứng nào')}
+    <div class="row" style="margin-top:8px"><button class="btn sm" data-a="newDeposit" data-id="${o.id}">${ic('plus')} Thu thêm</button></div></div>`).join(''):emp(withDepShown.length,'Chưa có khoản tạm ứng nào')}
   <h3 style="margin-top:20px">Lịch sử thu tạm ứng</h3>
   ${hist.length?hist.slice(0,50).map(d=>`<div class="card"><div class="row sp"><b>${vnd(d.amount)}</b><span class="mut">${esc(d.date)}</span></div><div class="mut">${esc(d.o.code)} · ${esc(orderCustomerName(d.o))} · ${esc(d.method||'')}${d.note?' · '+esc(d.note):''}</div></div>`).join(''):'<div class="empty">Chưa có lịch sử</div>'}`;
 }
@@ -1208,7 +1214,8 @@ function convertQuote(q){
   db.orders.push(o);q.orderId=o.id;q.status='Chấp nhận';save();render();toast('Đã chuyển '+q.code+' thành đơn '+o.code,'ok');
 }
 function quotes(){
-  const all=[...db.quotes].sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
+  const AS=archIds();
+  const all=[...db.quotes].filter(q=>!AS.has(q.orderId)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
   const list=fapply('quote',all);
   return`<div class="row sp"><h2>Báo giá</h2><div class="row">${isMgr()?`<button class="btn gh" data-a="tpl">${ic('sliders')} Mẫu</button>`:''}<button class="btn" data-a="newQuote">${ic('plus')} Báo giá</button></div></div>
   ${fbar('quote',all)}
@@ -1269,7 +1276,7 @@ function purchaseForm(id, presetOrderId=''){
       </div>
     </div>
     ${fld('Ngày','date',o.date,'date','required')}
-    <label>Đơn hàng liên quan <select name="orderId"><option value="">— Chi phí chung / chưa gắn đơn —</option>${db.orders.filter(x=>x.status!=='Huỷ').sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<option value="${x.id}" ${(o.orderId||'')===x.id?'selected':''}>${esc(x.code)} · ${esc(orderCustomerName(x))}</option>`).join('')}</select></label>
+    <label>Đơn hàng liên quan <select name="orderId"><option value="">— Chi phí chung / chưa gắn đơn —</option>${db.orders.filter(x=>x.status!=='Huỷ'&&(!x.archived||x.id===o.orderId)).sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<option value="${x.id}" ${(o.orderId||'')===x.id?'selected':''}>${esc(x.code)} · ${esc(orderCustomerName(x))}</option>`).join('')}</select></label>
     <div class="mut">Chọn đơn hàng nếu đây là tiền xưởng in/gia công hoặc vật tư dùng riêng cho đơn đó. Mỗi khoản chỉ nhập một lần.</div>
     <label>Dịch vụ / hàng mua</label><div id="items"></div>
     <button type="button" class="btn gh sm" id="addI" style="margin-top:8px">${ic('plus')} Thêm dòng</button>
@@ -1314,7 +1321,8 @@ function purchaseForm(id, presetOrderId=''){
 }
 function buys(){
   const mk=today().slice(0,7);
-  const all=[...db.purchases].sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
+  const AS=archIds();
+  const all=[...db.purchases].filter(p=>!AS.has(p.orderId)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
   const list=fapply('purchases',all);
   const mon=db.purchases.filter(p=>p.date.startsWith(mk)).reduce((s,p)=>s+ptotal(p),0);
   const debt=db.purchases.filter(p=>!p.paid).reduce((s,p)=>s+ptotal(p),0);
@@ -1345,11 +1353,12 @@ function suppliersView(){
 }
 function expensesView(){
   const mk=today().slice(0,7),expenses=[...db.expenses].sort((a,b)=>b.date.localeCompare(a.date));
+  const AS=archIds(),vis=expenses.filter(e=>!AS.has(e.orderId));
   const expMon=expenses.filter(e=>e.date.startsWith(mk)).reduce((s,e)=>s+(+e.amount||0),0);
   return`<div class="row sp"><div><h2>Chi phí</h2><div class="mut">Ghi nhận chi phí phát sinh và gắn vào đơn hàng để tính lãi lỗ.</div></div><button class="btn" data-a="newExp">${ic('plus')} Chi phí mới</button></div>
     <div class="grid"><div class="card kpi"><small>Chi phí tháng này</small><b>${vnd(expMon)}</b></div><div class="card kpi"><small>Tổng chi phí</small><b>${vnd(expenses.reduce((s,e)=>s+(+e.amount||0),0))}</b></div></div>
-    ${fbar('exp',expenses)}
-    ${fapply('exp',expenses).length?fapply('exp',expenses).map(e=>`<div class="card row sp"><div><b>${esc(e.cat)}</b> <span class="mut">${e.date}</span><div class="mut">${esc(e.note||'')} ${e.orderId?`<span class="badge ok">${esc((db.orders.find(o=>o.id===e.orderId)||{}).code||'Đơn đã xoá')}</span>`:'<span class="badge">Chưa gắn đơn</span>'}</div></div><div class="row"><b>${vnd(e.amount)}</b><button class="btn dg sm" data-a="delExp" data-id="${e.id}">×</button></div></div>`).join(''):emp(expenses.length,'Chưa có chi phí')}`;
+    ${fbar('exp',vis)}
+    ${fapply('exp',vis).length?fapply('exp',vis).map(e=>`<div class="card row sp"><div><b>${esc(e.cat)}</b> <span class="mut">${e.date}</span><div class="mut">${esc(e.note||'')} ${e.orderId?`<span class="badge ok">${esc((db.orders.find(o=>o.id===e.orderId)||{}).code||'Đơn đã xoá')}</span>`:'<span class="badge">Chưa gắn đơn</span>'}</div></div><div class="row"><b>${vnd(e.amount)}</b><button class="btn dg sm" data-a="delExp" data-id="${e.id}">×</button></div></div>`).join(''):emp(vis.length,'Chưa có chi phí')}`;
 }
 function orderRevenue(o){
   // VAT is a pass-through amount, not operating revenue; the quote conversion stores it as a line item.
@@ -1367,6 +1376,7 @@ function orderCostBreakdown(o){
 }
 function profitView(){
   const active=db.orders.filter(o=>valid(o)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
+  const shown=active.filter(o=>!o.archived);
   const rev=active.reduce((s,o)=>s+orderRevenue(o),0),actual=active.reduce((s,o)=>s+orderActualCosts(o),0),estimated=active.reduce((s,o)=>s+cogs(o),0);
   const supplierGroups=new Map();
   active.forEach(o=>{
@@ -1381,8 +1391,46 @@ function profitView(){
   <div class="card"><b>Cách đọc số liệu</b><p class="mut">“Chênh lệch sau chi phí đã ghi nhận” = doanh thu trước VAT − phiếu mua hàng gắn đơn − chi phí gắn đơn. Đây chưa phải lợi nhuận cuối cùng nếu còn thiếu hóa đơn xưởng, giao hàng hoặc phí khác. Những đơn chưa có giao dịch chi phí sẽ được ghi rõ là chưa đủ dữ liệu.</p><p class="mut">“Giá vốn tham khảo” lấy từ trường giá vốn trong danh mục sản phẩm để so sánh nhanh; không cộng vào chi phí thực tế nhằm tránh tính trùng với tiền xưởng đã ghi ở Mua hàng. Báo cáo theo NCC nhóm doanh thu/lãi của đơn theo NCC chính đã chọn; mọi phiếu mua gắn với đơn vẫn được cộng vào chi phí của đơn để không bỏ sót nhà cung cấp phụ.</p></div>
   <div class="card supplier-report"><div class="row sp"><b>Lãi lỗ theo nhà cung cấp chính</b><span class="mut">${bySupplier.length} nhóm</span></div>
   ${bySupplier.length?bySupplier.map(g=>`<div class="supplier-report-row"><div class="row sp"><b>${esc(g.name)}</b><span class="badge ${g.profit<0?'bd':'ok'}">${vnd(g.profit)}</span></div><div class="supplier-report-metrics"><span>${g.orders} đơn</span><span>Doanh thu ${vnd(g.revenue)}</span><span>Mua hàng/xưởng ${vnd(g.buys)}</span><span>Chi phí khác ${vnd(g.expenses)}</span></div></div>`).join(''):'<div class="empty">Chưa có dữ liệu</div>'}</div>
-  ${fbar('profit',active)}
-  ${fapply('profit',active).length?fapply('profit',active).map(o=>{const rev=orderRevenue(o),bd=orderCostBreakdown(o),profit=rev-bd.buys-bd.exp,est=cogs(o),custName=orderCustomerName(o),supplierName=orderSupplierName(o);return `<div class="card"><div class="row sp"><div><b>${esc(o.code)} · ${esc(custName)}</b><div class="mut">${esc(o.date)} · ${esc(o.status||'Mới')}</div><div style="margin-top:5px">${supplierName?`<span class="badge vendor-badge">${ic('store')} NCC chính: ${esc(supplierName)}</span>`:'<span class="badge vendor-missing">Chưa gắn NCC chính</span>'}</div></div><span class="badge ${profit<0?'bd':bd.count?'ok':'wr'}">${bd.count?'Đã ghi '+bd.count+' khoản':'Chưa ghi chi phí'}</span></div><div class="grid" style="margin-top:10px"><div><small class="mut">Doanh thu trước VAT</small><div><b>${vnd(rev)}</b></div></div><div><small class="mut">Mua hàng / xưởng</small><div><b>${vnd(bd.buys)}</b></div></div><div><small class="mut">Chi phí khác</small><div><b>${vnd(bd.exp)}</b></div></div><div><small class="mut">Lãi theo khoản đã ghi</small><div><b class="${bd.count===0?'mut':profit<0?'neg':'pos'}">${bd.count===0?'Chưa đủ dữ liệu':vnd(profit)}</b></div></div></div><div class="mut" style="margin-top:8px">Giá vốn tham khảo trong danh mục: ${vnd(est)} · ${bd.count?'Đã ghi '+bd.count+' giao dịch liên quan':'Chưa có giao dịch mua hàng/chi phí gắn với đơn này'}.</div><div class="row" style="margin-top:8px"><button class="btn gh sm" data-a="newPurchaseForOrder" data-id="${o.id}">＋ Ghi tiền xưởng</button><button class="btn gh sm" data-a="newExpForOrder" data-id="${o.id}">＋ Ghi chi phí</button><button class="btn gh sm" data-a="editOrder" data-id="${o.id}">Xem / sửa đơn</button></div></div>`}).join(''):'<div class="empty">Chưa có đơn hàng để tính lãi lỗ.</div>'}`;
+  ${fbar('profit',shown)}
+  ${fapply('profit',shown).length?fapply('profit',shown).map(o=>{const rev=orderRevenue(o),bd=orderCostBreakdown(o),profit=rev-bd.buys-bd.exp,est=cogs(o),custName=orderCustomerName(o),supplierName=orderSupplierName(o);return `<div class="card"><div class="row sp"><div><b>${esc(o.code)} · ${esc(custName)}</b><div class="mut">${esc(o.date)} · ${esc(o.status||'Mới')}</div><div style="margin-top:5px">${supplierName?`<span class="badge vendor-badge">${ic('store')} NCC chính: ${esc(supplierName)}</span>`:'<span class="badge vendor-missing">Chưa gắn NCC chính</span>'}</div></div><span class="badge ${profit<0?'bd':bd.count?'ok':'wr'}">${bd.count?'Đã ghi '+bd.count+' khoản':'Chưa ghi chi phí'}</span></div><div class="grid" style="margin-top:10px"><div><small class="mut">Doanh thu trước VAT</small><div><b>${vnd(rev)}</b></div></div><div><small class="mut">Mua hàng / xưởng</small><div><b>${vnd(bd.buys)}</b></div></div><div><small class="mut">Chi phí khác</small><div><b>${vnd(bd.exp)}</b></div></div><div><small class="mut">Lãi theo khoản đã ghi</small><div><b class="${bd.count===0?'mut':profit<0?'neg':'pos'}">${bd.count===0?'Chưa đủ dữ liệu':vnd(profit)}</b></div></div></div><div class="mut" style="margin-top:8px">Giá vốn tham khảo trong danh mục: ${vnd(est)} · ${bd.count?'Đã ghi '+bd.count+' giao dịch liên quan':'Chưa có giao dịch mua hàng/chi phí gắn với đơn này'}.</div><div class="row" style="margin-top:8px"><button class="btn gh sm" data-a="newPurchaseForOrder" data-id="${o.id}">＋ Ghi tiền xưởng</button><button class="btn gh sm" data-a="newExpForOrder" data-id="${o.id}">＋ Ghi chi phí</button><button class="btn gh sm" data-a="editOrder" data-id="${o.id}">Xem / sửa đơn</button></div></div>`}).join(''):'<div class="empty">Chưa có đơn hàng để tính lãi lỗ.</div>'}`;
+}
+
+/* ---------- Lưu trữ đơn hàng ---------- */
+const DONE_ST=['Hoàn thành','Đã giao'];
+const archIds=()=>new Set(db.orders.filter(o=>o.archived).map(o=>o.id));
+function orderLinks(ids){
+  const S=new Set(ids);
+  return{q:db.quotes.filter(x=>S.has(x.orderId)).length,p:db.purchases.filter(x=>S.has(x.orderId)).length,e:db.expenses.filter(x=>S.has(x.orderId)).length,
+    d:db.orders.filter(o=>S.has(o.id)).reduce((n,o)=>n+(o.deposits||[]).length,0)};
+}
+function purgeOrders(ids){
+  if(!isMgr()){toast('Chỉ quản lý mới được xoá vĩnh viễn','err');return}
+  ids=ids.filter(id=>db.orders.some(o=>o.id===id));if(!ids.length)return;
+  const k=orderLinks(ids),one=ids.length===1?db.orders.find(o=>o.id===ids[0]):null;
+  const msg=(one?'Xoá vĩnh viễn đơn '+one.code+'?':'Xoá vĩnh viễn '+ids.length+' đơn?')+'\n\nSẽ xoá luôn dữ liệu gắn với '+(one?'đơn này':'các đơn này')+':\n• '+k.d+' khoản tạm ứng\n• '+k.q+' báo giá\n• '+k.p+' phiếu mua hàng\n• '+k.e+' khoản chi phí\n\nKhông thể hoàn tác.';
+  if(!confirm(msg))return;
+  const S=new Set(ids);
+  db.quotes=db.quotes.filter(x=>!S.has(x.orderId));
+  db.purchases=db.purchases.filter(x=>!S.has(x.orderId));
+  db.expenses=db.expenses.filter(x=>!S.has(x.orderId));
+  db.orders=db.orders.filter(o=>!S.has(o.id));
+  save();render();toast('Đã xoá '+ids.length+' đơn và dữ liệu liên quan','ok');
+}
+function archiveData(){
+  const AR=db.orders.filter(o=>o.archived).sort((a,b)=>String(b.archivedAt||b.date).localeCompare(String(a.archivedAt||a.date))||b.code.localeCompare(a.code));
+  return{AR,list:fapply('archive',AR)};
+}
+function archiveView(){
+  const{AR,list}=archiveData();
+  const revenue=AR.reduce((s,o)=>s+orderRevenue(o),0);
+  return`<div class="row sp"><div><h2>Lưu trữ</h2><div class="mut">Đơn đã hoàn tất được cất khỏi danh sách chính cho gọn. Doanh thu, công nợ và báo cáo vẫn tính cả đơn lưu trữ. Khi xoá vĩnh viễn, tạm ứng, báo giá, phiếu mua hàng và chi phí gắn với đơn cũng bị xoá theo.</div></div>${isMgr()&&list.length?`<button class="btn dg" data-a="purgeArchive">${ic('trash')} Xoá ${list.length} đơn</button>`:''}</div>
+  <div class="grid"><div class="card kpi"><small>Đơn đã lưu trữ</small><b>${AR.length}</b></div><div class="card kpi"><small>Doanh thu trước VAT</small><b>${vnd(revenue)}</b></div></div>
+  ${fbar('archive',AR)}
+  ${list.length?list.map(o=>{const k=orderLinks([o.id]);return`<div class="card">
+    <div class="row sp"><b>${esc(o.code)} · ${esc(orderCustomerName(o))}</b><b>${vnd(total(o))}</b></div>
+    <div class="mut">${esc(o.date||'')} · ${esc(o.status||'')}${o.archivedAt?' · lưu trữ '+esc(o.archivedAt):''}</div>
+    <div class="row" style="gap:6px;margin-top:6px"><span class="badge ${o.paid?'ok':'wr'}">${o.paid?'Đã thu':'Chưa thu'}</span><span class="mut">${k.d} tạm ứng · ${k.q} báo giá · ${k.p} phiếu mua · ${k.e} chi phí</span></div>
+    <div class="row" style="margin-top:8px"><button class="btn gh sm" data-a="previewOrder" data-id="${o.id}">👁 Xem</button><button class="btn gh sm" data-a="unarchiveOrder" data-id="${o.id}">${ic('undo')} Khôi phục</button>${isMgr()?`<button class="btn dg sm" data-a="delOrder" data-id="${o.id}">${ic('trash')} Xoá vĩnh viễn</button>`:''}</div></div>`}).join(''):emp(AR.length,'Chưa có đơn nào trong lưu trữ')}`;
 }
 
 /* ---------- Bộ lọc dùng chung cho các module ---------- */
@@ -1401,6 +1449,7 @@ const FDEF={
   suppliers:[['all','Tất cả',()=>true],...Object.entries(SUP_CAT).map(([k,v])=>[k,v,x=>(x.category||'in-an')===k])],
   exp:[['all','Tất cả',()=>true],['month','Tháng này',e=>thisMonth(e.date)],['ord','Đã gắn đơn',e=>!!e.orderId],['noord','Chưa gắn đơn',e=>!e.orderId]],
   profit:[['all','Tất cả',()=>true],['nocost','Chưa ghi chi phí',o=>orderCostBreakdown(o).count===0],['gain','Có lãi',o=>orderCostBreakdown(o).count>0&&orderRevenue(o)-orderActualCosts(o)>=0],['loss','Lỗ',o=>orderCostBreakdown(o).count>0&&orderRevenue(o)-orderActualCosts(o)<0],['nosup','Chưa gắn NCC',o=>!orderSupplierName(o)]],
+  archive:[['all','Tất cả',()=>true],['hh','Hoàn thành',o=>o.status==='Hoàn thành'],['dg','Đã giao',o=>o.status==='Đã giao'],['huy','Huỷ',o=>o.status==='Huỷ'],['unpaid','Chưa thu',o=>!o.paid]],
   team:[['all','Tất cả',()=>true],['pending','Chờ duyệt',u=>u.role==='pending'],['staff','Nhân viên',u=>u.role==='staff'],['manager','Quản lý',u=>u.role==='manager'],['blocked','Đã khoá',u=>u.role==='blocked']]
 };
 const fcur=v=>{const d=FDEF[v]||[];return d.find(x=>x[0]===VF[v])||d[0]};
@@ -1410,7 +1459,7 @@ function fbar(v,list){
   return`<div class="fbar" role="group" aria-label="Bộ lọc">${ic('filter')}${d.map(x=>`<button type="button" class="fchip${x[0]===cur?' on':''}" data-a="vf" data-id="${esc(v+'|'+x[0])}" aria-pressed="${x[0]===cur}">${esc(x[1])}<i>${list.filter(x[2]).length}</i></button>`).join('')}</div>`;
 }
 const emp=(n,txt)=>`<div class="empty">${n?'Không có mục nào khớp bộ lọc':txt}</div>`;
-const views={home,deposits:depositsView,orders,quote:quotes,cust:custs,prod:prods,purchases:buys,suppliers:suppliersView,exp:expensesView,profit:profitView,more,team};
+const views={archive:archiveView,home,deposits:depositsView,orders,quote:quotes,cust:custs,prod:prods,purchases:buys,suppliers:suppliersView,exp:expensesView,profit:profitView,more,team};
 function whoHTML(){
   if(!CLOUD||!me||session==='out')return'';
   return`<span class="who-txt">${esc(me.name||me.email)} · ${ROLE_NAME[me.role]||''}</span> <button class="btn" data-a="logout">Thoát</button>`;
@@ -1468,7 +1517,11 @@ const acts={
   filter:id=>{filter=id;render()},
   vf:s=>{const i=s.indexOf('|');VF[s.slice(0,i)]=s.slice(i+1);render()},
   newOrder:()=>orderForm(),editOrder:id=>orderForm(id),previewOrder:id=>previewOrder(id),printOrder:id=>printOrder(id),pdfOrder:id=>pdfOrder(id),
-  delOrder:id=>{const linkedBuys=db.purchases.filter(p=>p.orderId===id).length,linkedCosts=db.expenses.filter(e=>e.orderId===id).length;const linked=linkedBuys+linkedCosts;const warning=linked?`\n\nĐơn này có ${linkedBuys} phiếu mua và ${linkedCosts} khoản chi liên kết. Các giao dịch sẽ được giữ nguyên nhưng bỏ liên kết đơn để không biến mất khỏi danh sách.`:'';if(!confirm('Xoá đơn này?'+warning))return;if(linked){db.purchases.forEach(p=>{if(p.orderId===id)p.orderId=''});db.expenses.forEach(e=>{if(e.orderId===id)e.orderId=''})}db.quotes.forEach(q=>{if(q.orderId===id){q.orderId='';q.status='Đã gửi'}});db.orders=db.orders.filter(x=>x.id!==id);save();render()},
+  delOrder:id=>purgeOrders([id]),
+  archiveOrder:id=>{const o=db.orders.find(x=>x.id===id);if(!o)return;if(!o.paid&&o.status!=='Huỷ'&&!confirm('Đơn '+o.code+' chưa thu đủ tiền. Vẫn chuyển vào Lưu trữ?'))return;o.archived=true;o.archivedAt=today();save();render();toast('Đã chuyển '+o.code+' vào Lưu trữ','ok')},
+  unarchiveOrder:id=>{const o=db.orders.find(x=>x.id===id);if(!o)return;delete o.archived;delete o.archivedAt;save();render();toast('Đã khôi phục '+o.code,'ok')},
+  archiveDone:()=>{const L=db.orders.filter(o=>!o.archived&&o.paid&&DONE_ST.includes(o.status));if(!L.length)return;if(!confirm('Chuyển '+L.length+' đơn đã hoàn thành và đã thu đủ tiền vào Lưu trữ?'))return;const d=today();L.forEach(o=>{o.archived=true;o.archivedAt=d});save();render();toast('Đã lưu trữ '+L.length+' đơn','ok')},
+  purgeArchive:()=>purgeOrders(archiveData().list.map(o=>o.id)),
   newDeposit:id=>depositForm(id),depositOrder:id=>depositForm(id),
   pay:id=>{const o=db.orders.find(x=>x.id===id);o.paid=!o.paid;save();render()},
   newCust:()=>custForm(),editCust:id=>custForm(id),
