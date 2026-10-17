@@ -1763,6 +1763,28 @@ function supplierQuoteToPurchase(id){
 }
 
 
+/* Upload file NCC: hiển thị tiến độ, giới hạn thời gian và hủy được */
+function uploadNccWithProgress(file,path,onProgress){
+ return new Promise((resolve,reject)=>{
+  let finished=false,timer;
+  const fail=e=>{if(finished)return;finished=true;clearTimeout(timer);reject(e)};
+  const done=()=>{if(finished)return;finished=true;clearTimeout(timer);resolve()};
+  let task;
+  try{
+   if(typeof firebase==='undefined'||typeof firebase.storage!=='function')throw new Error('Không tải được Firebase Storage SDK.');
+   const bucket=firebase.app().options.storageBucket;
+   if(!bucket)throw new Error('Thiếu storageBucket trong cấu hình Firebase.');
+   task=firebase.storage().ref(path).put(file,{contentType:file.type||'application/octet-stream'});
+   task.on('state_changed', snap=>{
+    const percent=snap.totalBytes?Math.round(100*snap.bytesTransferred/snap.totalBytes):0;
+    onProgress(percent);
+    clearTimeout(timer);
+    timer=setTimeout(()=>{task.cancel();fail(new Error('Tải lên không có tiến triển trong 30 giây. Kiểm tra mạng và Firebase Storage Rules.'))},30000);
+   }, e=>fail(new Error(e.code==='storage/unauthorized'?'Không được phép tải file. Kiểm tra Firebase Storage Rules.':e.code==='storage/canceled'?'Đã hủy tải lên.':e.code==='storage/quota-exceeded'?'Firebase Storage đã vượt hạn mức.':e.message||'Lỗi Firebase Storage')),done);
+   timer=setTimeout(()=>{task.cancel();fail(new Error('Không kết nối được Firebase Storage trong 30 giây.'))},30000);
+  }catch(e){fail(e)}
+ });
+}
 /* Hồ sơ báo giá đính kèm trực tiếp từng nhà cung cấp */
 function supplierFilesDialog(sid){
  if(!isMgr())return;
@@ -1787,8 +1809,9 @@ function supplierFilesDialog(sid){
   <label>Ghi chú (không bắt buộc)<input name="nccNote" placeholder="Ví dụ: Bảng giá tháng 10"></label>
   <p class="mut">${CLOUD?'Tối đa 10 MB. Tệp lưu qua Firebase Storage.':'Tối đa 750 KB khi lưu trực tiếp trên trình duyệt.'}</p>
  </div>`,()=>false);
- const form=m.querySelector('form'), saveBtn=form.querySelector('button:not([type])');
- if(saveBtn)saveBtn.textContent='Tải lên & lưu';
+ const form=m.querySelector('form'), saveBtn=form.querySelector('.row.end button.btn:not([type])');
+ if(saveBtn){saveBtn.textContent='Tải lên & lưu';saveBtn.type='submit'}
+ const status=document.createElement('div');status.setAttribute('role','status');status.className='mut';status.style.marginTop='8px';form.querySelector('.row.end').before(status);
  m.querySelectorAll('[data-ncc-open]').forEach(b=>b.onclick=()=>downloadSupplierQuote(b.dataset.nccOpen));
  m.querySelectorAll('[data-ncc-delete]').forEach(b=>b.onclick=()=>{
    const q=(db.supplierQuotes||[]).find(x=>x.id===b.dataset.nccDelete);
@@ -1808,15 +1831,16 @@ function supplierFilesDialog(sid){
    supplierId:sid,supplierName:supplier.name,orderId:'',
    date:String(fd.get('nccDate')||today()),note:String(fd.get('nccNote')||'').trim(),
    items:[],createdAt:new Date().toISOString()};
-  const btn=form.querySelector('.row.end .btn:not([type])');
+  const btn=saveBtn;
   if(btn){btn.disabled=true;btn.textContent='Đang tải lên…'}
+  status.textContent='Đang chuẩn bị file…';
   try{
    if(CLOUD){
-     if(!firebase.storage||!FB.storageBucket)throw new Error('Chưa cấu hình Firebase Storage.');
      const path='supplier-quotes/'+encodeURIComponent(data.id)+'/'+Date.now()+'-'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-     await firebase.storage().ref(path).put(file,{contentType:file.type||'application/octet-stream'});
+     await uploadNccWithProgress(file,path,pct=>{status.textContent='Đang tải lên: '+pct+'%';if(btn)btn.textContent='Đang tải '+pct+'%'});
      data.attachment={name:file.name,type:file.type,size:file.size,path,storage:'firebase'};
    }else{
+     status.textContent='Đang đọc file trên thiết bị…';
      const dataUrl=await new Promise((resolve,reject)=>{
        const reader=new FileReader();
        reader.onload=()=>resolve(reader.result);
@@ -1825,10 +1849,11 @@ function supplierFilesDialog(sid){
      });
      data.attachment={name:file.name,type:file.type,size:file.size,dataUrl,storage:'local'};
    }
+   status.textContent='Đã tải file, đang lưu thông tin…';
    (db.supplierQuotes||(db.supplierQuotes=[])).push(data);
    save();m.remove();render();toast('Đã lưu file báo giá của '+supplier.name,'ok');
    supplierFilesDialog(sid);
-  }catch(err){alert('Lưu báo giá không thành công: '+err.message)}
+  }catch(err){status.textContent='Không tải được: '+err.message;alert('Lưu báo giá không thành công: '+err.message)}
   finally{if(btn){btn.disabled=false;btn.textContent='Tải lên & lưu'}}
  };
 }
