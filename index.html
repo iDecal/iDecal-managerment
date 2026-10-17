@@ -415,6 +415,39 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
 .itd{margin:4px 0 0}.itd summary{cursor:pointer;color:var(--pri);font-size:13px;font-weight:500;list-style:none;display:inline-flex;align-items:center;gap:4px;padding:2px 0}
 .itd summary::-webkit-details-marker{display:none}.itd summary::before{content:'▸';font-size:11px;transition:transform .15s}.itd[open] summary::before{transform:rotate(90deg)}
 .itd ul{margin:4px 0 2px;padding-left:18px;color:var(--mut);font-size:13px}.itd li{margin:2px 0}
+
+/* ===== Đơn hàng gọn ===== */
+.oc{padding:12px 14px;margin-bottom:10px;border-radius:18px}
+.oc-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.oc-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}
+.oc-p{flex:none;font-size:15px}
+.oc-m{display:flex;align-items:center;flex-wrap:wrap;gap:0 2px;color:var(--mut);font-size:13px;margin-top:1px}
+.oc-m .itd{margin:0;display:inline-block}.oc-m .itd summary{padding:0}
+.oc-m .itd[open]{display:block;flex:1 1 100%}
+.oc-n{color:var(--mut);font-size:12.5px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.oc-n .i{width:13px;height:13px}
+.oc-c{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
+.oc-c .st{width:auto;height:30px;padding:0 26px 0 12px;font-size:13px;font-weight:500;border-radius:99px;background-color:var(--soft);color:var(--pri);border-color:transparent}
+.oc-c .badge{padding:4px 10px;font-size:12px;display:inline-flex;align-items:center;gap:4px}
+.oc-c .badge .i{width:13px;height:13px}
+.oc-cost{margin-top:6px;font-size:13px}
+.oc-cost summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:4px;font-weight:500}
+.oc-cost summary::-webkit-details-marker{display:none}.oc-cost summary::after{content:'▾';font-size:10px;opacity:.6}
+.oc-cost[open] summary::after{content:'▴'}
+.oc-cost>div{margin-top:3px}
+.oc-a{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:nowrap}
+.oc-a .btn.sm{min-height:34px;padding:5px 11px;white-space:nowrap}
+.mm{position:relative;margin-left:auto}
+.mm summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:36px;padding:0}
+.mm summary::-webkit-details-marker{display:none}
+.mm-pop{position:absolute;right:0;bottom:calc(100% + 6px);z-index:8;min-width:160px;background:var(--card);border:1px solid var(--bd);border-radius:14px;box-shadow:0 10px 30px rgba(15,18,40,.18);padding:6px;display:flex;flex-direction:column}
+.mm-pop button{display:flex;align-items:center;gap:8px;border:0;background:none;color:var(--tx);font:500 14px Roboto,Arial,sans-serif;padding:10px 12px;border-radius:10px;cursor:pointer;text-align:left}
+.mm-pop button:hover{background:var(--soft)}.mm-pop button.dg{color:var(--bad)}
+@media(min-width:700px){.oc{display:grid;grid-template-columns:1fr auto;column-gap:16px}.oc>.oc-h,.oc>.oc-m,.oc>.oc-n,.oc>.oc-cost{grid-column:1}.oc>.oc-c{grid-column:1}.oc>.oc-a{grid-column:2;grid-row:1/span 4;align-self:center;margin:0}}
+@media(max-width:560px){
+  .stage{min-height:50px;padding:4px 8px}.stage .stage-n{font-size:17px}
+  .oc-a .btn.sm{flex:1;padding:5px 6px}.mm{flex:none}
+}
 </style>
 </head>
 <body>
@@ -427,6 +460,8 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
 <script>
 const KEY='idecal_v1';
 const ICONS={
+  eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
   archive:'<rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/>',
   trash:'<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/>',
   undo:'<path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 8"/>',
@@ -824,28 +859,42 @@ function stageBar(){
   const tail=`<span class="stage-sep" aria-hidden="true">│</span><button class="stage all${filter==='Tất cả'?' on':''}" data-a="filter" data-id="Tất cả" aria-pressed="${filter==='Tất cả'}"><span class="stage-n">${db.orders.filter(o=>!o.archived).length}</span><span class="stage-l">Tất cả</span></button><button class="stage cancel${filter==='Huỷ'?' on':''}" data-a="filter" data-id="Huỷ" aria-pressed="${filter==='Huỷ'}"><span class="stage-n">${c['Huỷ']||0}</span><span class="stage-l">Huỷ</span></button>`;
   return`<div class="stagebar" role="group" aria-label="Các bước xử lý đơn hàng">${bar}${tail}</div>`;
 }
+function orderCard(o){
+  const bd=orderCostBreakdown(o),diff=orderRevenue(o)-orderActualCosts(o),sup=orderSupplierName(o);
+  const done=['Hoàn thành','Đã giao','Huỷ'].includes(o.status);
+  const n=(o.items||[]).length;
+  const note=o.note&&!/^Từ BG\d+/.test(o.note)?o.note:'';
+  const src=(o.note||'').match(/^Từ (BG\d+)/);
+  return`<div class="card oc">
+    <div class="oc-h"><div class="oc-t"><b>${esc(o.code)}</b> · ${esc(orderCustomerName(o))}</div><b class="oc-p">${vnd(total(o))}</b></div>
+    <div class="oc-m">${esc(o.date)}${src?' · '+src[1]:''} · <details class="itd oc-it"><summary>${n} mặt hàng</summary><ul>${(o.items||[]).map(i=>`<li>${esc(i.name)} <b>×${fq(i.qty)}</b></li>`).join('')}</ul></details></div>
+    ${note?`<div class="oc-n" title="${esc(note)}">${ic('pencil')} ${esc(note)}</div>`:''}
+    <div class="oc-c">
+      <select class="st" data-id="${o.id}">${STATUS.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select>
+      <span class="badge ${o.paid?'ok':'wr'}" data-a="pay" data-id="${o.id}" style="cursor:pointer">${o.paid?'Đã thu':'Chưa thu'}</span>
+      ${dep(o)?`<span class="badge ${o.paid?'ok':'wr'}" title="Đã tạm ứng ${vnd(dep(o))}">${ic('banknote')} ${o.paid?'Ứng '+vnd(dep(o)):'Ứng '+vnd(dep(o))+' · còn '+vnd(orderDue(o))}</span>`:''}
+      ${sup?`<span class="badge vendor-badge">${ic('store')} ${esc(sup)}</span>`:'<span class="badge vendor-missing">Chưa gắn NCC</span>'}
+    </div>
+    <details class="oc-cost"><summary class="${bd.count===0?'mut':diff<0?'neg':'pos'}">${bd.count===0?'Chưa đủ chi phí để tính lãi':'Chênh lệch '+vnd(diff)}</summary><div class="mut">Giá vốn tham khảo: <b>${vnd(cogs(o))}</b> · Chi phí đã gắn: <b>${vnd(orderActualCosts(o))}</b></div></details>
+    <div class="oc-a">
+      <button class="btn gh sm" data-a="previewOrder" data-id="${o.id}">${ic('eye')} Xem</button>
+      <button class="btn gh sm" data-a="editOrder" data-id="${o.id}">${ic('pencil')} Sửa</button>
+      ${o.paid?'':`<button class="btn gh sm" data-a="depositOrder" data-id="${o.id}">${ic('banknote')} Tạm ứng</button>`}
+      <details class="mm"><summary class="btn gh sm" aria-label="Thêm thao tác">${ic('more')}</summary><div class="mm-pop">
+        ${done?`<button type="button" data-a="archiveOrder" data-id="${o.id}">${ic('archive')} Lưu trữ</button>`:''}
+        ${isMgr()?`<button type="button" class="dg" data-a="delOrder" data-id="${o.id}">${ic('trash')} Xoá đơn</button>`:''}
+        ${!done&&!isMgr()?'<span class="mut" style="padding:8px 10px;display:block">Không có thao tác khác</span>':''}
+      </div></details>
+    </div>
+  </div>`;
+}
 function orders(){
   const base=db.orders.filter(o=>!o.archived&&(filter==='Tất cả'||o.status===filter)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
   const list=fapply('orders',base);
   return`<div class="row sp"><h2>Đơn hàng</h2><div class="row">${(()=>{const n=db.orders.filter(o=>!o.archived&&o.paid&&DONE_ST.includes(o.status)).length;return n?`<button class="btn gh" data-a="archiveDone">${ic('archive')} Lưu trữ đơn xong (${n})</button>`:''})()}<button class="btn" data-a="newOrder">${ic('plus')} Đơn mới</button></div></div>
   ${stageBar()}
   ${fbar('orders',base)}
-  ${list.length?list.map(o=>{const customerLabel=orderCustomerName(o);return`<div class="card">
-    <div class="row sp"><b>${esc(o.code)} - ${esc(customerLabel)}</b><b>${vnd(total(o))}</b></div>
-    ${itemsDet(o.items,o.date)}
-    <div style="margin-top:6px">${orderSupplierName(o)?`<span class="badge vendor-badge">${ic('store')} NCC chính: ${esc(orderSupplierName(o))}</span>`:'<span class="badge vendor-missing">Chưa gắn NCC</span>'}</div>
-    <div class="row" style="gap:14px;margin-top:6px"><span class="mut">Giá vốn tham khảo: <b>${vnd(cogs(o))}</b></span><span class="mut">Chi phí đã gắn: <b>${vnd(orderActualCosts(o))}</b></span><span class="${orderCostBreakdown(o).count===0?'mut':orderRevenue(o)-orderActualCosts(o)<0?'neg':'pos'}">${orderCostBreakdown(o).count===0?'Chưa đủ chi phí để tính lãi':'Chênh lệch theo khoản đã ghi: '+vnd(orderRevenue(o)-orderActualCosts(o))}</span></div>
-    ${o.note?`<div class="mut">${ic('pencil')} ${esc(o.note)}</div>`:''}
-    ${dep(o)?`<div class="row" style="gap:8px;margin-top:6px"><span class="badge ok">${ic('banknote')} Đã tạm ứng ${vnd(dep(o))}</span><span class="badge ${orderDue(o)?'wr':'ok'}">${orderDue(o)?'Còn phải thu '+vnd(orderDue(o)):'Đã thu đủ'}</span></div>`:''}
-    <div class="row" style="margin-top:8px;flex-wrap:wrap">
-      <select class="st" data-id="${o.id}" style="width:auto">${STATUS.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select>
-      <span class="badge ${o.paid?'ok':'wr'}" data-a="pay" data-id="${o.id}" style="cursor:pointer">${o.paid?'Đã thu':'Chưa thu'}</span>
-      ${o.paid?'':`<button class="btn gh sm" data-a="depositOrder" data-id="${o.id}">${ic('banknote')} Tạm ứng</button>`}
-      <button class="btn gh sm" data-a="previewOrder" data-id="${o.id}">👁 Xem trực tiếp</button>
-      <button class="btn gh sm" data-a="editOrder" data-id="${o.id}">Sửa</button>
-      ${['Hoàn thành','Đã giao','Huỷ'].includes(o.status)?`<button class="btn gh sm" data-a="archiveOrder" data-id="${o.id}">${ic('archive')} Lưu trữ</button>`:''}
-      ${isMgr()?`<button class="btn dg sm" data-a="delOrder" data-id="${o.id}">Xoá</button>`:''}
-    </div></div>`}).join(''):emp(base.length,'Chưa có đơn nào')}`;
+  ${list.length?list.map(o=>orderCard(o)).join(''):emp(base.length,'Chưa có đơn nào')}`;
 }
 function custs(){
   const all=db.customers,list=fapply('cust',all);
@@ -923,9 +972,11 @@ function itemEditor(m,items){
   items.forEach(addRow);
   m.querySelector('#addI').onclick=()=>addRow();
 }
+const meName=()=>CLOUD&&me?String(me.name||me.email||'').trim():'';
 function quoteForm(id){
   const q=db.quotes.find(x=>x.id===id)||{date:today(),until:addDays(today(),7),status:'Nháp',items:[{}],discount:0};
   const m=modal(id?'Sửa báo giá '+q.code:'Báo giá mới',`
+    ${CLOUD?`<div class="mut" style="margin-bottom:2px">Người báo giá: <b>${esc(id?(q.by||'—'):(meName()||'—'))}</b></div>`:''}
     <label>Khách hàng<select name="cid"><option value="">Khách lẻ</option>${db.customers.map(c=>`<option value="${c.id}" ${c.id===q.cid?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
     ${fld('Tên khách (nếu là khách lẻ)','cname',q.cname||'')}
     ${fld('Ngày','date',q.date,'date','required')}
@@ -941,7 +992,7 @@ function quoteForm(id){
     const items=readItems(m);
     if(!items.length){alert('Cần ít nhất 1 dòng hàng hợp lệ');return false}
     const data={cid:fd.get('cid'),cname:fd.get('cname'),date:fd.get('date'),until:fd.get('until'),completionDate:fd.get('completionDate'),discount:+fd.get('discount')||0,vatRate:Math.max(0,+fd.get('vatRate')||0),note:fd.get('note'),items};
-    if(id)Object.assign(q,data);else db.quotes.push({id:uid(),code:'BG'+String(++db.qseq).padStart(4,'0'),status:'Nháp',...data});
+    if(id)Object.assign(q,data);else db.quotes.push({id:uid(),code:'BG'+String(++db.qseq).padStart(4,'0'),status:'Nháp',by:meName(),byEmail:CLOUD&&me?me.email||'':'',...data});
     save();render();
   });
   itemEditor(m,q.items);
@@ -1003,7 +1054,7 @@ function quoteHTML(q,t){
   const rows=q.items.map((i,n)=>'<tr>'+(t.colIdx?`<td>${n+1}</td>`:'')+(t.colImg?`<td>${imgOf(i)}</td>`:'')+`<td>${esc(i.name)}</td>`+`<td>${esc(unitOf(i)||'—')}</td>`+`<td class="r">${fq(i.qty)}</td><td class="r">${vnd(i.price)}</td><td class="r"><b>${vnd(lineAmt(i))}</b></td></tr>`).join('');
   return`${shopHead(t)}
   <h2>${esc(t.title||TPL_DEF.title)}</h2><div class="c">BÁO GIÁ DỊCH VỤ · ${esc(q.code)}</div>
-  <div class="meta"><div><small>Khách hàng</small><b>${esc(qname(q))}</b>${c&&c.phone?`<div>${esc(c.phone)}</div>`:''}</div><div><small>Ngày báo giá</small><b>${esc(q.date||'—')}</b></div>${t.showUntil&&q.until?`<div><small>Hiệu lực đến</small><b>${esc(q.until)}</b></div>`:''}${q.completionDate?`<div><small>Thời gian hoàn thành dự kiến</small><b>${esc(q.completionDate)}</b></div>`:''}</div>
+  <div class="meta"><div><small>Khách hàng</small><b>${esc(qname(q))}</b>${c&&c.phone?`<div>${esc(c.phone)}</div>`:''}</div><div><small>Ngày báo giá</small><b>${esc(q.date||'—')}</b></div>${t.showUntil&&q.until?`<div><small>Hiệu lực đến</small><b>${esc(q.until)}</b></div>`:''}${q.completionDate?`<div><small>Thời gian hoàn thành dự kiến</small><b>${esc(q.completionDate)}</b></div>`:''}${q.by?`<div><small>Người báo giá</small><b>${esc(q.by)}</b></div>`:''}</div>
   ${c&&c.addr?`<p style="margin:0 0 10px;color:#53677c"><b>Địa chỉ:</b> ${esc(c.addr)}</p>`:''}
   ${t.intro?`<p>${nl(esc(t.intro))}</p>`:''}
   ${t.greet?`<p style="margin:10px 0"><b>${esc(t.greet)}</b> ${esc(qname(q))},</p>`:''}
@@ -1271,6 +1322,7 @@ function quotes(){
   ${list.length?list.map(q=>`<div class="card">
     <div class="row sp"><b>${q.code} · ${esc(qname(q))}</b><b>${vnd(qtotal(q))}</b></div>
     ${itemsDet(q.items,q.date+(q.until?' · HL đến '+q.until:'')+(q.completionDate?' · Hoàn thành dự kiến: '+q.completionDate:''))}
+    ${q.by?`<div class="mut">${ic('users')} Người báo giá: <b>${esc(q.by)}</b></div>`:''}
     <div class="row" style="margin-top:8px">
       <select class="qs" data-id="${q.id}" style="width:auto" ${db.orders.some(o=>o.id===q.orderId)?'disabled':''}>${QST.map(s=>`<option ${s===q.status?'selected':''}>${s}</option>`).join('')}</select>
       ${db.orders.some(o=>o.id===q.orderId)?`<span class="badge ok">Đã chuyển thành đơn ${esc((db.orders.find(o=>o.id===q.orderId)||{}).code)}</span><button class="btn gh sm" data-a="viewOrder">Xem đơn</button>`:(q.status==='Từ chối'?'':`<button class="btn sm" data-a="toOrder" data-id="${q.id}">${ic('check')} Khách chấp nhận</button>`)}
@@ -1611,7 +1663,7 @@ const acts={
   import:()=>$('#file').click(),
   reset:()=>{if(CLOUD)return;if(confirm('Xoá TOÀN BỘ dữ liệu? Không thể hoàn tác.')){if(LS)LS.removeItem(KEY);db=blank();render()}}
 };
-document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b)acts[b.dataset.a](b.dataset.id)});
+document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.mm-pop button'))d.open=false});const b=e.target.closest('[data-a]');if(b)acts[b.dataset.a](b.dataset.id)});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('nav-open')){setNav(false);const b=$('#navToggle');if(b)b.focus()}});
 document.addEventListener('change',e=>{
   if(e.target.classList.contains('rl')){fs.collection('users').doc(e.target.dataset.id).update({role:e.target.value}).then(()=>toast('Đã cập nhật cấp','ok')).catch(x=>toast('Lỗi: '+x.message));return}
