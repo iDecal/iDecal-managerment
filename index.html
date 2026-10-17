@@ -513,11 +513,25 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
 
 
 /* Process: khung navy, danh sách nền trắng và icon rõ theo từng trạng thái */
-.orders-alt .oc-mid-sec:has(> .st){background:linear-gradient(135deg,#172c4a 0%,#203d60 100%);border:1px solid #426b94;box-shadow:0 5px 14px rgba(17,49,89,.16)}
-.orders-alt .oc-mid-sec:has(> .st) small{color:#b9e7ff;letter-spacing:.85px;font-weight:800}
-.orders-alt .oc-mid-sec .st{background:#fff!important;color:#174c75!important;border:1px solid #9bc8e7!important;font-weight:750!important;box-shadow:0 2px 7px rgba(0,0,0,.09);padding-left:14px}
-.orders-alt .oc-mid-sec .st:focus{outline:2px solid #7ed8ff;outline-offset:2px}
-.orders-alt .oc-mid-sec .st option{background:#fff!important;color:#174c75!important;font-weight:650}
+.orders-alt .process-box{background:linear-gradient(135deg,#17324f 0%,#21486e 100%);border:1px solid #426b94;box-shadow:0 5px 14px rgba(17,49,89,.16)}
+.orders-alt .process-box small{color:#cbe9ff;letter-spacing:.85px;font-weight:800}
+.orders-alt .process-box .st{background:#fff!important;font-weight:750!important;box-shadow:0 2px 7px rgba(0,0,0,.09);padding-left:14px;transition:.18s ease}
+.orders-alt .process-box .st:focus{outline:2px solid #7ed8ff;outline-offset:2px}
+.orders-alt .process-box .st option{background:#fff!important;color:#174c75!important;font-weight:650}
+/* Mỗi giai đoạn 1 màu riêng */
+.orders-alt .process-box[data-status="Mới"]{background:linear-gradient(135deg,#123a57 0%,#0f5477 100%);border-color:#3f89b1}
+.orders-alt .process-box[data-status="Mới"] .st{color:#0e5d86!important;border:1px solid #8fd1f4!important;background:#f3fbff!important}
+.orders-alt .process-box[data-status="Đang thiết kế"]{background:linear-gradient(135deg,#544018 0%,#74541c 100%);border-color:#bf9a45}
+.orders-alt .process-box[data-status="Đang thiết kế"] small{color:#fff0b5}
+.orders-alt .process-box[data-status="Đang thiết kế"] .st{color:#946200!important;border:1px solid #efca74!important;background:#fff8e7!important}
+.orders-alt .process-box[data-status="Đang in"]{background:linear-gradient(135deg,#16365d 0%,#215487 100%);border-color:#4a88c5}
+.orders-alt .process-box[data-status="Đang in"] .st{color:#0f5fa6!important;border:1px solid #89bdf2!important;background:#eef7ff!important}
+.orders-alt .process-box[data-status="Hoàn thành"]{background:linear-gradient(135deg,#144b3c 0%,#1f6b54 100%);border-color:#4fb38e}
+.orders-alt .process-box[data-status="Hoàn thành"] small{color:#d5ffe9}
+.orders-alt .process-box[data-status="Hoàn thành"] .st{color:#0e7c54!important;border:1px solid #84d8b3!important;background:#edfff6!important}
+.orders-alt .process-box[data-status="Huỷ"]{background:linear-gradient(135deg,#5a2026 0%,#7a2b33 100%);border-color:#d07a85}
+.orders-alt .process-box[data-status="Huỷ"] small{color:#ffd8dd}
+.orders-alt .process-box[data-status="Huỷ"] .st{color:#b42331!important;border:1px solid #efb0b8!important;background:#fff2f4!important}
 
 /* Nội bộ: giao việc và trò chuyện */
 .collab-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
@@ -849,6 +863,14 @@ function cloudSave(){
 const hasLocal=()=>{try{const d=JSON.parse(LS.getItem(KEY));return !!d&&COLS.some(k=>(d[k]||[]).length)}catch(e){return false}};
 const STATUS=['Mới','Đang thiết kế','Đang in','Hoàn thành','Huỷ'];
 const STATUS_ICONS={'Mới':'🆕','Đang thiết kế':'🎨','Đang in':'🖨️','Hoàn thành':'✅','Huỷ':'⛔'};
+function updateStatusSelectUI(root=document){
+  root.querySelectorAll('select.st, select[name="status"]').forEach(sel=>{
+    const cleaned=String(sel.value||'').replace(/^[^\p{L}\p{N}]+\s*/u,'').trim() || 'Mới';
+    sel.dataset.status = cleaned;
+    const box = sel.closest('.process-box');
+    if(box) box.dataset.status = cleaned;
+  });
+}
 const normOrderStatus=s=>s==='Đã giao'?'Hoàn thành':(s||'Mới');
 const TABS=[
   {id:'home',icon:'home',label:'Tổng quan',group:'',req:'all',color:'sky'},
@@ -1252,7 +1274,7 @@ function orderCard(o){
       ${note?`<div class="oc-note">${ic('pencil')} ${esc(note)}</div>`:''}
     </div>
     <div class="oc-mid">
-      <div class="oc-mid-sec">
+      <div class="oc-mid-sec process-box">
         <small>Process / tiến độ</small>
         <select class="st" data-id="${o.id}">${STATUS.map(s=>`<option value="${esc(s)}" ${s===normOrderStatus(o.status)?'selected':''}>${STATUS_ICONS[s]||'•'} ${esc(s)}</option>`).join('')}</select>
       </div>
@@ -2621,6 +2643,7 @@ function render(){if(['deposits','tasks','chat'].includes(view))view='orders';
   $('#app').innerHTML=(view==='gemini'?'':searchBar+(!CLOUD&&!LS?WARN:''))+views[view]()+`<div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả phù hợp.</div>`;
   if(window.setGeminiMenuMode)window.setGeminiMenuMode(view==='gemini');
   applyModuleSearch();
+  updateStatusSelectUI();
   refreshOpenOrderPreviews();
   if(view==='chat'){markChatRead();const el=document.getElementById('chatMessages');if(el)el.scrollTop=el.scrollHeight}
 }
@@ -2803,7 +2826,9 @@ document.addEventListener('change',e=>{
   if(e.target.classList.contains('rl')){fs.collection('users').doc(e.target.dataset.id).update({role:e.target.value}).then(()=>toast('Đã cập nhật cấp','ok')).catch(x=>toast('Lỗi: '+x.message));return}
   if(e.target.classList.contains('qs')){const q=db.quotes.find(x=>x.id===e.target.dataset.id);q.status=e.target.value;if(q.status==='Chấp nhận'){convertQuote(q);return}save();render();return}
   if(e.target.classList.contains('st')){const o=db.orders.find(x=>x.id===e.target.dataset.id);const was=o.status;o.status=e.target.value;
-    save();render()}
+    updateStatusSelectUI(document);
+    save();render();return}
+  if(e.target.matches('select[name="status"]')){updateStatusSelectUI(document);return}
 });
 $('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.orders)throw 0;if(confirm('Ghi đè dữ liệu hiện tại bằng file sao lưu?')){db=Object.assign(blank(),d);save();render()}}catch(_){alert('File không hợp lệ')}};r.readAsText(f);e.target.value=''};
 if(CLOUD)initCloud();else render();
