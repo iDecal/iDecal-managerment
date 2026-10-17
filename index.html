@@ -457,14 +457,14 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
 .itd ul{margin:4px 0 2px;padding-left:18px;color:var(--mut);font-size:13px}.itd li{margin:2px 0}
 
 /* ===== Đơn hàng gọn ===== */
-.oc{padding:15px 16px;margin-bottom:18px;border-radius:22px;position:relative;overflow:hidden;box-shadow:0 8px 22px rgba(14,44,77,.05)}
-.orders-alt .oc:nth-child(odd){background:linear-gradient(180deg,#ffffff 0%,#fbfdff 100%);border:1px solid #d9e4ef;border-left:7px solid #d6e5f4}
-.orders-alt .oc:nth-child(even){background:linear-gradient(180deg,#f4f9ff 0%,#eef6ff 100%);border:1px solid #cfe0ef;border-left:7px solid #bdd6ee}
-.orders-alt .oc:hover{box-shadow:0 12px 24px rgba(14,44,77,.08);transform:translateY(-1px);transition:.18s ease}
+.oc{padding:14px 16px;margin-bottom:16px;border-radius:22px;position:relative;overflow:hidden;box-shadow:0 5px 16px rgba(14,44,77,.05)}
+.orders-alt .oc:nth-child(odd){background:linear-gradient(180deg,#ffffff 0%,#fbfdff 100%);border:1px solid #dbe7f2;border-left:8px solid #cfe0f7}
+.orders-alt .oc:nth-child(even){background:linear-gradient(180deg,#fbfcff 0%,#f5f8fc 100%);border:1px solid #dfe5ec;border-left:8px solid #e7d8f6}
+.orders-alt .oc:nth-child(even)::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,rgba(116,87,197,.035),transparent 28%)}
+.orders-alt .oc:hover{box-shadow:0 10px 22px rgba(14,44,77,.08);transform:translateY(-1px);transition:.18s ease}
 .oc-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.oc-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px;line-height:1.35}
+.oc-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:17px;line-height:1.4}
 .oc-t b{font-size:18px}
-.oc-p{flex:none;font-size:18px;color:#0d2742;padding-top:2px}
 .oc-main,.oc-mid{min-width:0}
 .oc-schedule{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;padding:10px 12px;border-radius:14px;background:#eef7ff;border:1px solid #d6e8f7}
 .oc-kind{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:#fff;color:#16618f;border:1px solid #bfdaf0;font-size:12px;font-weight:700;white-space:nowrap}
@@ -504,7 +504,6 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
   .oc{padding:13px 13px 14px}
   .oc-h{flex-direction:column;gap:6px}
   .oc-t{white-space:normal}
-  .oc-p{font-size:19px}
   .oc-schedule{padding:9px 10px}
   .oc-mid{gap:8px}
   .oc-a{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -840,6 +839,7 @@ function cloudSave(){
 }
 const hasLocal=()=>{try{const d=JSON.parse(LS.getItem(KEY));return !!d&&COLS.some(k=>(d[k]||[]).length)}catch(e){return false}};
 const STATUS=['Mới','Đang thiết kế','Đang in','Hoàn thành','Huỷ'];
+const normOrderStatus=s=>s==='Đã giao'?'Hoàn thành':(s||'Mới');
 const TABS=[
   {id:'home',icon:'home',label:'Tổng quan',group:'',req:'all',color:'sky'},
   {id:'orders',icon:'clipboard',label:'Đơn hàng',group:'Bán hàng',req:'all',color:'green'},
@@ -893,8 +893,8 @@ const cogs=o=>o.items.reduce((s,i)=>s+lineCost(i),0);
 const cust=id=>db.customers.find(c=>c.id===id);
 const prod=id=>db.products.find(p=>p.id===id);
 const valid=o=>o.status!=='Huỷ';
-const STEPS=['Mới','Đang thiết kế','Đang in','Hoàn thành'];
-const statusCounts=()=>{const c={};for(const s of STATUS)c[s]=0;for(const o of db.orders)if(!o.archived)c[o.status]=(c[o.status]||0)+1;return c};
+const STEPS=['Mới','Đang thiết kế','Đang in','Hoàn thành','Đã giao'];
+const statusCounts=()=>{const c={};for(const s of STATUS)c[s]=0;for(const o of db.orders)if(!o.archived){const st=normOrderStatus(o.status);c[st]=(c[st]||0)+1}return c};
 const openJobs=c=>(c['Mới']||0)+(c['Đang thiết kế']||0)+(c['Đang in']||0);
 
 /* ---------- Modal ---------- */
@@ -944,7 +944,7 @@ function orderForm(id){
     <div class="mut">Chọn xưởng/NCC thực hiện đơn này để nhóm báo cáo lãi lỗ theo NCC. Nếu chưa có trong danh sách, thêm ở menu Nhà cung cấp hoặc tạo phiếu mua hàng trước.</div>
     <label>Hàng hoá</label><div id="items"></div>
     <button type="button" class="btn gh sm" id="addI" style="margin-top:8px">${ic('plus')} Thêm dòng</button>
-    <label>Trạng thái<select name="status">${STATUS.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select></label>
+    <label>Trạng thái<select name="status">${STATUS.map(s=>`<option ${s===normOrderStatus(o.status)?'selected':''}>${s}</option>`).join('')}</select></label>
     <label class="chk"><input type="checkbox" name="paid" ${o.paid?'checked':''}> Đã thanh toán toàn bộ (không còn công nợ)</label>
     ${fld('Ghi chú','note',o.note||'')}
     <div class="tot">Tổng: <b id="tot">0đ</b></div>`,
@@ -1196,13 +1196,12 @@ function stageBar(){
 }
 function orderCard(o){
   const sup=orderSupplierName(o);
-  const done=['Hoàn thành','Đã giao','Huỷ'].includes(o.status);
+  const done=['Hoàn thành','Huỷ'].includes(normOrderStatus(o.status));
   const note=o.note&&!/^Từ BG\d+/.test(o.note)?o.note:'';
   const type=orderFulfillment(o);
   const isInstall=type==='installation';
   const dueRaw=isInstall?o.installDue:o.deliveryDue;
   const dueDisplay=dueRaw?String(dueRaw).replace('T',' · '):'Chưa hẹn lịch';
-  const statusValue=o.status==='Đã giao'?'Hoàn thành':o.status;
   return`<div class="card oc">
     <div class="oc-main">
       <div class="oc-h">
@@ -1219,7 +1218,7 @@ function orderCard(o){
     <div class="oc-mid">
       <div class="oc-mid-sec">
         <small>Process / tiến độ</small>
-        <select class="st" data-id="${o.id}">${STATUS.map(s=>`<option ${s===statusValue?'selected':''}>${s}</option>`).join('')}</select>
+        <select class="st" data-id="${o.id}">${STATUS.map(s=>`<option ${s===normOrderStatus(o.status)?'selected':''}>${s}</option>`).join('')}</select>
       </div>
       ${dep(o)?`<div class="oc-mid-sec"><small>Đã tạm ứng</small><div class="oc-mid-badges"><span class="badge">${ic('banknote')} ${vnd(dep(o))}</span></div></div>`:''}
       <div class="oc-mid-sec">
@@ -1242,9 +1241,9 @@ function orderCard(o){
     </div>
   </div>`;
 }
-function orderFulfillmentction orderFulfillmentfunction orderFulfillment(o){return o.fulfillmentType==='installation'?'installation':o.fulfillmentType==='delivery'?'delivery':((o.workerIds?.length||o.installDue)?'installation':'delivery')}
+function orderFulfillment(o){return o.fulfillmentType==='installation'?'installation':o.fulfillmentType==='delivery'?'delivery':((o.workerIds?.length||o.installDue)?'installation':'delivery')}
 function orders(){
-  const base=db.orders.filter(o=>!o.archived&&(filter==='Tất cả'||o.status===filter)&&true).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
+  const base=db.orders.filter(o=>!o.archived&&(filter==='Tất cả'||normOrderStatus(o.status)===filter)&&true).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
   const list=fapply('orders',base);
   return`<div class="row sp"><h2>Đơn hàng</h2><div class="row">${(()=>{const n=db.orders.filter(o=>!o.archived&&o.paid&&DONE_ST.includes(o.status)).length;return n?`<button class="btn gh" data-a="archiveDone">${ic('archive')} Lưu trữ đơn xong (${n})</button>`:''})()}<button class="btn" data-a="newOrder">${ic('plus')} Đơn mới</button></div></div>
   ${stageBar()}
@@ -1760,7 +1759,7 @@ function orderHTML(o,t){
   t=t||tplOf();
   const rows=(o.items||[]).map((i,n)=>`<tr><td>${n+1}</td><td>${esc(i.name||'—')}</td><td>${esc(i.unit||(prod(i.pid)||{}).unit||'—')}</td><td class="r">${fq(i.qty)}</td><td class="r">${vnd(i.price)}</td><td class="r"><b>${vnd(lineAmt(i))}</b></td></tr>`).join('');
   return `${shopHead(t)}<h2>CHI TIẾT ĐƠN HÀNG</h2><div class="c">MÃ ĐƠN · ${esc(o.code)}</div>
-  <div class="meta"><div><small>Khách hàng</small><b>${esc(orderCustomerName(o))}</b></div><div><small>Ngày tạo</small><b>${esc(o.date||'—')}</b></div><div><small>Tiến độ</small><b>${esc(o.status||'Mới')}</b></div></div>
+  <div class="meta"><div><small>Khách hàng</small><b>${esc(orderCustomerName(o))}</b></div><div><small>Ngày tạo</small><b>${esc(o.date||'—')}</b></div><div><small>Tiến độ</small><b>${esc(normOrderStatus(o.status))}</b></div></div>
   <div class="terms"><b>${orderFulfillment(o)==='installation'?'🛠️ THI CÔNG':'🚚 GIAO HÀNG'}</b>
     <div style="margin-top:6px"><b>Ngày & giờ:</b> ${esc((orderFulfillment(o)==='installation'?o.installDue:o.deliveryDue)?.replace('T',' · ')||'Chưa hẹn lịch')}</div>
     ${orderFulfillment(o)==='installation'&&o.orderArea?`<div style="margin-top:4px"><b>Khu vực:</b> ${esc(normWorkerArea(o.orderArea))}${o.orderDistrict?' · '+esc(o.orderDistrict):''}</div>`:''}
@@ -2531,7 +2530,7 @@ const custDue=c=>db.orders.filter(o=>o.cid===c.id&&valid(o)).reduce((t,o)=>t+ord
 const custOrders=c=>db.orders.filter(o=>o.cid===c.id&&valid(o)).length;
 const SUP_CAT={'in-an':'In ấn','shop-decal':'Shop Decal','film-noi-that':'Film nội thất','film-cach-nhiet':'Film cách nhiệt'};
 const FDEF={
-  orders:[['all','Tất cả đơn',()=>true],['delivery','🚚 Giao hàng',o=>orderFulfillment(o)==='delivery'],['delivered','Đã giao',o=>orderFulfillment(o)==='delivery'&&o.status==='Đã giao'],['installation','🛠️ Thi công',o=>orderFulfillment(o)==='installation']],
+  orders:[['all','Tất cả đơn',()=>true],['delivery','🚚 Giao hàng',o=>orderFulfillment(o)==='delivery'],['installation','🛠️ Thi công',o=>orderFulfillment(o)==='installation']],
   quote:[['all','Tất cả',()=>true],...QST.map(x=>[x,x,q=>q.status===x]),['conv','Đã thành đơn',q=>db.orders.some(o=>o.id===q.orderId)]],
   cust:[['all','Tất cả',()=>true],['individual','Cá nhân',c=>c.customerType!=='company'],['company','Doanh nghiệp',c=>c.customerType==='company'],['debt','Còn nợ',c=>custDue(c)>0],['has','Đã có đơn',c=>custOrders(c)>0],['none','Chưa có đơn',c=>custOrders(c)===0]],
   deposits:[['all','Tất cả',()=>true],['open','Chưa thu đủ',o=>!o.paid],['done','Đã thu đủ',o=>!!o.paid]],
@@ -2540,7 +2539,7 @@ const FDEF={
   suppliers:[['all','Tất cả',()=>true],...Object.entries(SUP_CAT).map(([k,v])=>[k,v,x=>(x.category||'in-an')===k])],
   exp:[['all','Tất cả',()=>true],['month','Tháng này',e=>thisMonth(e.date)],['ord','Đã gắn đơn',e=>!!e.orderId],['noord','Chưa gắn đơn',e=>!e.orderId]],
   profit:[['all','Tất cả',()=>true],['nocost','Chưa ghi chi phí',o=>orderCostBreakdown(o).count===0],['gain','Có lãi',o=>orderCostBreakdown(o).count>0&&orderRevenue(o)-orderActualCosts(o)>=0],['loss','Lỗ',o=>orderCostBreakdown(o).count>0&&orderRevenue(o)-orderActualCosts(o)<0],['nosup','Chưa gắn NCC',o=>!orderSupplierName(o)]],
-  archive:[['all','Tất cả',()=>true],['hh','Hoàn thành',o=>o.status==='Hoàn thành'],['dg','Đã giao',o=>o.status==='Đã giao'],['huy','Huỷ',o=>o.status==='Huỷ'],['unpaid','Chưa thu',o=>!o.paid]],
+  archive:[['all','Tất cả',()=>true],['hh','Hoàn thành',o=>normOrderStatus(o.status)==='Hoàn thành'],['huy','Huỷ',o=>o.status==='Huỷ'],['unpaid','Chưa thu',o=>!o.paid]],
   team:[['all','Tất cả',()=>true],['pending','Chờ duyệt',u=>u.role==='pending'],['staff','Nhân viên',u=>u.role==='staff'],['manager','Quản lý',u=>u.role==='manager'],['blocked','Đã khoá',u=>u.role==='blocked']]
 };
 const fcur=v=>{const d=FDEF[v]||[];return d.find(x=>x[0]===VF[v])||d[0]};
