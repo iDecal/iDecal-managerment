@@ -440,7 +440,10 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
 .itd ul{margin:4px 0 2px;padding-left:18px;color:var(--mut);font-size:13px}.itd li{margin:2px 0}
 
 /* ===== Đơn hàng gọn ===== */
-.oc{padding:12px 14px;margin-bottom:10px;border-radius:18px}
+.oc{padding:12px 14px;margin-bottom:10px;border-radius:18px;position:relative;overflow:hidden;box-shadow:0 4px 14px rgba(14,44,77,.04)}
+.orders-alt .oc:nth-child(odd){background:linear-gradient(180deg,#ffffff 0%,#fcfdff 100%);border:1px solid #dfe8f1;border-left:5px solid #e4edf6}
+.orders-alt .oc:nth-child(even){background:linear-gradient(180deg,#f6faff 0%,#f1f7fd 100%);border:1px solid #d7e5f2;border-left:5px solid #cfe1f1}
+.orders-alt .oc:hover{box-shadow:0 8px 18px rgba(14,44,77,.07);transform:translateY(-1px);transition:.18s ease}
 .oc-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .oc-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}
 .oc-p{flex:none;font-size:15px}
@@ -551,6 +554,18 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
 #gem-panel .gm-status{font-size:11px;min-height:14px;color:var(--mut,#64748b)}
 @media(max-width:560px){#gem-launch{bottom:82px;right:12px}#gem-panel{width:100vw;border-left:0}#gem-panel .gm-compose{padding-bottom:calc(11px + env(safe-area-inset-bottom))}}
 @media(prefers-reduced-motion:reduce){#gem-panel{transition:none}}
+
+/* Gemini as full workspace under the left navigation, not a right overlay */
+#gem-launch{display:none!important}
+#gem-panel{visibility:hidden;pointer-events:none}
+body[data-view="gemini"] #gem-panel{visibility:visible;pointer-events:auto;position:fixed;left:236px;right:0;top:var(--hh);bottom:0;width:auto;height:auto;max-width:none;transform:none;transition:none;z-index:8;box-shadow:none;border:0;background:var(--bg,#f4f7fb);padding:14px max(18px,calc((100vw - 1250px)/2));gap:0}
+body[data-view="gemini"] #gem-panel .gm-head{border-radius:14px 14px 0 0;padding:16px 20px}
+body[data-view="gemini"] #gem-panel .gm-stream{background:var(--card,#fff);padding:20px 24px;gap:14px}
+body[data-view="gemini"] #gem-panel .gm-bubble{max-width:min(82%,780px);font-size:14px}
+body[data-view="gemini"] #gem-panel .gm-config{background:var(--card,#fff);padding:12px 20px}
+body[data-view="gemini"] #gem-panel .gm-compose{border-radius:0 0 14px 14px;padding:13px 20px}
+body[data-view="gemini"] #gem-panel .gm-compose textarea{min-height:84px}
+@media(max-width:560px){body[data-view="gemini"] #gem-panel{top:94px;left:0;bottom:calc(68px + env(safe-area-inset-bottom));padding:0 9px 5px;width:100%;border:0}body[data-view="gemini"] #gem-panel .gm-bubble{max-width:96%}body[data-view="gemini"] #gem-panel .gm-stream{padding:12px}body[data-view="gemini"] #gem-panel .gm-head{padding:10px}body[data-view="gemini"] #gem-panel .gm-config{padding:8px}body[data-view="gemini"] #gem-panel .gm-compose{padding:9px}body[data-view="gemini"] #gem-panel .gm-info{display:none}}
 </style>
 <style id="customer-form-upgrade">.cust-section{border:1px solid var(--bd,#e5e7eb);padding:12px;border-radius:12px;margin:11px 0;background:rgba(125,155,190,.035)}.cust-section>strong{display:block;margin-bottom:10px}.cust-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 12px}.cust-form-grid label{min-width:0;margin:0}.customer-type-bar{margin-bottom:12px}@media(max-width:620px){.cust-form-grid{grid-template-columns:1fr}.cust-section{padding:10px}}</style>
 <style id="worker-purchase-design">
@@ -738,6 +753,7 @@ const TABS=[
   {id:'exp',icon:'wallet',label:'Chi phí',group:'Mua hàng & Chi phí',req:'mgr',color:'rose'},
   {id:'profit',icon:'chart',label:'Lãi lỗ đơn hàng',group:'Mua hàng & Chi phí',req:'mgr',color:'green'},
   {id:'workers',icon:'users',label:'Thợ thi công',group:'Nhân sự thi công',req:'all',color:'teal'},
+  {id:'gemini',icon:'image',label:'✦ Gemini AI',group:'Trợ lý AI',req:'all',color:'purple'},
   {id:'team',icon:'shield',label:'Thành viên',group:'Cài đặt',req:'owner',color:'indigo'},
   {id:'more',icon:'sliders',label:'Khác',group:'Cài đặt',req:'all',color:'slate'},
 ];
@@ -1010,7 +1026,8 @@ function homeStaff(){
 }
 function stageBar(){
   const c=statusCounts();
-  const bar=STEPS.map((s,i)=>`<button class="stage${s===filter?' on':''}" data-a="filter" data-id="${esc(s)}" aria-pressed="${s===filter}"><span class="stage-n">${c[s]||0}</span><span class="stage-l">${esc(s)}</span></button>`+(i<STEPS.length-1?'<span class="stage-sep" aria-hidden="true">›</span>':'')).join('');
+  const visibleSteps=STEPS.filter(s=>s!=='Đã giao');
+  const bar=visibleSteps.map((s,i)=>`<button class="stage${s===filter?' on':''}" data-a="filter" data-id="${esc(s)}" aria-pressed="${s===filter}"><span class="stage-n">${c[s]||0}</span><span class="stage-l">${esc(s)}</span></button>`+(i<visibleSteps.length-1?'<span class="stage-sep" aria-hidden="true">›</span>':'')).join('');
   const tail=`<span class="stage-sep" aria-hidden="true">│</span><button class="stage all${filter==='Tất cả'?' on':''}" data-a="filter" data-id="Tất cả" aria-pressed="${filter==='Tất cả'}"><span class="stage-n">${db.orders.filter(o=>!o.archived).length}</span><span class="stage-l">Tất cả</span></button><button class="stage cancel${filter==='Huỷ'?' on':''}" data-a="filter" data-id="Huỷ" aria-pressed="${filter==='Huỷ'}"><span class="stage-n">${c['Huỷ']||0}</span><span class="stage-l">Huỷ</span></button>`;
   return`<div class="stagebar" role="group" aria-label="Các bước xử lý đơn hàng">${bar}${tail}</div>`;
 }
@@ -1046,16 +1063,14 @@ function orderCard(o){
     </div>
   </div>`;
 }
-let orderFulfillmentFilter='all';
 function orderFulfillment(o){return o.fulfillmentType==='installation'?'installation':o.fulfillmentType==='delivery'?'delivery':((o.workerIds?.length||o.installDue)?'installation':'delivery')}
 function orders(){
-  const base=db.orders.filter(o=>!o.archived&&(filter==='Tất cả'||o.status===filter)&&(orderFulfillmentFilter==='all'||orderFulfillment(o)===orderFulfillmentFilter)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
+  const base=db.orders.filter(o=>!o.archived&&(filter==='Tất cả'||o.status===filter)&&true).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
   const list=fapply('orders',base);
   return`<div class="row sp"><h2>Đơn hàng</h2><div class="row">${(()=>{const n=db.orders.filter(o=>!o.archived&&o.paid&&DONE_ST.includes(o.status)).length;return n?`<button class="btn gh" data-a="archiveDone">${ic('archive')} Lưu trữ đơn xong (${n})</button>`:''})()}<button class="btn" data-a="newOrder">${ic('plus')} Đơn mới</button></div></div>
   ${stageBar()}
-  <div class="row" style="gap:7px;flex-wrap:wrap;margin:9px 0 12px"><button class="btn sm ${orderFulfillmentFilter==='all'?'':'gh'}" data-a="workTypeFilter" data-id="all">Tất cả loại đơn</button><button class="btn sm ${orderFulfillmentFilter==='delivery'?'':'gh'}" data-a="workTypeFilter" data-id="delivery">🚚 Giao hàng</button><button class="btn sm ${orderFulfillmentFilter==='installation'?'':'gh'}" data-a="workTypeFilter" data-id="installation">🛠️ Thi công</button></div>
   ${fbar('orders',base)}
-  ${list.length?list.map(o=>orderCard(o)).join(''):emp(base.length,'Chưa có đơn nào')}`;
+  ${list.length?`<div class="orders-alt">${list.map(o=>orderCard(o)).join('')}</div>`:emp(base.length,'Chưa có đơn nào')}`;
 }
 function custs(){
   const all=db.customers,list=fapply('cust',all);
@@ -2296,7 +2311,7 @@ const custDue=c=>db.orders.filter(o=>o.cid===c.id&&valid(o)).reduce((t,o)=>t+ord
 const custOrders=c=>db.orders.filter(o=>o.cid===c.id&&valid(o)).length;
 const SUP_CAT={'in-an':'In ấn','shop-decal':'Shop Decal','film-noi-that':'Film nội thất','film-cach-nhiet':'Film cách nhiệt'};
 const FDEF={
-  orders:[['all','Tất cả',()=>true],['unpaid','Chưa thu',o=>!o.paid],['paid','Đã thu',o=>!!o.paid],['nosup','Chưa gắn NCC',o=>!orderSupplierName(o)]],
+  orders:[['all','Tất cả đơn',()=>true],['delivery','🚚 Giao hàng',o=>orderFulfillment(o)==='delivery'],['delivered','Đã giao',o=>orderFulfillment(o)==='delivery'&&o.status==='Đã giao'],['installation','🛠️ Thi công',o=>orderFulfillment(o)==='installation']],
   quote:[['all','Tất cả',()=>true],...QST.map(x=>[x,x,q=>q.status===x]),['conv','Đã thành đơn',q=>db.orders.some(o=>o.id===q.orderId)]],
   cust:[['all','Tất cả',()=>true],['individual','Cá nhân',c=>c.customerType!=='company'],['company','Doanh nghiệp',c=>c.customerType==='company'],['debt','Còn nợ',c=>custDue(c)>0],['has','Đã có đơn',c=>custOrders(c)>0],['none','Chưa có đơn',c=>custOrders(c)===0]],
   deposits:[['all','Tất cả',()=>true],['open','Chưa thu đủ',o=>!o.paid],['done','Đã thu đủ',o=>!!o.paid]],
@@ -2312,11 +2327,12 @@ const fcur=v=>{const d=FDEF[v]||[];return d.find(x=>x[0]===VF[v])||d[0]};
 const fapply=(v,list)=>{const d=fcur(v);return d?list.filter(d[2]):list};
 function fbar(v,list){
   const d=FDEF[v];if(!d)return'';const cur=fcur(v)[0];
-  return`<div class="fbar" role="group" aria-label="Bộ lọc">${ic('filter')}${d.map(x=>`<button type="button" class="fchip${x[0]===cur?' on':''}" data-a="vf" data-id="${esc(v+'|'+x[0])}" aria-pressed="${x[0]===cur}">${esc(x[1])}<i>${list.filter(x[2]).length}</i></button>`).join('')}</div>`;
+  const options=v==='orders'&&cur!=='delivery'&&cur!=='delivered'?d.filter(x=>x[0]!=='delivered'):d;
+  return`<div class="fbar" role="group" aria-label="Bộ lọc">${ic('filter')}${options.map(x=>`<button type="button" class="fchip${x[0]===cur?' on':''}" data-a="vf" data-id="${esc(v+'|'+x[0])}" aria-pressed="${x[0]===cur}">${esc(x[1])}<i>${list.filter(x[2]).length}</i></button>`).join('')}</div>`;
 }
 const itemsDet=(items,pre)=>`<div class="mut">${pre}</div><details class="itd"><summary>${items.length} mặt hàng · bấm để xem</summary><ul>${items.map(i=>`<li>${esc(i.name)} <b>×${fq(i.qty)}</b></li>`).join('')}</ul></details>`;
 const emp=(n,txt)=>`<div class="empty">${n?'Không có mục nào khớp bộ lọc':txt}</div>`;
-const views={workers:workersView,tasks:tasksView,chat:chatView,archive:archiveView,home,deposits:depositsView,orders,quote:quotes,cust:custs,prod:prods,purchases:buys,suppliers:suppliersView,supplierQuotes:supplierQuotesView,exp:expensesView,profit:profitView,more,team};
+const views={gemini:()=>`<div class="gemini-menu-placeholder" aria-hidden="true"></div>`,workers:workersView,tasks:tasksView,chat:chatView,archive:archiveView,home,deposits:depositsView,orders,quote:quotes,cust:custs,prod:prods,purchases:buys,suppliers:suppliersView,supplierQuotes:supplierQuotesView,exp:expensesView,profit:profitView,more,team};
 function whoHTML(){
   if(!CLOUD||!me||session==='out')return'';
   return`<span class="who-txt">${esc(me.name||me.email)} · ${ROLE_NAME[me.role]||''}</span> <button class="btn" data-a="logout">Thoát</button>`;
@@ -2360,7 +2376,8 @@ function render(){if(['deposits','tasks','chat'].includes(view))view='orders';
   const TB=[['home','Tổng quan','home'],['orders','Đơn hàng','clipboard'],['quote','Báo giá','filetext'],['cust','Khách hàng','users']].filter(x=>tabs.some(t=>t.id===x[0]));
   $('#tabbar').innerHTML=TB.map(x=>`<button type="button" class="${view===x[0]?'on':''}" data-a="tab" data-id="${x[0]}"${view===x[0]?' aria-current="page"':''}>${ic(x[2])}<span>${x[1]}</span></button>`).join('')+`<button type="button" class="${TB.some(x=>x[0]===view)?'':'on'}" data-a="toggleNav" aria-label="Mở menu">${ic('menu')}<span>Menu</span></button>`;
   const searchBar=`<div class="module-search"><span class="search-ic">${ic('search',20)}</span><input id="moduleSearch" type="search" value="${esc(moduleSearch)}" placeholder="Tìm kiếm trong ${esc((tabs.find(t=>t.id===view)||{}).label||'module này')}…" aria-label="Tìm kiếm trong module hiện tại"><button type="button" data-a="clearSearch" title="Xoá tìm kiếm">×</button><div class="search-help">Tìm theo tên, mã, số điện thoại, nội dung hoặc thông tin hiển thị trong module này.</div></div>`;
-  $('#app').innerHTML=searchBar+(!CLOUD&&!LS?WARN:'')+views[view]()+`<div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả phù hợp.</div>`;
+  $('#app').innerHTML=(view==='gemini'?'':searchBar+(!CLOUD&&!LS?WARN:''))+views[view]()+`<div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả phù hợp.</div>`;
+  if(window.setGeminiMenuMode)window.setGeminiMenuMode(view==='gemini');
   applyModuleSearch();
   if(view==='chat'){markChatRead();const el=document.getElementById('chatMessages');if(el)el.scrollTop=el.scrollHeight}
 }
@@ -2486,7 +2503,7 @@ const acts={
   tab:id=>{view=id;moduleSearch='';setNav(false);render();scrollTo(0,0)},
   quickAdd:()=>{const m={quote:'newQuote',cust:'newCust',purchases:'newPurchase',suppliers:'newSupplier',exp:'newExp',prod:'newProd'};let k=m[view]||'newOrder';if((k==='newProd'||k==='newPurchase'||k==='newSupplier'||k==='newExp')&&!isMgr())k='newOrder';acts[k]()},
   clearSearch:()=>{moduleSearch='';const el=$('#moduleSearch');if(el)el.value='';applyModuleSearch();if(el)el.focus()},
-  filter:id=>{filter=id;render()},workTypeFilter:id=>{orderFulfillmentFilter=id;render()},
+  filter:id=>{filter=id;render()},
   vf:s=>{const i=s.indexOf('|');VF[s.slice(0,i)]=s.slice(i+1);render()},
   newOrder:()=>orderForm(),editOrder:id=>orderForm(id),previewWorkSlip:id=>previewWorkSlip(id),previewOrder:id=>previewOrder(id),printOrder:id=>printOrder(id),pdfOrder:id=>pdfOrder(id),
   delOrder:id=>purgeOrders([id]),
@@ -2549,9 +2566,9 @@ $('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileR
 if(CLOUD)initCloud();else render();
 </script>
 
-<button type="button" id="gem-launch" aria-controls="gem-panel" aria-expanded="false">✦ Gemini AI <span aria-hidden="true">↗</span></button>
+<button type="button" id="gem-launch" aria-controls="gem-panel" aria-expanded="false" hidden>✦ Gemini AI</button>
 <aside id="gem-panel" role="dialog" aria-label="Trợ lý Gemini AI" aria-modal="false" inert>
-  <div class="gm-head"><div><strong>✦ Gemini AI</strong><div class="gm-sub">Hỏi đáp · Chụp màn hình · Phân tích ảnh</div></div><div style="display:flex;gap:6px"><button type="button" id="gm-clear" class="gm-iconbtn" title="Xóa hội thoại">Xóa chat</button><button type="button" id="gm-close" class="gm-iconbtn" aria-label="Đóng Gemini">✕</button></div></div>
+  <div class="gm-head"><div><strong>✦ Gemini AI</strong><div class="gm-sub">Hỏi đáp · Chụp màn hình · Phân tích ảnh</div></div><div style="display:flex;gap:6px"><button type="button" id="gm-clear" class="gm-iconbtn" title="Xóa hội thoại">Xóa chat</button><button type="button" id="gm-close" class="gm-iconbtn" aria-label="Về tổng quan">← Quay lại</button></div></div>
   <div class="gm-config"><label for="gm-key">Gemini API key (chỉ dùng trong phiên, không lưu vào iDecal)</label><div class="gm-keyrow"><input id="gm-key" type="password" autocomplete="off" placeholder="Nhập API key của bạn…"><button class="gm-iconbtn" type="button" id="gm-keyshow">Hiện</button></div><div class="gm-info">Khóa API được gửi trực tiếp từ trình duyệt đến Google khi bạn bấm Gửi. Không sử dụng khóa nhạy cảm trên thiết bị dùng chung; để dùng trong doanh nghiệp, nên triển khai API qua máy chủ bảo mật. Không tự động đọc hay sửa đơn hàng iDecal.</div></div>
   <div class="gm-stream" id="gm-stream" aria-live="polite"><div class="gm-bubble ai">Xin chào! Bạn có thể nhập yêu cầu, chụp màn hình ứng dụng, chụp ảnh từ điện thoại hoặc tải ảnh lên để nhờ Gemini phân tích.</div></div>
   <div class="gm-compose"><div id="gm-preview" class="gm-preview" hidden></div><textarea id="gm-input" placeholder="Ví dụ: Đọc thông tin trong ảnh và lập danh sách hạng mục cần báo giá…" aria-label="Nhập lời nhắn"></textarea><div class="gm-actions"><button type="button" id="gm-screen" title="Chụp màn hình (trình duyệt tương thích)">▣ Màn hình</button><button type="button" id="gm-camera">◎ Camera</button><button type="button" id="gm-upload">＋ Ảnh</button><button type="button" id="gm-remove" hidden>Bỏ ảnh</button><button type="button" id="gm-send" class="gm-send">Gửi ➤</button></div><div id="gm-status" class="gm-status" role="status"></div></div>
@@ -2564,9 +2581,12 @@ if(CLOUD)initCloud();else render();
  const panel=by('gem-panel'),openBtn=by('gem-launch'),keyEl=by('gm-key'),input=by('gm-input'),stream=by('gm-stream'),preview=by('gm-preview'),status=by('gm-status');
  let attachment=null,busy=false;let turns=[];
  const statusMsg=m=>{status.textContent=m||''};
- function toggle(force){const open=force===undefined?!panel.classList.contains('open'):force;panel.classList.toggle('open',open);panel.inert=!open;openBtn.setAttribute('aria-expanded',String(open));if(open){setTimeout(()=>input.focus(),180)}else{openBtn.focus()}}
- openBtn.addEventListener('click',()=>toggle());by('gm-close').addEventListener('click',()=>toggle(false));
- document.addEventListener('keydown',e=>{if(e.key==='Escape'&&panel.classList.contains('open'))toggle(false)});
+ function setMenuMode(active){panel.classList.toggle('open',active);panel.inert=!active;openBtn.setAttribute('aria-expanded',String(active));}
+ window.setGeminiMenuMode=setMenuMode;
+ setMenuMode(document.body.dataset.view==='gemini');
+ openBtn.addEventListener('click',()=>{view='gemini';moduleSearch='';render()});
+ by('gm-close').addEventListener('click',()=>{view='home';moduleSearch='';render()});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.dataset.view==='gemini'){view='home';render()}});
  by('gm-keyshow').addEventListener('click',()=>{keyEl.type=keyEl.type==='password'?'text':'password';by('gm-keyshow').textContent=keyEl.type==='password'?'Hiện':'Ẩn'});
  function bubble(who,message,img){const div=document.createElement('div');div.className='gm-bubble '+who;div.textContent=message||'';if(img){const im=document.createElement('img');im.src=img;im.alt='Ảnh đính kèm';div.appendChild(im)}stream.appendChild(div);stream.scrollTop=stream.scrollHeight;return div}
  function setAttachment(a){attachment=a;preview.replaceChildren();preview.hidden=!a;by('gm-remove').hidden=!a;if(a){const im=document.createElement('img');im.src='data:'+a.mime+';base64,'+a.data;im.alt='Ảnh đính kèm';const name=document.createElement('span');name.textContent=a.name||'Ảnh đã chọn';preview.append(im,name)}}
