@@ -803,7 +803,8 @@ function orderForm(id){
     <label>Hàng hoá</label><div id="items"></div>
     <button type="button" class="btn gh sm" id="addI" style="margin-top:8px">${ic('plus')} Thêm dòng</button>
     <label>Trạng thái<select name="status">${STATUS.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select></label>
-    <label class="chk"><input type="checkbox" name="paid" ${o.paid?'checked':''}> Đã thanh toán</label>
+    <label class="chk"><input type="checkbox" name="paid" ${o.paid?'checked':''}> Đã thanh toán toàn bộ (không còn công nợ)</label>
+    ${!id?`<div class="card" style="padding:10px"><b>Tạm ứng cho NCC khi tạo phiếu</b><div class="mut">Có thể để trống và ghi tạm ứng sau.</div>${fld('Số tiền tạm ứng ban đầu (đ)','initialAdvance','','number','min="0" step="1"')}${fld('Ngày tạm ứng','advanceDate',today(),'date')}${fld('Hình thức tạm ứng','advanceMethod','Chuyển khoản')}</div>`:`<div class="mut">Đã tạm ứng: <b>${vnd(purchaseAdvTotal(o))}</b> · Còn phải trả: <b>${vnd(purchaseOutstanding(o))}</b>. Để ghi thêm tạm ứng, lưu phiếu và bấm “Tạm ứng NCC”.</div>`}
     ${fld('Ghi chú','note',o.note||'')}
     <div class="tot">Tổng: <b id="tot">0đ</b></div>`,
   (fd,m)=>{
@@ -1718,10 +1719,35 @@ function supplierForm(id){
     });
 }
 /* ---------- Mua hàng ---------- */
-const ptotal=p=>p.items.reduce((s,i)=>s+lineCost(i),0);
+const ptotal=p=>(p.items||[]).reduce((s,i)=>s+lineCost(i),0);
+const purchaseAdvTotal=p=>(p.advances||[]).reduce((s,a)=>s+(+a.amount||0),0);
+const purchaseOutstanding=p=>p.paid?0:Math.max(0,ptotal(p)-purchaseAdvTotal(p));
+function purchaseAdvanceForm(id){
+ const p=db.purchases.find(x=>x.id===id);if(!p)return;
+ const due=purchaseOutstanding(p);
+ if(p.paid){toast('Phiếu đã được đánh dấu thanh toán đủ. Chuyển lại trạng thái chưa trả nếu cần ghi tạm ứng.','err');return}
+ if(!due){toast('Phiếu mua này đã tạm ứng đủ giá trị.','err');return}
+ modal('Tạm ứng cho NCC · '+p.code,`<div class="card"><b>${esc(p.supplier||'Nhà cung cấp')}</b><div class="row sp"><span>Tổng tiền mua</span><b>${vnd(ptotal(p))}</b></div><div class="row sp"><span>Đã tạm ứng</span><b>${vnd(purchaseAdvTotal(p))}</b></div><div class="row sp"><span>Còn phải thanh toán</span><b>${vnd(due)}</b></div></div>
+ ${fld('Ngày tạm ứng','date',today(),'date','required')}
+ ${fld('Số tiền tạm ứng (đ)','amount','','number',`min="1" max="${due}" step="1" required`)}
+ ${fld('Hình thức','method','Chuyển khoản')}
+ <label>Ghi chú / nội dung chuyển khoản<textarea name="note" rows="2" placeholder="Ví dụ: Đặt cọc 50% chi phí in ấn"></textarea></label>
+ <div class="mut">Tạm ứng được trừ vào số tiền còn phải trả NCC, không cộng thêm vào chi phí mua hàng để tránh tính trùng.</div>`,fd=>{
+   const amount=Number(fd.get('amount'));
+   if(!Number.isSafeInteger(amount)||amount<=0||amount>purchaseOutstanding(p)){alert('Số tiền tạm ứng phải lớn hơn 0 và không vượt số tiền còn lại.');return false}
+   p.advances=p.advances||[];
+   p.advances.push({id:uid(),date:String(fd.get('date')||today()),amount,method:String(fd.get('method')||''),note:String(fd.get('note')||'')});
+   save();render();toast('Đã ghi tạm ứng '+vnd(amount),'ok');
+ });
+}
+function purchaseAdvanceDelete(id){
+ const [pid,aid]=String(id||'').split('|'),p=db.purchases.find(x=>x.id===pid);
+ if(!p||!confirm('Xóa khoản tạm ứng NCC này?'))return;
+ p.advances=(p.advances||[]).filter(a=>a.id!==aid);save();render();
+}
 function purchaseForm(id, presetOrderId=''){
   const presetOrder=db.orders.find(x=>x.id===presetOrderId);
-  const o=db.purchases.find(x=>x.id===id)||{date:today(),paid:true,items:[{}],supplier:presetOrder?orderSupplierName(presetOrder):'',supplierId:presetOrder?.supplierId||'',orderId:presetOrderId};
+  const o=db.purchases.find(x=>x.id===id)||{date:today(),paid:false,items:[{}],supplier:presetOrder?orderSupplierName(presetOrder):'',supplierId:presetOrder?.supplierId||'',orderId:presetOrderId};
   db.suppliers=db.suppliers||[];
   const sups=supplierChoices();
   const retail=o.supplier==='Khách lẻ'||o.sourceType==='retail';
@@ -1767,7 +1793,16 @@ function purchaseForm(id, presetOrderId=''){
         supplier=saved.name;supplierId=saved.id.startsWith('legacy-')?'':saved.id;supplierInfo={name:saved.name,address:saved.address||'',phone:saved.phone||'',email:saved.email||'',taxCode:saved.taxCode||'',contact:saved.contact||''};
       }
     }
-    const data={supplier,supplierId,supplierInfo,sourceType,date:fd.get('date'),orderId:fd.get('orderId')||'',paid:fd.get('paid')==='on',note:fd.get('note'),items};
+    const paid=fd.get('paid')==='on';
+    const initialAdvance=Number(fd.get('initialAdvance')||0);
+    const total=items.reduce((sum,i)=>sum+lineCost(i),0);
+    if(!id&&(!Number.isSafeInteger(initialAdvance)||initialAdvance<0||initialAdvance>total)){alert('Tạm ứng ban đầu phải từ 0 đến tổng giá trị phiếu mua.');return false}
+    if(id&&purchaseAdvTotal(o)>total){alert('Tổng tiền phiếu mua đang nhỏ hơn số đã tạm ứng. Vui lòng điều chỉnh các khoản tạm ứng trước.');return false}
+    if(paid&&(!id?initialAdvance>0:purchaseAdvTotal(o)>0)){
+      if(!confirm('Đánh dấu đã thanh toán toàn bộ: các khoản tạm ứng vẫn được giữ trong lịch sử. Tiếp tục?'))return false;
+    }
+    const data={supplier,supplierId,supplierInfo,sourceType,date:fd.get('date'),orderId:fd.get('orderId')||'',paid,note:fd.get('note'),items};
+    if(!id&&initialAdvance>0)data.advances=[{id:uid(),date:String(fd.get('advanceDate')||fd.get('date')||today()),amount:initialAdvance,method:String(fd.get('advanceMethod')||''),note:'Tạm ứng khi lập phiếu mua'}];
     if(id)Object.assign(o,data);else db.purchases.push({id:uid(),code:'MH'+String(++db.pseq).padStart(4,'0'),...data});
     const linkedOrder=db.orders.find(x=>x.id===data.orderId);
     if(linkedOrder&&!orderSupplierName(linkedOrder)&&supplier&&supplier!=='Khách lẻ'){
@@ -1789,17 +1824,21 @@ function buys(){
   const all=[...db.purchases].filter(p=>!AS.has(p.orderId)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
   const list=fapply('purchases',all);
   const mon=db.purchases.filter(p=>p.date.startsWith(mk)).reduce((s,p)=>s+ptotal(p),0);
-  const debt=db.purchases.filter(p=>!p.paid).reduce((s,p)=>s+ptotal(p),0);
+  const debt=db.purchases.reduce((sum,p)=>sum+purchaseOutstanding(p),0);
+  const adv=db.purchases.reduce((sum,p)=>sum+purchaseAdvTotal(p),0);
   return`<div class="row sp"><div><h2>Mua hàng</h2><div class="mut">Ghi tiền xưởng in/gia công, vật tư và công nợ NCC. Chọn mã đơn để tự cộng vào báo cáo lãi lỗ.</div></div><button class="btn" data-a="newPurchase">${ic('plus')} Phiếu mua</button></div>
-  <div class="grid"><div class="card kpi"><small>Mua tháng này</small><b>${vnd(mon)}</b></div><div class="card kpi"><small>Nợ nhà cung cấp</small><b class="${debt?'neg':''}">${vnd(debt)}</b></div></div>
+  <div class="grid"><div class="card kpi"><small>Mua tháng này</small><b>${vnd(mon)}</b></div><div class="card kpi"><small>Nợ nhà cung cấp</small><b class="${debt?'neg':''}">${vnd(debt)}</b></div><div class="card kpi"><small>Đã tạm ứng cho NCC</small><b>${vnd(adv)}</b></div></div>
   ${fbar('purchases',all)}
   ${list.length?list.map(p=>`<div class="card">
     <div class="row sp"><b>${p.code} · ${esc(p.supplier)}</b><b>${vnd(ptotal(p))}</b></div>
     ${itemsDet(p.items,p.date)}
     ${p.orderId?`<div class="mut"><span class="badge ok">Gắn với ${(db.orders.find(o=>o.id===p.orderId)||{}).code||'đơn đã xoá'}</span></div>`:'<div class="mut">Phiếu mua chưa gắn đơn hàng</div>'}
+    <div class="mut" style="margin-top:7px">Đã tạm ứng NCC: <b>${vnd(purchaseAdvTotal(p))}</b> · Còn phải thanh toán: <b>${vnd(purchaseOutstanding(p))}</b></div>
+    ${(p.advances||[]).length?`<details class="itd"><summary>Xem lịch sử tạm ứng (${p.advances.length})</summary>${p.advances.map(a=>`<div class="row sp" style="gap:6px;padding:5px 0;flex-wrap:wrap"><span>${esc(a.date)} · ${esc(a.method||'')} · ${vnd(a.amount)} ${a.note?'· '+esc(a.note):''}</span><button class="btn dg sm" data-a="delPurchaseAdvance" data-id="${p.id}|${a.id}">Xóa</button></div>`).join('')}</details>`:''}
     ${p.note?`<div class="mut">${ic('pencil')} ${esc(p.note)}</div>`:''}
     <div class="row" style="margin-top:8px">
       <span class="badge ${p.paid?'ok':'wr'}" data-a="ppay" data-id="${p.id}" style="cursor:pointer">${p.paid?'Đã trả':'Chưa trả'}</span>
+      ${!p.paid&&purchaseOutstanding(p)>0?`<button class="btn sm" data-a="purchaseAdvance" data-id="${p.id}">${ic('banknote')} Tạm ứng NCC</button>`:''}
       <button class="btn sm" data-a="pdfPurchase" data-id="${p.id}">${ic('pdf')} PDF</button>
       <button class="btn gh sm" data-a="printPurchase" data-id="${p.id}">${ic('printer')} In</button>
       <button class="btn gh sm" data-a="editPurchase" data-id="${p.id}">Sửa</button>
@@ -2099,7 +2138,7 @@ const FDEF={
   cust:[['all','Tất cả',()=>true],['individual','Cá nhân',c=>c.customerType!=='company'],['company','Doanh nghiệp',c=>c.customerType==='company'],['debt','Còn nợ',c=>custDue(c)>0],['has','Đã có đơn',c=>custOrders(c)>0],['none','Chưa có đơn',c=>custOrders(c)===0]],
   deposits:[['all','Tất cả',()=>true],['open','Chưa thu đủ',o=>!o.paid],['done','Đã thu đủ',o=>!!o.paid]],
   prod:[['all','Tất cả',()=>true],['product','Sản phẩm',p=>p.kind!=='service'],['service','Dịch vụ',p=>p.kind==='service']],
-  purchases:[['all','Tất cả',()=>true],['unpaid','Chưa trả',p=>!p.paid],['paid','Đã trả',p=>!!p.paid],['month','Tháng này',p=>thisMonth(p.date)],['noord','Chưa gắn đơn',p=>!p.orderId]],
+  purchases:[['all','Tất cả',()=>true],['unpaid','Chưa trả',p=>purchaseOutstanding(p)>0],['paid','Đã trả',p=>!!p.paid],['month','Tháng này',p=>thisMonth(p.date)],['noord','Chưa gắn đơn',p=>!p.orderId]],
   suppliers:[['all','Tất cả',()=>true],...Object.entries(SUP_CAT).map(([k,v])=>[k,v,x=>(x.category||'in-an')===k])],
   exp:[['all','Tất cả',()=>true],['month','Tháng này',e=>thisMonth(e.date)],['ord','Đã gắn đơn',e=>!!e.orderId],['noord','Chưa gắn đơn',e=>!e.orderId]],
   profit:[['all','Tất cả',()=>true],['nocost','Chưa ghi chi phí',o=>orderCostBreakdown(o).count===0],['gain','Có lãi',o=>orderCostBreakdown(o).count>0&&orderRevenue(o)-orderActualCosts(o)>=0],['loss','Lỗ',o=>orderCostBreakdown(o).count>0&&orderRevenue(o)-orderActualCosts(o)<0],['nosup','Chưa gắn NCC',o=>!orderSupplierName(o)]],
@@ -2305,7 +2344,8 @@ const acts={
   supplierFiles:id=>supplierFilesDialog(id),newSupplierQuote:()=>supplierQuoteForm(),editSupplierQuote:id=>supplierQuoteForm(id),downloadSupplierQuote:id=>downloadSupplierQuote(id),deleteSupplierQuote:id=>deleteSupplierQuote(id),supplierQuotePurchase:id=>supplierQuoteToPurchase(id),
   newPurchase:()=>purchaseForm(),editPurchase:id=>purchaseForm(id),newPurchaseForOrder:id=>purchaseForm('',id),newExpForOrder:id=>expForm(id),newSupplier:()=>supplierForm(),editSupplier:id=>supplierForm(id),
   delSupplier:id=>{const supplier=(db.suppliers||[]).find(x=>x.id===id);if(!supplier)return;const linked=(db.orders||[]).filter(o=>o.supplierId===id).length;if(!confirm('Xóa nhà cung cấp “'+supplier.name+'” khỏi danh bạ?'+(linked?' '+linked+' đơn hàng đang liên kết sẽ được bỏ liên kết NCC.':'')+' Phiếu mua hàng cũ vẫn được giữ nguyên.'))return;db.suppliers=db.suppliers.filter(x=>x.id!==id);db.orders.forEach(o=>{if(o.supplierId===id)o.supplierId=''});save();render()},
-  ppay:id=>{const p=db.purchases.find(x=>x.id===id);p.paid=!p.paid;save();render()},
+  purchaseAdvance:id=>purchaseAdvanceForm(id),delPurchaseAdvance:id=>purchaseAdvanceDelete(id),
+  ppay:id=>{const p=db.purchases.find(x=>x.id===id);if(!p)return;p.paid=!p.paid;save();render()},
   delPurchase:id=>{if(!confirm('Xoá phiếu mua hàng này? Chi phí liên kết với đơn hàng sẽ được tính lại.'))return;db.purchases=db.purchases.filter(x=>x.id!==id);save();render()},
   login:()=>login(),
   logout:()=>{if(auth)auth.signOut()},
