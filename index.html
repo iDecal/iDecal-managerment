@@ -404,10 +404,10 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
   .pv-paper{margin:12px 0 0;padding:14px 12px;min-height:0;border-radius:10px;box-shadow:0 4px 14px #102b4614}
   .pv-paper .doc{font-size:12px!important}
   .pv-paper .doc h1{font-size:18px}
-  .pv-paper .doc h2{font-size:17px;margin:16px 0 4px;letter-spacing:.3px}
-  .pv-paper .doc .qhead{flex-wrap:wrap;gap:10px;padding-bottom:12px}
+  .pv-paper .doc h2{font-size:30px!important;margin:16px 0 4px;letter-spacing:1px}
+  .pv-paper .doc .qhead.qhead-three{display:grid;grid-template-columns:minmax(80px,.9fr) minmax(130px,1.5fr) 72px;gap:7px;padding:10px;align-items:center}
   .pv-paper .doc .qbrand>img{max-height:52px;max-width:120px}.pv-paper .doc .qhead-qr img{width:78px;height:78px;max-width:none;max-height:none}
-  .pv-paper .doc .qhead>div{min-width:0;flex:1 1 180px;overflow-wrap:anywhere}
+  .pv-paper .doc .qhead>div{min-width:0;overflow-wrap:anywhere}
   .pv-paper .doc .meta{flex-direction:column;gap:8px;padding:10px}
   .pv-paper .doc .meta>div{flex:none}
   .pv-paper .doc table{font-size:11px;margin-top:12px}
@@ -418,8 +418,8 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
   .pv-paper .doc .summary{width:100%}
   .pv-paper .doc .summary td{padding:6px 4px}
   .pv-paper .doc .summary .grand td{font-size:13px}
-  .pv-paper .doc .sig{flex-direction:column;gap:22px;margin-top:28px}
-  .pv-paper .doc .sig>div{width:100%}
+  .pv-paper .doc .sig{flex-direction:row;gap:12px;margin-top:45px}
+  .pv-paper .doc .sig>div{width:45%}
   .pv-paper .doc .terms{padding:9px 10px}
 }
 @media(min-width:701px){
@@ -1176,9 +1176,26 @@ box-shadow:0 8px 24px rgba(21,74,117,.08);position:relative;overflow:hidden}
 .doc .sig{display:flex;justify-content:space-between;gap:30px;margin-top:64px;text-align:center;break-inside:avoid}.doc .sig>div{width:45%;padding-top:72px;min-height:122px}.doc .sig i{font-size:10px;color:#77869a}.doc .pimgs{width:42px;height:42px;object-fit:cover;border-radius:4px;display:block}.doc .terms{margin-top:16px;padding:10px 12px;background:#f7fafc;border-left:3px solid var(--ac,#087bbd);font-size:11px;color:#42556a;break-inside:avoid}.doc .paybox{display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:center;margin-top:12px;padding:9px;border:1px solid #dce8f1;border-radius:12px;background:#f8fbfe;break-inside:avoid}.doc .payqr{display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #dce8f1;border-radius:8px;padding:5px;min-height:88px}.doc .payqr img{width:78px;height:78px;object-fit:contain;display:block}.doc .payinfo b{display:block;color:#143b5b;margin-bottom:4px}.doc .payinfo .payline{margin:4px 0;color:#42556a}.doc .payinfo small{display:block;color:#708197;margin-top:6px}.doc .foot{margin-top:25px;padding-top:9px;border-top:1px solid #e0e8ef;text-align:center;color:#7b8b9d;font-size:10px}
 .doc .quote-conditions{padding:8px 11px}.doc .quote-conditions>div{margin-top:4px;white-space:normal;overflow-wrap:anywhere}.doc .quote-conditions strong{color:#263c52;font-weight:700}.doc .description{white-space:pre-wrap;overflow-wrap:anywhere;color:#4c6071;font-size:10.5px}.doc .payinfo .payline b{display:inline;font-weight:600;margin:0}.doc .payinfo{font-size:10.5px}.doc .payinfo small{font-size:9px;margin-top:3px}.doc .payinfo .payline{margin:2px 0}.doc table{font-size:10.8px}.doc th,.doc td{padding:6px 5px}.doc .summary{margin-top:10px}.doc .qhead{padding:12px 14px}.doc .qhead h1{font-size:16px}.doc .qchips{gap:4px 8px;margin-top:7px}.doc .qchip{font-size:9.4px}.doc .meta{margin:9px 0;padding:7px 9px}.doc .terms{margin-top:11px;padding:7px 9px}.doc h2{font-size:30px;letter-spacing:1.2px;margin:18px 0 2px}
 .doc .qhead-qr{flex:0 0 96px;position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center}.doc .qhead-qr img{width:86px;height:86px;max-width:none;max-height:none;object-fit:contain;background:white;padding:3px;border:1px solid #d8e7f1;border-radius:7px}.doc .qhead-qr span{font-size:8px;letter-spacing:.5px;font-weight:700;color:#53718c}.doc .qbrand{flex:1 1 auto;min-width:0}.doc .qinfo{min-width:0}.doc .foot{line-height:1.5;font-size:10.5px;color:#51677b}@media(max-width:460px){.doc .qhead{flex-wrap:nowrap;gap:7px;padding:10px}.doc .qhead-qr{flex-basis:76px}.doc .qhead-qr img{width:69px;height:69px}.doc .qhead-qr span{font-size:7px}.doc .qbrand{gap:6px}.doc .qbrand>img{max-width:58px;max-height:42px}.doc .qhead h1{font-size:13.5px}.doc .qsub{font-size:8px;letter-spacing:.5px}.doc .qchips{grid-template-columns:1fr;gap:3px}}\n.doc .quote-bottom-note{margin-top:18px;padding:7px 9px;border-top:1px solid #e5ecf2;font-size:10.5px;color:#526477;overflow-wrap:anywhere;break-inside:avoid}
-.doc.mod h2{text-align:center;border:0;padding-bottom:0;margin-top:22px}.doc.mod .c{text-align:center}.doc.mod th{background:var(--ac);color:#fff;border-color:var(--ac)}.doc.mod td{border-left:0;border-right:0}.doc .nowrap{white-space:nowrap}`;
+.doc.mod h2{text-align:center;border:0;padding-bottom:0;margin-top:22px}.doc.mod .c{text-align:center}.doc.mod th{background:var(--ac);color:#fff;border-color:var(--ac)}.doc.mod td{border-left:0;border-right:0}.doc .qhead.qhead-three{display:grid;grid-template-columns:minmax(130px,.9fr) minmax(210px,1.55fr) 106px;align-items:center;column-gap:16px;min-height:124px;padding:13px 16px}
+.doc .qhead-brand{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:7px;position:relative;z-index:2;min-width:0}
+.doc .qhead-brand>img{max-width:118px;max-height:53px;object-fit:contain}
+.doc .qhead .qhead-brand h1{font-size:12px;line-height:1.35;letter-spacing:.1px;font-weight:700;color:#1e415d;overflow-wrap:anywhere}
+.doc .qhead-contact{min-width:0;position:relative;z-index:2;border-left:1px solid #dce9f2;padding-left:13px}
+.doc .qhead-contact .qchips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 10px;margin:0}
+.doc .qhead-contact .qchip{display:flex;align-items:flex-start;gap:5px;border:0;border-radius:0;padding:0;background:transparent;font-size:9.7px;line-height:1.35}
+.doc .qhead-contact .qchip .i{flex:0 0 13px;margin-top:1px}
+.doc .qhead-payment{display:flex;justify-content:flex-end;align-items:center;position:relative;z-index:2;min-width:0}
+.doc .qhead-payment .qhead-qr{flex:0 0 94px}
+.doc .qhead-payment .qhead-qr img{width:82px;height:82px;max-width:none;max-height:none}
+.doc h2{font-size:36px!important;line-height:1.2;letter-spacing:1.7px;margin:18px 0 4px}
+.doc .quote-signatures{margin-top:52px;gap:32px;align-items:stretch}
+.doc .quote-signatures>div{padding-top:0;min-height:155px;display:flex;flex-direction:column;align-items:center}
+.doc .quote-signatures .signature-space{height:112px;min-height:112px;width:100%;display:flex;align-items:center;justify-content:center}
+.doc .quote-signatures .signature-stamp{max-width:210px;max-height:108px;width:auto;height:auto;object-fit:contain}
+@media(max-width:460px){.doc .qhead.qhead-three{grid-template-columns:minmax(78px,.9fr) minmax(120px,1.5fr) 67px;gap:5px;padding:8px;min-height:95px}.doc .qhead-brand>img{max-width:70px;max-height:40px}.doc .qhead .qhead-brand h1{font-size:9px}.doc .qhead-contact{padding-left:6px}.doc .qhead-contact .qchips{grid-template-columns:1fr;gap:3px}.doc .qhead-contact .qchip{font-size:8px}.doc .qhead-payment .qhead-qr{flex-basis:62px}.doc .qhead-payment .qhead-qr img{width:60px;height:60px}.doc h2{font-size:30px!important}.doc .quote-signatures .signature-space{height:90px;min-height:90px}}
+.doc .nowrap{white-space:nowrap}`;
 const TPL_DEF={style:'classic',accent:'#111111',font:14,title:'BÁO GIÁ',logo:'',showLogo:true,showShop:true,intro:'',greet:'Kính gửi:',
-  colIdx:true,colUnit:true,colImg:false,showUntil:true,showNote:true,showBank:true,showSig:true,sigL:'Khách hàng',sigR:'',terms:''};
+  colIdx:true,colUnit:true,colImg:false,showUntil:true,showNote:true,showBank:true,showSig:true,sigL:'Khách hàng',sigR:'',signatureImage:'',terms:''};
 function tplOf(){
   const t=Object.assign({},TPL_DEF,(db.shop&&db.shop.tpl)||{});t.colUnit=true;
   if(!/^#[0-9a-f]{6}$/i.test(t.accent))t.accent=TPL_DEF.accent;
@@ -1201,7 +1218,7 @@ function shopHead(t,q=null){
   ].filter(Boolean).map(([icon,val])=>`<span class="qchip">${ic(icon,13)}<span>${esc(val)}</span></span>`).join('');
   const qr=q&&t.showBank?paymentQrUrl(s.bankName,s.bankNumber,s.bankOwner,qtotal(q),paymentRefForQuote(q)):'';
   const right=qr?`<div class="qhead-qr"><img src="${esc(qr)}" alt="Mã QR thanh toán" referrerpolicy="no-referrer"><span>QUÉT QR THANH TOÁN</span></div>`:'';
-  return`<div class="qhead"><div class="qbrand">${logo}<div class="qinfo"><h1>${esc(s.name||'iDecal')}</h1><div class="qsub">Báo giá chuyên nghiệp · Nhanh chóng · Rõ ràng</div>${t.showShop&&chips?`<div class="qchips">${chips}</div>`:''}</div></div>${right}</div>`;
+  return`<div class="qhead qhead-three"><div class="qhead-brand">${logo}<h1>${esc(s.name||'iDecal')}</h1></div><div class="qhead-contact">${t.showShop&&chips?`<div class="qchips">${chips}</div>`:''}</div><div class="qhead-payment">${right}</div></div>`;
 }
 const BANK_QR_MAP={
   vcb:'vcb',vietcombank:'vcb',vietcom:'vcb',
@@ -1326,7 +1343,7 @@ function quoteHTML(q,t){
   <tr class="grand"><td>TỔNG TIỀN THANH TOÁN</td><td class="r">${vnd(qtotal(q))}</td></tr><tr class="amount-words"><td colspan="2"><b>Bằng chữ:</b> ${esc(tienBangChu(qtotal(q)))}</td></tr></tbody></table>
   ${(q.warranty||q.depositTerms!==''||q.paymentTerms!=='')?`<div class="terms quote-conditions"><b>ĐIỀU KHOẢN BẢO HÀNH & THANH TOÁN</b>${q.warranty?`<div><strong>Bảo hành:</strong> ${nl(esc(q.warranty))}</div>`:''}${(q.depositTerms??QUOTE_DEPOSIT_DEFAULT)?`<div><strong>Đặt cọc:</strong> ${nl(esc(q.depositTerms??QUOTE_DEPOSIT_DEFAULT))}</div>`:''}${(q.paymentTerms??QUOTE_PAYMENT_DEFAULT)?`<div><strong>Thanh toán:</strong> ${nl(esc(q.paymentTerms??QUOTE_PAYMENT_DEFAULT))}</div>`:''}</div>`:''}
   ${t.terms?`<div class="terms"><b>ĐIỀU KHOẢN & LƯU Ý</b><br>${nl(esc(t.terms))}</div>`:''}
-  ${t.showSig?`<div class="sig"><div><b>${esc(t.sigL||'KHÁCH HÀNG')}</b><br><i>(Ký, ghi rõ họ tên)</i></div><div><b>${esc(t.sigR||s.name||'iDecal')}</b><br><i>(Ký, đóng dấu)</i></div></div>`:''}
+  ${t.showSig?`<div class="sig quote-signatures"><div><b>${esc(t.sigL||'KHÁCH HÀNG')}</b><div class="signature-space"></div><i>(Ký, ghi rõ họ tên)</i></div><div><b>${esc(t.sigR||s.name||'iDecal')}</b><div class="signature-space">${t.signatureImage?`<img class="signature-stamp" src="${esc(t.signatureImage)}" alt="Chữ ký và con dấu đại diện iDecal">`:''}</div><i>(Ký, đóng dấu)</i></div></div>`:''}
   ${t.showNote&&q.note?`<div class="quote-bottom-note"><b>Ghi chú thêm:</b> ${nl(esc(q.note))}</div>`:''}
   <div class="foot">${esc(QUOTE_FOOTER_DEFAULT)}</div>`;
 }
@@ -1558,10 +1575,10 @@ function readTpl(form,logo){
     font:[12,14,16].includes(+g('font'))?+g('font'):14,title:(g('title')||'').trim()||TPL_DEF.title,
     logo:lk||(lk===null?'':logo),showLogo:!!g('showLogo'),showShop:!!g('showShop'),intro:(g('intro')||'').trim(),greet:(g('greet')||'').trim(),
     colIdx:!!g('colIdx'),colUnit:!!g('colUnit'),colImg:false,showUntil:!!g('showUntil'),showNote:!!g('showNote'),showBank:!!g('showBank'),showSig:!!g('showSig'),
-    sigL:(g('sigL')||'').trim(),sigR:(g('sigR')||'').trim(),terms:(g('terms')||'').trim()};
+    sigL:(g('sigL')||'').trim(),sigR:(g('sigR')||'').trim(),signatureImage:signatureImage,terms:(g('terms')||'').trim()};
 }
 function tplForm(){
-  const t=tplOf();let logo=(t.logo&&t.logo.startsWith('data:'))?t.logo:'';
+  const t=tplOf();let logo=(t.logo&&t.logo.startsWith('data:'))?t.logo:'';let signatureImage=t.signatureImage||'';
   const link0=(t.logo&&!t.logo.startsWith('data:'))?t.logo:'';
   const chk=(n,l)=>`<label class="chk"><input type="checkbox" name="${n}" ${t[n]?'checked':''}> ${l}</label>`;
   const opt=(v,l,cur)=>`<option value="${v}" ${String(v)===String(cur)?'selected':''}>${l}</option>`;
@@ -1584,6 +1601,11 @@ function tplForm(){
 
     <label>Hiển thị</label>${chk('showUntil','Ngày hiệu lực')}${chk('showNote','Ghi chú của từng báo giá')}${chk('showBank','Thông tin thanh toán (QR)')}${chk('showSig','Khối chữ ký')}
     ${fld('Chữ ký bên trái','sigL',t.sigL)}${fld('Chữ ký bên phải (để trống = tên cửa hàng)','sigR',t.sigR)}
+    <label>Ảnh chữ ký & con dấu đại diện iDecal (PNG nền trong suốt hoặc JPG)</label>
+    <div id="stampPreview" class="pv" style="min-height:64px;padding:10px"></div>
+    <div class="row"><button type="button" class="btn gh sm" id="stampUpload">${ic('camera')} Tải ảnh chữ ký / con dấu</button><button type="button" class="btn dg sm" id="stampRemove">Xóa ảnh</button></div>
+    <input type="file" id="stampFile" accept="image/png,image/jpeg,image/webp" hidden>
+    <div class="mut">Ảnh sẽ xuất hiện ở phần đại diện iDecal trong báo giá khi xem trước, in và xuất PDF. Nên dùng PNG nền trong suốt.</div>
     <label>Điều khoản / lưu ý chung<textarea name="terms" rows="4" placeholder="VD: Giá chưa gồm VAT. Đặt cọc 50% khi chốt đơn. Báo giá có hiệu lực 7 ngày.">${esc(t.terms)}</textarea></label>
     <div class="mut">Lời cảm ơn / chân trang chỉnh ở "Thông tin cửa hàng".</div>
     <div class="row" style="margin-top:12px"><button type="button" class="btn gh sm" id="tplPrint">${ic('printer')} In thử</button><button type="button" class="btn dg sm" id="tplReset">Đặt lại mặc định</button></div>`,
@@ -1600,6 +1622,16 @@ function tplForm(){
     pvin.style.transform='scale('+(pvbox.clientWidth/720)+')';
   };
   form.addEventListener('input',upd);form.addEventListener('change',upd);
+  const stampPv=m.querySelector('#stampPreview'),stampFile=m.querySelector('#stampFile');
+  const showStamp=()=>{stampPv.innerHTML=signatureImage?`<img src="${esc(signatureImage)}" alt="Chữ ký & con dấu" style="max-width:210px;max-height:100px;object-fit:contain">`:'<span class="mut">Chưa tải ảnh chữ ký / con dấu</span>'};
+  m.querySelector('#stampUpload').onclick=()=>stampFile.click();
+  m.querySelector('#stampRemove').onclick=()=>{signatureImage='';showStamp();upd()};
+  stampFile.onchange=async()=>{
+    const f=stampFile.files[0];if(!f)return;
+    try{signatureImage=await fileToLogo(f,420);showStamp();upd();toast('Đã chọn ảnh chữ ký / con dấu','ok')}
+    catch(e){alert(e.message)}finally{stampFile.value=''}
+  };
+  showStamp();
   m.querySelector('#lgUp').onclick=()=>pf.click();
   m.querySelector('#lgDel').onclick=()=>{logo='';lk.value='';upd()};
   pf.onchange=async()=>{
