@@ -434,6 +434,23 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
   .pv-paper .doc .summary{width:56%}
   .pv-paper .doc th,.pv-paper .doc td{padding:7px 8px}
 }
+
+@media(min-width:701px){
+ .pv-ov{align-items:center;justify-content:center}
+ .pv-ov .pv-md{width:75vw;max-width:75vw;height:90vh;max-height:90vh;border-radius:16px;padding:0 18px 18px}
+ .pv-ov .pv-head{margin:0 -18px;padding:13px 18px 11px}
+ .pv-ov .pv-paper{max-width:920px}
+}
+@media(max-width:700px){
+ .pv-ov{inset:0;padding:0;align-items:stretch;justify-content:stretch}
+ .pv-ov .pv-md{height:100dvh;max-height:100dvh;width:100vw;max-width:100vw;border-radius:0}
+ .pv-ov .pv-head{position:sticky;top:0}
+ .pv-ov .pv-act [data-x]{font-weight:700;flex:1}
+}
+.worker-check.worker-suggested{background:#effaf6;border-color:#9acfb5;position:relative}
+.worker-check.worker-suggested-exact{background:#e5f5ed;border-color:#55ae82}
+.worker-check .area-suggest-tag{display:block;font-size:10px;font-weight:700;color:#16764d;margin-left:auto}
+
 /* Danh sách hàng hoá thu gọn */
 .itd{margin:4px 0 0}.itd summary{cursor:pointer;color:var(--pri);font-size:13px;font-weight:500;list-style:none;display:inline-flex;align-items:center;gap:4px;padding:2px 0}
 .itd summary::-webkit-details-marker{display:none}.itd summary::before{content:'▸';font-size:11px;transition:transform .15s}.itd[open] summary::before{transform:rotate(90deg)}
@@ -822,8 +839,14 @@ function orderForm(id){
     ${fld('Ngày','date',o.date,'date','required')}
     <div class="reminder-dates">${fld('Giờ in ấn','printDue',o.printDue||'','datetime-local')}${fld('Giờ thi công','installDue',o.installDue||'','datetime-local')}${fld('Giờ giao hàng','deliveryDue',o.deliveryDue||'','datetime-local')}</div>
     <div class="mut" style="margin:5px 0 12px">Nhắc trước giờ thực hiện 3 tiếng. Các lịch cũ chỉ có ngày cần bổ sung giờ để hệ thống nhắc chính xác.</div>
+    <div class="worker-fieldset" style="margin:12px 0"><b>${ic('map-pin')} Khu vực thực hiện đơn hàng</b>
+      <label>Tỉnh / thành phố<select name="orderArea" id="orderArea"><option value="">— Chọn tỉnh / thành —</option>${WORKER_AREAS.map(a=>`<option value="${esc(a)}" ${normWorkerArea(o.orderArea)===a?'selected':''}>${esc(a)}</option>`).join('')}</select></label>
+      <label>Quận / huyện (nếu có)<select name="orderDistrict" id="orderDistrict">${workerDistrictOptions(o.orderArea,o.orderDistrict||'')}</select></label>
+      <div class="mut">Dùng khu vực này để ưu tiên gợi ý thợ gần nơi giao hàng hoặc thi công.</div>
+    </div>
     <div class="card" style="padding:12px;margin:9px 0;background:#f6fafb"><b>${ic('users')} Phân công thợ thi công</b><div class="mut" style="margin:5px 0 9px">Có thể chọn nhiều thợ cho một đơn hàng; quản lý tiến độ ngay tại đây.</div>
-    ${(db.workers||[]).length?`<div class="worker-select">${db.workers.map(w=>`<label class="worker-check"><input type="checkbox" name="workerIds" value="${esc(w.id)}" ${(o.workerIds||[]).includes(w.id)?'checked':''} ${w.active===false?'disabled':''}><span>${esc(w.name)}${w.skill?' · '+esc(w.skill):''}${w.area?' · 📍 '+esc(normWorkerArea(w.area))+(w.district?' / '+esc(w.district):''):''}</span></label>`).join('')}</div>`:'<div class="mut">Chưa có danh sách thợ. Vào mục Thợ thi công để thêm thợ.</div>'}
+    <div id="orderWorkerHint" class="mut" style="margin:6px 0">Chọn tỉnh/thành để gợi ý thợ phù hợp.</div>
+    ${(db.workers||[]).length?`<div class="worker-select" id="orderWorkerChoices">${db.workers.map(w=>`<label class="worker-check" data-area="${esc(normWorkerArea(w.area))}" data-district="${esc(w.district||'')}"><input type="checkbox" name="workerIds" value="${esc(w.id)}" ${(o.workerIds||[]).includes(w.id)?'checked':''} ${w.active===false?'disabled':''}><span>${esc(w.name)}${w.skill?' · '+esc(w.skill):''}${w.area?' · 📍 '+esc(normWorkerArea(w.area))+(w.district?' / '+esc(w.district):''):''}</span></label>`).join('')}</div>`:'<div class="mut">Chưa có danh sách thợ. Vào mục Thợ thi công để thêm thợ.</div>'}
     <label style="margin-top:9px">Tiến độ thi công<select name="installStatus">${INSTALL_STATES.map(st=>`<option value="${st}" ${(o.installStatus||'Chưa bắt đầu')===st?'selected':''}>${st}</option>`).join('')}</select></label>
     ${fld('Địa điểm / địa chỉ thi công','installAddress',o.installAddress||'')}
     <label>Ghi chú giao việc cho thợ<textarea name="installNote" rows="2">${esc(o.installNote||'')}</textarea></label></div>
@@ -845,10 +868,30 @@ function orderForm(id){
     const picked=supplierOpts.find(x=>x.id===pickedSupplier);
     const supplierId=picked&&!picked.legacy?picked.id:'';
     const supplierName=picked?picked.name:'';
-    const data={fulfillmentType:String(fd.get('fulfillmentType')||'delivery'),cid:fd.get('cid'),cname:String(fd.get('cname')||'').trim(),date:fd.get('date'),printDue:fd.get('printDue')||'',installDue:fd.get('installDue')||'',deliveryDue:fd.get('deliveryDue')||'',status:fd.get('status'),paid:fd.get('paid')==='on',note:fd.get('note'),items,supplierId,supplierName,workerIds:fd.getAll('workerIds').filter(w=>db.workers.some(x=>x.id===w)),installStatus:String(fd.get('installStatus')||'Chưa bắt đầu'),installAddress:String(fd.get('installAddress')||'').trim(),installNote:String(fd.get('installNote')||'').trim()};
+    const data={orderArea:String(fd.get('orderArea')||''),orderDistrict:String(fd.get('orderDistrict')||''),fulfillmentType:String(fd.get('fulfillmentType')||'delivery'),cid:fd.get('cid'),cname:String(fd.get('cname')||'').trim(),date:fd.get('date'),printDue:fd.get('printDue')||'',installDue:fd.get('installDue')||'',deliveryDue:fd.get('deliveryDue')||'',status:fd.get('status'),paid:fd.get('paid')==='on',note:fd.get('note'),items,supplierId,supplierName,workerIds:fd.getAll('workerIds').filter(w=>db.workers.some(x=>x.id===w)),installStatus:String(fd.get('installStatus')||'Chưa bắt đầu'),installAddress:String(fd.get('installAddress')||'').trim(),installNote:String(fd.get('installNote')||'').trim()};
     if(id)Object.assign(o,data);else db.orders.push({id:uid(),code:'DH'+String(++db.seq).padStart(4,'0'),...data});
     save();render();refreshAlerts();
   });
+  const areaSelect=m.querySelector('#orderArea'),districtSelect=m.querySelector('#orderDistrict');
+  const highlightWorkers=()=>{
+    const area=areaSelect.value,district=districtSelect.value,entries=[...m.querySelectorAll('#orderWorkerChoices .worker-check')];
+    let matches=0;
+    for(const entry of entries){
+      const sameArea=!!area&&entry.dataset.area===area;
+      const sameDistrict=!!district&&entry.dataset.district===district;
+      entry.classList.toggle('worker-suggested',sameArea);
+      entry.classList.toggle('worker-suggested-exact',sameArea&&sameDistrict);
+      entry.style.order=sameArea?(sameDistrict?'-2':'-1'):'0';
+      if(sameArea)matches++;
+      const badge=entry.querySelector('.area-suggest-tag');if(badge)badge.remove();
+      if(sameArea){const t=document.createElement('small');t.className='area-suggest-tag';t.textContent=sameDistrict?'★ Cùng quận/huyện':'✓ Cùng tỉnh/thành';entry.appendChild(t)}
+    }
+    const hint=m.querySelector('#orderWorkerHint');
+    if(hint)hint.textContent=area?(matches?`Gợi ý ${matches} thợ ở ${area}; người cùng quận/huyện được đưa lên đầu. Bạn vẫn có thể chọn thợ ở khu vực khác.`:`Chưa có thợ tại ${area}. Bạn vẫn có thể chọn thợ ở khu vực khác.`):'Chọn tỉnh/thành để gợi ý thợ phù hợp.';
+  };
+  areaSelect.onchange=()=>{districtSelect.innerHTML=workerDistrictOptions(areaSelect.value,'');highlightWorkers()};
+  districtSelect.onchange=highlightWorkers;
+  highlightWorkers();
   const box=m.querySelector('#items');
   const calc=()=>{let t=0;box.querySelectorAll('.it').forEach(r=>t+=Math.round((+r.querySelector('.q').value||0)*(+r.querySelector('.pr').value||0)));m.querySelector('#tot').textContent=vnd(t)};
   const addRow=(it={})=>{
