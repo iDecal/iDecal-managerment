@@ -448,6 +448,16 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
   .stage{min-height:50px;padding:4px 8px}.stage .stage-n{font-size:17px}
   .oc-a .btn.sm{flex:1;padding:5px 6px}.mm{flex:none}
 }
+
+/* Nội bộ: giao việc và trò chuyện */
+.collab-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.task-list{display:grid;gap:10px}.task-card{padding:14px;border:1px solid var(--line,#e1e5ee);border-radius:15px;background:var(--card,#fff)}
+.task-meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px;color:var(--mut);font-size:12px}.task-card p{white-space:pre-wrap;margin:8px 0}
+.task-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.collab-pill{display:inline-block;background:#e8edff;color:#3645a4;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:600}
+.chat-pane{background:var(--card,#fff);border:1px solid var(--line,#e1e5ee);border-radius:16px;overflow:hidden}.chat-feed{height:min(60vh,510px);min-height:260px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:11px}
+.chat-line{max-width:82%;align-self:flex-start;background:#f0f2f8;border-radius:14px;padding:9px 12px;overflow-wrap:anywhere}.chat-line.mine{align-self:flex-end;background:#dfeaff}.chat-line .chat-author{font-size:11px;font-weight:700;color:#58657c;margin-bottom:4px}.chat-line .chat-time{font-size:10px;color:#788398;text-align:right;margin-top:4px}.chat-line .chat-body{white-space:pre-wrap;font-size:14px}.chat-compose{display:flex;gap:8px;padding:12px;border-top:1px solid #e5e8ef}.chat-compose input{min-width:0;flex:1;padding:11px 12px;border:1px solid #d5dbe5;border-radius:10px;font:inherit}
+.collab-fields{display:grid;gap:10px}.collab-fields label{display:grid;gap:4px;font-size:13px;font-weight:600}.collab-fields input,.collab-fields textarea,.collab-fields select{width:100%;padding:10px;border:1px solid #d5dbe5;border-radius:10px;font:inherit;background:#fff;color:#222}
+@media(max-width:700px){.chat-line{max-width:94%}}
 </style>
 </head>
 <body>
@@ -587,8 +597,9 @@ function startSync(){
     if(d.id==='suppliers'){db.suppliers=d.data().items||[];synced.suppliers=JSON.stringify(db.suppliers)}
   })},'meta');
   if(isOwner())sub(fs.collection('users'),s=>{usersList=s.docs.map(d=>({uid:d.id,...d.data()}))},'users');
+  startCollab();
 }
-function stopSync(){unsubs.forEach(f=>f());unsubs=[];loaded={};need=0;ready=false;synced={};db=blank()}
+function stopSync(){stopCollab();unsubs.forEach(f=>f());unsubs=[];loaded={};need=0;ready=false;synced={};db=blank()}
 function checkReady(){if(!ready&&Object.keys(loaded).length>=need){ready=true;session='ready'}render()}
 function cloudSave(){
   if(!ready)return;
@@ -625,6 +636,8 @@ const TABS=[
   {id:'suppliers',icon:'store',label:'Nhà cung cấp',group:'Mua hàng & Chi phí',req:'mgr',color:'teal'},
   {id:'exp',icon:'wallet',label:'Chi phí',group:'Mua hàng & Chi phí',req:'mgr',color:'rose'},
   {id:'profit',icon:'chart',label:'Lãi lỗ đơn hàng',group:'Mua hàng & Chi phí',req:'mgr',color:'green'},
+  {id:'tasks',icon:'clipboard',label:'Công việc',group:'Nội bộ',req:'all',color:'purple'},
+  {id:'chat',icon:'users',label:'Trao đổi nội bộ',group:'Nội bộ',req:'all',color:'sky'},
   {id:'team',icon:'shield',label:'Thành viên',group:'Cài đặt',req:'owner',color:'indigo'},
   {id:'more',icon:'sliders',label:'Khác',group:'Cài đặt',req:'all',color:'slate'},
 ];
@@ -1561,7 +1574,7 @@ function fbar(v,list){
 }
 const itemsDet=(items,pre)=>`<div class="mut">${pre}</div><details class="itd"><summary>${items.length} mặt hàng · bấm để xem</summary><ul>${items.map(i=>`<li>${esc(i.name)} <b>×${fq(i.qty)}</b></li>`).join('')}</ul></details>`;
 const emp=(n,txt)=>`<div class="empty">${n?'Không có mục nào khớp bộ lọc':txt}</div>`;
-const views={archive:archiveView,home,deposits:depositsView,orders,quote:quotes,cust:custs,prod:prods,purchases:buys,suppliers:suppliersView,exp:expensesView,profit:profitView,more,team};
+const views={tasks:tasksView,chat:chatView,archive:archiveView,home,deposits:depositsView,orders,quote:quotes,cust:custs,prod:prods,purchases:buys,suppliers:suppliersView,exp:expensesView,profit:profitView,more,team};
 function whoHTML(){
   if(!CLOUD||!me||session==='out')return'';
   return`<span class="who-txt">${esc(me.name||me.email)} · ${ROLE_NAME[me.role]||''}</span> <button class="btn" data-a="logout">Thoát</button>`;
@@ -1607,12 +1620,65 @@ function render(){
   const searchBar=`<div class="module-search"><span class="search-ic">${ic('search',20)}</span><input id="moduleSearch" type="search" value="${esc(moduleSearch)}" placeholder="Tìm kiếm trong ${esc((tabs.find(t=>t.id===view)||{}).label||'module này')}…" aria-label="Tìm kiếm trong module hiện tại"><button type="button" data-a="clearSearch" title="Xoá tìm kiếm">×</button><div class="search-help">Tìm theo tên, mã, số điện thoại, nội dung hoặc thông tin hiển thị trong module này.</div></div>`;
   $('#app').innerHTML=searchBar+(!CLOUD&&!LS?WARN:'')+views[view]()+`<div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả phù hợp.</div>`;
   applyModuleSearch();
+  if(view==='chat'){const el=document.getElementById('chatMessages');if(el)el.scrollTop=el.scrollHeight}
 }
 const $=s=>document.querySelector(s);
+
+
+/* ================= CÔNG VIỆC + CHAT NỘI BỘ =================
+ * Firebase: collections teamTasks, teamMessages, users.
+ * Offline demo: localStorage, không chia sẻ giữa thiết bị.
+ */
+const COLLAB_KEY='idecal-collab-v1';
+let collabTasks=[],collabMessages=[],collabPeople=[],collabUnsubs=[],collabStarted=false;
+function collabOfflineRead(){if(CLOUD)return;try{const d=JSON.parse(LS?.getItem(COLLAB_KEY)||'{}');collabTasks=d.tasks||[];collabMessages=d.messages||[];collabPeople=d.people||[]}catch(e){}}
+function collabOfflineWrite(){if(!CLOUD&&LS)try{LS.setItem(COLLAB_KEY,JSON.stringify({tasks:collabTasks,messages:collabMessages,people:collabPeople}))}catch(e){toast('Không lưu được dữ liệu nội bộ','err')}}
+function stopCollab(){collabUnsubs.forEach(f=>f());collabUnsubs=[];collabStarted=false;collabTasks=[];collabMessages=[];collabPeople=[]}
+function startCollab(){if(!CLOUD||!fs||collabStarted)return;collabStarted=true;
+ const listen=(q,cb,name)=>collabUnsubs.push(q.onSnapshot(s=>{cb(s.docs.map(d=>({id:d.id,...d.data()})));if(session==='ready'&&(view==='tasks'||view==='chat'))render()},e=>{toast('Không đọc được '+name+': '+e.message,'err')}));
+ listen(fs.collection('teamTasks'),x=>collabTasks=x,'công việc');
+ listen(fs.collection('teamMessages').orderBy('createdAt','desc').limit(200),x=>collabMessages=x.reverse(),'tin nhắn');
+ // Cần quy tắc Firestore cho phép thành viên đã duyệt đọc hồ sơ người dùng.
+ if(!isOwner())listen(fs.collection('users'),x=>collabPeople=x,'danh sách thành viên');
+}
+collabOfflineRead();
+const collabWho=()=>CLOUD?(me?.uid||''):'local-owner';
+const collabName=uid=>{const u=[...usersList,...collabPeople].find(x=>x.uid===uid||x.id===uid);return u?.name||u?.email||((uid===collabWho())?(me?.name||'Bạn'):'Thành viên')};
+const collabActive=()=>CLOUD?[...new Map([...usersList,...collabPeople,...(me?[me]:[])].filter(x=>['owner','manager','staff'].includes(x.role)).map(x=>[x.uid||x.id,x])).values()]:[{uid:'local-owner',name:'Chủ cửa hàng',role:'owner'}];
+const collabAllowed=t=>isMgr()||t.assignee===collabWho();
+const collabDate=v=>{if(!v)return '';if(typeof v.toDate==='function')return v.toDate().toLocaleString('vi-VN');if(v.seconds)return new Date(v.seconds*1000).toLocaleString('vi-VN');return new Date(v).toLocaleString('vi-VN')};
+const taskStatuses=['Cần làm','Đang thực hiện','Chờ duyệt','Hoàn thành'];
+function tasksView(){const all=[...collabTasks].sort((a,b)=>(a.status==='Hoàn thành')-(b.status==='Hoàn thành')||String(a.due||'9999').localeCompare(String(b.due||'9999')));
+ const filtered=isMgr()?all:all.filter(t=>t.assignee===collabWho()||t.createdBy===collabWho());
+ return `<div class="collab-head"><div><h2>Quản lý công việc</h2><div class="mut">${filtered.filter(t=>t.status!=='Hoàn thành').length} việc chưa hoàn thành · ${filtered.length} việc tất cả</div></div>${isMgr()?'<button class="btn" data-a="addTask">+ Giao việc</button>':''}</div>
+ ${!CLOUD?'<p class="mut">Chế độ lưu trên thiết bị: để giao việc qua nhiều tài khoản, cần thiết lập Firebase.</p>':''}
+ <div class="task-list">${filtered.length?filtered.map(t=>`<article class="task-card"><div class="row sp"><b>${esc(t.title||'Không có tiêu đề')}</b><span class="collab-pill">${esc(t.status||'Cần làm')}</span></div>
+ ${t.description?`<p>${esc(t.description)}</p>`:''}<div class="task-meta"><span>👤 ${esc(collabName(t.assignee))}</span><span>📅 ${esc(t.due||'Chưa có hạn')}</span><span>⚑ ${esc(t.priority||'Bình thường')}</span><span>Người giao: ${esc(collabName(t.createdBy))}</span></div>
+ <div class="task-actions">${collabAllowed(t)?`<button class="btn gh sm" data-a="taskStatus" data-id="${esc(t.id)}">Đổi trạng thái</button>`:''}${isMgr()?`<button class="btn gh sm" data-a="editTask" data-id="${esc(t.id)}">Sửa</button><button class="btn gh sm" data-a="delTask" data-id="${esc(t.id)}">Xoá</button>`:''}</div></article>`).join(''):'<div class="empty">Chưa có công việc được giao.</div>'}</div>`;
+}
+function chatView(){return `<div class="collab-head"><div><h2>Trao đổi nội bộ</h2><div class="mut">Phòng chat chung dành cho thành viên đã được duyệt.</div></div></div>
+ ${!CLOUD?'<p class="mut">Tin nhắn hiện chỉ lưu trên trình duyệt này. Cần Firebase để trò chuyện giữa các thiết bị.</p>':''}
+ <section class="chat-pane"><div class="chat-feed" id="chatMessages" role="log" aria-label="Tin nhắn nội bộ">${collabMessages.length?collabMessages.map(m=>`<div class="chat-line ${m.uid===collabWho()?'mine':''}"><div class="chat-author">${esc(m.name||collabName(m.uid))}</div><div class="chat-body">${esc(m.text||'')}</div><div class="chat-time">${esc(collabDate(m.createdAt))}</div></div>`).join(''):'<div class="empty">Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện.</div>'}</div>
+ <form class="chat-compose" id="chatForm"><input id="chatInput" maxlength="2000" required autocomplete="off" placeholder="Nhập tin nhắn cho cả nhóm…" aria-label="Tin nhắn"><button type="submit" class="btn">Gửi</button></form></section>`}
+function saveTaskData(t){if(CLOUD){const ref=fs.collection('teamTasks').doc(t.id);ref.set(t).then(()=>toast('Đã lưu công việc','ok')).catch(e=>toast('Không lưu được: '+e.message,'err'))}else{const i=collabTasks.findIndex(x=>x.id===t.id);if(i<0)collabTasks.push(t);else collabTasks[i]=t;collabOfflineWrite();render();toast('Đã lưu công việc','ok')}}
+function taskForm(id){if(!isMgr())return toast('Chỉ chủ hoặc quản lý được giao việc','err');const t=collabTasks.find(x=>x.id===id)||{};const people=collabActive();
+ const overlay=document.createElement('div');overlay.className='ov';overlay.innerHTML=`<div class="md"><div class="row sp"><h2>${id?'Sửa công việc':'Giao công việc'}</h2><button type="button" class="btn gh" data-x>Đóng</button></div><form id="collabTaskForm" class="collab-fields">
+ <label>Tiêu đề<input name="title" maxlength="160" required value="${esc(t.title||'')}"></label><label>Mô tả<textarea name="description" rows="4" maxlength="5000">${esc(t.description||'')}</textarea></label>
+ <label>Giao cho<select name="assignee" required>${people.map(x=>`<option value="${esc(x.uid||x.id)}" ${(x.uid||x.id)===t.assignee?'selected':''}>${esc(x.name||x.email||'Thành viên')}</option>`).join('')}</select></label>
+ <label>Hạn hoàn thành<input type="date" name="due" value="${esc(t.due||'')}"></label>
+ <label>Độ ưu tiên<select name="priority">${['Bình thường','Quan trọng','Khẩn cấp'].map(x=>`<option ${t.priority===x?'selected':''}>${x}</option>`).join('')}</select></label>
+ <label>Trạng thái<select name="status">${taskStatuses.map(x=>`<option ${t.status===x?'selected':''}>${x}</option>`).join('')}</select></label><button class="btn" type="submit">Lưu công việc</button></form></div>`;
+ document.body.appendChild(overlay);overlay.addEventListener('click',e=>{if(e.target===overlay||e.target.closest('[data-x]'))overlay.remove()});
+ overlay.querySelector('form').onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);const uid=f.get('assignee');if(!people.some(x=>(x.uid||x.id)===uid))return toast('Người nhận không hợp lệ','err');const data={id:id||('task-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)),title:String(f.get('title')).trim(),description:String(f.get('description')).trim(),assignee:uid,due:String(f.get('due')),priority:String(f.get('priority')),status:String(f.get('status')),createdBy:t.createdBy||collabWho(),createdAt:t.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};if(!data.title)return;saveTaskData(data);overlay.remove()};
+}
+function changeTaskStatus(id){const t=collabTasks.find(x=>x.id===id);if(!t||!collabAllowed(t))return;const next=prompt('Nhập trạng thái:\n'+taskStatuses.join(' / '),t.status||'Cần làm');if(next===null)return;if(!taskStatuses.includes(next))return toast('Trạng thái không hợp lệ','err');saveTaskData({...t,status:next,updatedAt:new Date().toISOString()})}
+function deleteTask(id){if(!isMgr()||!confirm('Xoá công việc này?'))return;if(CLOUD)fs.collection('teamTasks').doc(id).delete().catch(e=>toast(e.message,'err'));else{collabTasks=collabTasks.filter(x=>x.id!==id);collabOfflineWrite();render()}}
+function sendChat(){const input=document.getElementById('chatInput');if(!input)return;const value=input.value.trim();if(!value)return;if(value.length>2000)return toast('Tin nhắn quá dài','err');input.value='';const m={uid:collabWho(),name:me?.name||'Chủ cửa hàng',text:value,createdAt:CLOUD?firebase.firestore.FieldValue.serverTimestamp():new Date().toISOString()};if(CLOUD)fs.collection('teamMessages').add(m).catch(e=>{toast('Không gửi được: '+e.message,'err');input.value=value});else{collabMessages.push({...m,id:'msg-'+Date.now()});collabOfflineWrite();render()}}
 
 /* ---------- Actions ---------- */
 const setNav=open=>{document.body.classList.toggle('nav-open',open);const b=$('#navToggle');if(b)b.setAttribute('aria-expanded',open?'true':'false')};
 const acts={
+  addTask:()=>taskForm(),editTask:id=>taskForm(id),delTask:id=>deleteTask(id),taskStatus:id=>changeTaskStatus(id),sendChat:()=>sendChat(),
   tab:id=>{view=id;moduleSearch='';setNav(false);render();scrollTo(0,0)},
   quickAdd:()=>{const m={quote:'newQuote',cust:'newCust',purchases:'newPurchase',suppliers:'newSupplier',exp:'newExp',prod:'newProd'};let k=m[view]||'newOrder';if((k==='newProd'||k==='newPurchase'||k==='newSupplier'||k==='newExp')&&!isMgr())k='newOrder';acts[k]()},
   clearSearch:()=>{moduleSearch='';const el=$('#moduleSearch');if(el)el.value='';applyModuleSearch();if(el)el.focus()},
@@ -1663,8 +1729,9 @@ const acts={
   import:()=>$('#file').click(),
   reset:()=>{if(CLOUD)return;if(confirm('Xoá TOÀN BỘ dữ liệu? Không thể hoàn tác.')){if(LS)LS.removeItem(KEY);db=blank();render()}}
 };
-document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.mm-pop button'))d.open=false});const b=e.target.closest('[data-a]');if(b)acts[b.dataset.a](b.dataset.id)});
+document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.mm-pop button'))d.open=false});const b=e.target.closest('[data-a]');if(b&&typeof acts[b.dataset.a]==='function')acts[b.dataset.a](b.dataset.id)});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('nav-open')){setNav(false);const b=$('#navToggle');if(b)b.focus()}});
+document.addEventListener('submit',e=>{if(e.target.id==='chatForm'){e.preventDefault();sendChat()}});
 document.addEventListener('change',e=>{
   if(e.target.classList.contains('rl')){fs.collection('users').doc(e.target.dataset.id).update({role:e.target.value}).then(()=>toast('Đã cập nhật cấp','ok')).catch(x=>toast('Lỗi: '+x.message));return}
   if(e.target.classList.contains('qs')){const q=db.quotes.find(x=>x.id===e.target.dataset.id);q.status=e.target.value;if(q.status==='Chấp nhận'){convertQuote(q);return}save();render();return}
