@@ -1063,17 +1063,18 @@ const qname=q=>{const c=cust(q.cid);return c?c.name:(q.cname||'Khách lẻ')};
 function readItems(m){
   return[...m.querySelectorAll('.it')].map(r=>{
     const pid=r.querySelector('.p').value,p=prod(pid);
-    return{pid,name:p?p.name:r.querySelector('.n').value.trim(),qty:+r.querySelector('.q').value||0,price:+r.querySelector('.pr').value||0,cost:p?p.cost:0,unit:(r.querySelector('.u')?.value||'').trim()||(p?p.unit:'')};
+    return{pid,name:p?p.name:r.querySelector('.n').value.trim(),qty:+r.querySelector('.q').value||0,price:+r.querySelector('.pr').value||0,cost:p?p.cost:0,unit:(r.querySelector('.u')?.value||'').trim()||(p?p.unit:''),description:(r.querySelector('.desc')?.value||'').trim()};
   }).filter(i=>i.name&&i.qty>0);
 }
-function itemEditor(m,items){
+function itemEditor(m,items,forQuote=false){
   const box=m.querySelector('#items');
   const calc=()=>{let t=0;box.querySelectorAll('.it').forEach(r=>t+=Math.round((+r.querySelector('.q').value||0)*(+r.querySelector('.pr').value||0)));const d=+(m.querySelector('[name=discount]')||{}).value||0,base=Math.max(0,t-d),rate=+((m.querySelector('[name=vatRate]')||{}).value??8)||0,vat=Math.round(base*rate/100);const sub=m.querySelector('#sub'),v=m.querySelector('#vat'),vl=m.querySelector('#vatLabel');if(sub)sub.textContent=vnd(t);if(v)v.textContent=vnd(vat);if(vl)vl.textContent=rate;m.querySelector('#tot').textContent=vnd(base+vat)};
   const addRow=(it={})=>{
     const r=document.createElement('div');r.className='it';
     r.innerHTML=`<select class="p"><option value="">Khác (nhập tay)…</option>${db.products.map(p=>`<option value="${p.id}" ${p.id===it.pid?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
       <input class="q" type="number" min="0" step="any" inputmode="decimal" title="Số lượng" placeholder="SL" value="${it.qty||1}"><input class="pr" type="number" step="any" inputmode="decimal" placeholder="Đơn giá" title="Đơn giá" value="${it.price??''}"><input class="u" placeholder="ĐVT" title="Đơn vị tính (m², mét, cái…)" value="${esc(it.unit||(prod(it.pid)||{}).unit||'cái')}"><button type="button" class="x">×</button>
-      <input class="n" placeholder="Tên hàng / mô tả, kích thước" value="${esc(it.pid?'':it.name||'')}" style="display:${it.pid?'none':'block'}">`;
+      <input class="n" placeholder="Tên sản phẩm / dịch vụ" value="${esc(it.pid?'':it.name||'')}" style="display:${it.pid?'none':'block'}">
+      ${forQuote?`<textarea class="desc" rows="2" placeholder="Diễn giải chi tiết: chất liệu, quy cách, kích thước, yêu cầu..." style="width:100%;grid-column:1/-1">${esc(it.description||'')}</textarea>`:''}`;
     box.appendChild(r);
     const sel=r.querySelector('.p');
     sel.onchange=()=>{const p=prod(sel.value);r.querySelector('.n').style.display=p?'none':'block';if(p)r.querySelector('.pr').value=p.price;calc()};
@@ -1107,7 +1108,7 @@ function quoteForm(id){
     if(id)Object.assign(q,data);else db.quotes.push({id:uid(),code:'BG'+String(++db.qseq).padStart(4,'0'),status:'Nháp',by:meName(),byEmail:CLOUD&&me?me.email||'':'',...data});
     save();render();
   });
-  itemEditor(m,q.items);
+  itemEditor(m,q.items,true);
 }
 function shopForm(){
   const s=db.shop||{};
@@ -1136,7 +1137,8 @@ const DOC_CSS=`.doc{font:13px/1.55 'Inter',-apple-system,BlinkMacSystemFont,'Seg
 .doc *{box-sizing:border-box}.doc h1{margin:0;font-size:23px;letter-spacing:.2px;color:#0e3150;font-weight:800}.doc h2{text-align:center;margin:22px 0 4px;font-size:22px;letter-spacing:1px;color:#0b2340;font-weight:800}
 .doc .qhead{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:18px 20px;border:1px solid #dbe8f2;border-radius:18px;background:radial-gradient(circle at top right,rgba(8,123,189,.16),transparent 32%),radial-gradient(circle at 18% 24%,rgba(8,123,189,.08),transparent 22%),linear-gradient(135deg,#fafdff 0%,#f3f8fc 55%,#eef5fb 100%);box-shadow:0 8px 24px rgba(21,74,117,.08);position:relative;overflow:hidden}.doc .qhead:after{content:'';position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(8,123,189,.06) 1px, transparent 1px);background-size:14px 14px;mask-image:linear-gradient(135deg,rgba(0,0,0,.4),transparent 70%);opacity:.7}.doc .qhead img{max-height:72px;max-width:170px;object-fit:contain;position:relative;z-index:1}.doc .qbrand{display:flex;gap:14px;align-items:flex-start;min-width:0;position:relative;z-index:1}.doc .qinfo{min-width:0}.doc .qsub{color:#62748a;font-size:11px;margin-top:4px}.doc .qchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;position:relative;z-index:1}.doc .qchip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.82);border:1px solid rgba(177,203,224,.9);color:#486075;font-size:10.5px;line-height:1.35;max-width:100%}.doc .qchip .i{width:13px;height:13px;color:var(--ac,#087bbd);flex:0 0 auto}.doc .qchip span:last-child{overflow-wrap:anywhere}.doc .c{text-align:center;color:#68788d;font-size:11px}.doc .meta{display:flex;justify-content:space-between;gap:12px;margin:13px 0;padding:10px 12px;background:#f2f7fb;border:1px solid #dce8f1;border-radius:7px}.doc .meta>div{flex:1;min-width:0}.doc .meta small{display:block;color:#708197;font-size:10px;text-transform:uppercase;letter-spacing:.5px}.doc .meta b{color:#142f4d;font-size:12px;overflow-wrap:anywhere}
 .doc table{width:100%;border-collapse:collapse;margin-top:15px;font-size:11.5px}.doc th,.doc td{border:1px solid #dce5ed;padding:8px 8px;text-align:left;color:#26384b;vertical-align:middle}.doc th{background:#eaf3f9;color:#143b5b;font-weight:700}.doc tbody tr:nth-child(even){background:#f8fbfd}.doc .r{text-align:right;white-space:nowrap}.doc .tt{text-align:right;margin-top:7px;color:#53677c}.doc .summary{width:56%;margin:14px 0 0 auto;border-collapse:collapse}.doc .summary td{padding:5px 8px;border:0;border-bottom:1px solid #e5edf3}.doc .summary .grand td{background:#eaf5fb;color:#075b8e;font-weight:800;font-size:14px;border-top:2px solid var(--ac,#087bbd)}.doc .tgrand{color:var(--ac,#087bbd)}
-.doc .sig{display:flex;justify-content:space-between;gap:30px;margin-top:42px;text-align:center;break-inside:avoid}.doc .sig>div{width:45%}.doc .sig i{font-size:10px;color:#77869a}.doc .pimgs{width:42px;height:42px;object-fit:cover;border-radius:4px;display:block}.doc .terms{margin-top:16px;padding:10px 12px;background:#f7fafc;border-left:3px solid var(--ac,#087bbd);font-size:11px;color:#42556a;break-inside:avoid}.doc .paybox{display:grid;grid-template-columns:118px 1fr;gap:14px;align-items:center;margin-top:16px;padding:12px;border:1px solid #dce8f1;border-radius:12px;background:#f8fbfe;break-inside:avoid}.doc .payqr{display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #dce8f1;border-radius:10px;padding:8px;min-height:118px}.doc .payqr img{width:96px;height:96px;object-fit:contain;display:block}.doc .payinfo b{display:block;color:#143b5b;margin-bottom:4px}.doc .payinfo .payline{margin:4px 0;color:#42556a}.doc .payinfo small{display:block;color:#708197;margin-top:6px}.doc .foot{margin-top:25px;padding-top:9px;border-top:1px solid #e0e8ef;text-align:center;color:#7b8b9d;font-size:10px}
+.doc .sig{display:flex;justify-content:space-between;gap:30px;margin-top:42px;text-align:center;break-inside:avoid}.doc .sig>div{width:45%}.doc .sig i{font-size:10px;color:#77869a}.doc .pimgs{width:42px;height:42px;object-fit:cover;border-radius:4px;display:block}.doc .terms{margin-top:16px;padding:10px 12px;background:#f7fafc;border-left:3px solid var(--ac,#087bbd);font-size:11px;color:#42556a;break-inside:avoid}.doc .paybox{display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:center;margin-top:12px;padding:9px;border:1px solid #dce8f1;border-radius:12px;background:#f8fbfe;break-inside:avoid}.doc .payqr{display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #dce8f1;border-radius:8px;padding:5px;min-height:88px}.doc .payqr img{width:78px;height:78px;object-fit:contain;display:block}.doc .payinfo b{display:block;color:#143b5b;margin-bottom:4px}.doc .payinfo .payline{margin:4px 0;color:#42556a}.doc .payinfo small{display:block;color:#708197;margin-top:6px}.doc .foot{margin-top:25px;padding-top:9px;border-top:1px solid #e0e8ef;text-align:center;color:#7b8b9d;font-size:10px}
+.doc .description{white-space:pre-wrap;overflow-wrap:anywhere;color:#4c6071;font-size:10.5px}.doc .payinfo .payline b{display:inline;font-weight:600;margin:0}.doc .payinfo{font-size:10.5px}.doc .payinfo small{font-size:9px;margin-top:3px}.doc .payinfo .payline{margin:2px 0}.doc table{font-size:10.8px}.doc th,.doc td{padding:6px 5px}.doc .summary{margin-top:10px}.doc .qhead{padding:12px 14px}.doc .qhead h1{font-size:20px}.doc .qchips{gap:5px;margin-top:7px}.doc .qchip{padding:3px 7px;font-size:9.5px}.doc .meta{margin:9px 0;padding:7px 9px}.doc .terms{margin-top:11px;padding:7px 9px} 
 .doc.mod h2{text-align:center;border:0;padding-bottom:0;margin-top:22px}.doc.mod .c{text-align:center}.doc.mod th{background:var(--ac);color:#fff;border-color:var(--ac)}.doc.mod td{border-left:0;border-right:0}.doc .nowrap{white-space:nowrap}`;
 const TPL_DEF={style:'classic',accent:'#111111',font:14,title:'BÁO GIÁ',logo:'',showLogo:true,showShop:true,intro:'',greet:'Kính gửi:',
   colIdx:true,colUnit:true,colImg:false,showUntil:true,showNote:true,showBank:true,showSig:true,sigL:'Khách hàng',sigR:'',terms:''};
@@ -1221,15 +1223,15 @@ function quotePayHTML(q,t){
   const qr=paymentQrUrl(s.bankName,s.bankNumber,s.bankOwner,qtotal(q),ref);
   const note=s.bank?nl(esc(s.bank)):'';
   if(!(t.showBank&&(qr||s.bankName||s.bankOwner||note)))return'';
-  return`<div class="paybox"><div class="payqr">${qr?`<img src="${qr}" alt="QR thanh toán" referrerpolicy="no-referrer">`:'<div class="mut">Chưa có QR</div>'}</div><div class="payinfo"><b>THÔNG TIN THANH TOÁN</b>${s.bankName?`<div class="payline"><b>Ngân hàng:</b> ${esc(s.bankName)}</div>`:''}${s.bankOwner?`<div class="payline"><b>Chủ tài khoản:</b> ${esc(s.bankOwner)}</div>`:''}${ref?`<div class="payline"><b>Nội dung chuyển tiền:</b> ${esc(ref)}</div>`:''}<small>Quét mã QR để thanh toán. Nội dung chuyển khoản dùng mã đơn hàng / mã báo giá để đối soát.</small>${note?`<div class="payline" style="margin-top:8px">${note}</div>`:''}</div></div>`;
+  return`<div class="paybox"><div class="payqr">${qr?`<img src="${qr}" alt="QR thanh toán" referrerpolicy="no-referrer">`:'<div class="mut">Chưa có QR</div>'}</div><div class="payinfo"><b>THANH TOÁN QR</b>${s.bankName?`<div class="payline"><b>Ngân hàng:</b> ${esc(s.bankName)}</div>`:''}${s.bankOwner?`<div class="payline"><b>Chủ tài khoản:</b> ${esc(s.bankOwner)}</div>`:''}${ref?`<div class="payline"><b>Nội dung chuyển tiền:</b> ${esc(ref)}</div>`:''}<small>Quét QR để thanh toán.</small>${note?`<div class="payline" style="margin-top:8px">${note}</div>`:''}</div></div>`;
 }
 function quoteHTML(q,t){
   t=t||tplOf();
   const c=cust(q.cid),s=db.shop||{},sub=q.items.reduce((sum,i)=>sum+lineAmt(i),0);
   const unitOf=i=>i.unit||(prod(i.pid)||{}).unit||'';
   const imgOf=i=>{const p=prod(i.pid);return p&&p.img?`<img class="pimgs" src="${esc(p.img)}" alt="" referrerpolicy="no-referrer">`:''};
-  const head='<tr>'+(t.colIdx?'<th style="width:34px">#</th>':'')+(t.colImg?'<th>Ảnh</th>':'')+'<th>Hàng hoá / dịch vụ</th>'+'<th style="width:68px">ĐVT</th>'+'<th class="r" style="width:60px">SL</th><th class="r" style="width:100px">Đơn giá</th><th class="r" style="width:110px">Thành tiền</th></tr>';
-  const rows=q.items.map((i,n)=>'<tr>'+(t.colIdx?`<td>${n+1}</td>`:'')+(t.colImg?`<td>${imgOf(i)}</td>`:'')+`<td>${esc(i.name)}</td>`+`<td>${esc(unitOf(i)||'—')}</td>`+`<td class="r">${fq(i.qty)}</td><td class="r">${vnd(i.price)}</td><td class="r"><b>${vnd(lineAmt(i))}</b></td></tr>`).join('');
+  const head='<tr>'+(t.colIdx?'<th style="width:26px">#</th>':'')+'<th>Hàng hoá / dịch vụ</th><th style="width:26%">Diễn giải</th><th style="width:48px">ĐVT</th><th class="r" style="width:38px">SL</th><th class="r" style="width:82px">Đơn giá</th><th class="r" style="width:88px">Thành tiền</th></tr>';
+  const rows=q.items.map((i,n)=>'<tr>'+(t.colIdx?`<td>${n+1}</td>`:'')+`<td>${esc(i.name)}</td><td class="description">${i.description?nl(esc(i.description)):'—'}</td><td>${esc(unitOf(i)||'—')}</td><td class="r">${fq(i.qty)}</td><td class="r">${vnd(i.price)}</td><td class="r"><b>${vnd(lineAmt(i))}</b></td></tr>`).join('');
   return`${shopHead(t)}
   <h2>${esc(t.title||TPL_DEF.title)}</h2><div class="c">BÁO GIÁ DỊCH VỤ · ${esc(q.code)}</div>
   <div class="meta"><div><small>Khách hàng</small><b>${esc(qname(q))}</b>${c&&c.phone?`<div>${esc(c.phone)}</div>`:''}</div><div><small>Ngày báo giá</small><b>${esc(q.date||'—')}</b></div>${t.showUntil&&q.until?`<div><small>Hiệu lực đến</small><b>${esc(q.until)}</b></div>`:''}${q.completionDate?`<div><small>Thời gian hoàn thành dự kiến</small><b>${esc(q.completionDate)}</b></div>`:''}${q.by?`<div><small>Người báo giá</small><b>${esc(q.by)}</b></div>`:''}</div>
@@ -1474,7 +1476,7 @@ function readTpl(form,logo){
   return{style:g('style')==='modern'?'modern':'classic',accent:/^#[0-9a-f]{6}$/i.test(g('accent')||'')?g('accent'):TPL_DEF.accent,
     font:[12,14,16].includes(+g('font'))?+g('font'):14,title:(g('title')||'').trim()||TPL_DEF.title,
     logo:lk||(lk===null?'':logo),showLogo:!!g('showLogo'),showShop:!!g('showShop'),intro:(g('intro')||'').trim(),greet:(g('greet')||'').trim(),
-    colIdx:!!g('colIdx'),colUnit:!!g('colUnit'),colImg:!!g('colImg'),showUntil:!!g('showUntil'),showNote:!!g('showNote'),showBank:!!g('showBank'),showSig:!!g('showSig'),
+    colIdx:!!g('colIdx'),colUnit:!!g('colUnit'),colImg:false,showUntil:!!g('showUntil'),showNote:!!g('showNote'),showBank:!!g('showBank'),showSig:!!g('showSig'),
     sigL:(g('sigL')||'').trim(),sigR:(g('sigR')||'').trim(),terms:(g('terms')||'').trim()};
 }
 function tplForm(){
@@ -1497,8 +1499,8 @@ function tplForm(){
     ${chk('showLogo','Hiện logo')}${chk('showShop','Hiện địa chỉ và SĐT cửa hàng')}
     <label>Lời giới thiệu (dưới tiêu đề)<textarea name="intro" rows="2">${esc(t.intro)}</textarea></label>
     ${fld('Lời chào khách (để trống nếu không cần)','greet',t.greet)}
-    <label>Các cột trong bảng</label>${chk('colIdx','Số thứ tự')}${chk('colUnit','Đơn vị tính (m², cái…)')}${chk('colImg','Ảnh sản phẩm')}
-    <div class="mut">Ảnh sản phẩm lấy từ link có thể không hiện khi xuất PDF; ảnh tải lên thì luôn hiện.</div>
+    <label>Các cột trong bảng</label>${chk('colIdx','Số thứ tự')}${chk('colUnit','Đơn vị tính (m², cái…)')}
+
     <label>Hiển thị</label>${chk('showUntil','Ngày hiệu lực')}${chk('showNote','Ghi chú của từng báo giá')}${chk('showBank','Thông tin thanh toán (QR)')}${chk('showSig','Khối chữ ký')}
     ${fld('Chữ ký bên trái','sigL',t.sigL)}${fld('Chữ ký bên phải (để trống = tên cửa hàng)','sigR',t.sigR)}
     <label>Điều khoản / lưu ý chung<textarea name="terms" rows="4" placeholder="VD: Giá chưa gồm VAT. Đặt cọc 50% khi chốt đơn. Báo giá có hiệu lực 7 ngày.">${esc(t.terms)}</textarea></label>
