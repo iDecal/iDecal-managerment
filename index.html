@@ -511,6 +511,14 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
 }
 
 
+
+/* Process nổi bật, tối với chữ vàng ngả xanh */
+.orders-alt .oc-mid-sec:has(> .st){background:linear-gradient(135deg,#172c4a 0%,#203d60 100%);border:1px solid #426b94;box-shadow:0 5px 14px rgba(17,49,89,.16)}
+.orders-alt .oc-mid-sec:has(> .st) small{color:#9edfff;letter-spacing:.85px;font-weight:800}
+.orders-alt .oc-mid-sec .st{background-color:#0c233f!important;color:#e4f7ff!important;border:1px solid #5795c3!important;font-weight:750!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
+.orders-alt .oc-mid-sec .st:focus{outline:2px solid #7ed8ff;outline-offset:2px}
+.orders-alt .oc-mid-sec .st option{background:#112c4e;color:#e4f7ff}
+
 /* Nội bộ: giao việc và trò chuyện */
 .collab-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
 .task-list{display:grid;gap:10px}.task-card{padding:14px;border:1px solid var(--line,#e1e5ee);border-radius:15px;background:var(--card,#fff)}
@@ -1212,6 +1220,15 @@ function stageBar(){
   const tail=`<span class="stage-sep" aria-hidden="true">│</span><button class="stage all${filter==='Tất cả'?' on':''}" data-a="filter" data-id="Tất cả" aria-pressed="${filter==='Tất cả'}"><span class="stage-n">${db.orders.filter(o=>!o.archived).length}</span><span class="stage-l">Tất cả</span></button><button class="stage cancel${filter==='Huỷ'?' on':''}" data-a="filter" data-id="Huỷ" aria-pressed="${filter==='Huỷ'}"><span class="stage-n">${c['Huỷ']||0}</span><span class="stage-l">Huỷ</span></button>`;
   return`<div class="stagebar" role="group" aria-label="Các bước xử lý đơn hàng">${bar}${tail}</div>`;
 }
+function formatOrderAppointment(value){
+  if(!value)return 'Chưa hẹn lịch';
+  const raw=String(value).trim();
+  const m=raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2}))?/);
+  if(m)return `${m[4]?m[4]+':'+m[5]+' · ':''}${m[3]}-${m[2]}-${m[1]}`;
+  const vi=raw.match(/^(\d{2})[/-](\d{2})[/-](\d{4})(?:\s+(\d{2}):(\d{2}))?/);
+  if(vi)return `${vi[4]?vi[4]+':'+vi[5]+' · ':''}${vi[1]}-${vi[2]}-${vi[3]}`;
+  return raw;
+}
 function orderCard(o){
   const sup=orderSupplierName(o);
   const done=['Hoàn thành','Huỷ'].includes(normOrderStatus(o.status));
@@ -1219,7 +1236,7 @@ function orderCard(o){
   const type=orderFulfillment(o);
   const isInstall=type==='installation';
   const dueRaw=isInstall?o.installDue:o.deliveryDue;
-  const dueDisplay=dueRaw?String(dueRaw).replace('T',' · '):'Chưa hẹn lịch';
+  const dueDisplay=formatOrderAppointment(dueRaw);
   return`<div class="card oc">
     <div class="oc-main">
       <div class="oc-h">
