@@ -603,7 +603,8 @@ body[data-view="gemini"] #gem-panel .gm-compose{border-radius:0 0 14px 14px;padd
 body[data-view="gemini"] #gem-panel .gm-compose textarea{min-height:84px}
 @media(max-width:560px){body[data-view="gemini"] #gem-panel{top:94px;left:0;bottom:calc(68px + env(safe-area-inset-bottom));padding:0 9px 5px;width:100%;border:0}body[data-view="gemini"] #gem-panel .gm-bubble{max-width:96%}body[data-view="gemini"] #gem-panel .gm-stream{padding:12px}body[data-view="gemini"] #gem-panel .gm-head{padding:10px}body[data-view="gemini"] #gem-panel .gm-config{padding:8px}body[data-view="gemini"] #gem-panel .gm-compose{padding:9px}body[data-view="gemini"] #gem-panel .gm-info{display:none}}
 </style>
-<style id="customer-form-upgrade">.cust-section{border:1px solid var(--bd,#e5e7eb);padding:12px;border-radius:12px;margin:11px 0;background:rgba(125,155,190,.035)}.cust-section>strong{display:block;margin-bottom:10px}.cust-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 12px}.cust-form-grid label{min-width:0;margin:0}.customer-type-bar{margin-bottom:12px}@media(max-width:620px){.cust-form-grid{grid-template-columns:1fr}.cust-section{padding:10px}}</style>
+<style id="customer-form-upgrade">.cust-section{border:1px solid var(--bd,#e5e7eb);padding:12px;border-radius:12px;margin:11px 0;background:rgba(125,155,190,.035)}.cust-section>strong{display:block;margin-bottom:10px}.cust-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 12px}.cust-form-grid label{min-width:0;margin:0}.customer-type-bar{margin-bottom:12px}@media(max-width:620px){.cust-form-grid{grid-template-columns:1fr}.cust-section{padding:10px}}.cust-more-details{background:#f8fbff;border-color:#d7e5f4}.cust-more-details summary{cursor:pointer;font-weight:700;color:#23628c;list-style:revert}.cust-more-details[open] summary{margin-bottom:13px}.cust-more-details .cust-extra-company{margin:12px 0;padding:12px;border-top:1px solid #dfe8ef}.cust-more-details .cust-extra-company>strong{display:block;margin-bottom:9px}.cust-more-details>.cust-form-grid{margin-top:10px}
+</style>
 <style id="worker-purchase-design">
 .worker-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:11px}.worker-card{display:flex;flex-direction:column;gap:9px}.worker-jobs{background:#f5f9fb;border-radius:9px;padding:10px;font-size:12px}.worker-job{display:flex;justify-content:space-between;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid #e6edf3;flex-wrap:wrap}.worker-select{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:7px}.worker-check{display:flex;align-items:center;gap:8px;border:1px solid #dbe9e9;border-radius:8px;padding:9px!important;background:white;font-size:12px}.worker-check input{width:auto}.purchase-card{border:1px solid #dce8f0!important;box-shadow:0 3px 11px rgba(0,44,76,.04)}.purchase-title{font-weight:700;font-size:15px;margin-top:3px}.purchase-amount{color:#0c5578;font-size:18px}.purchase-money{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0}.purchase-money>div{border:1px solid #e3edf2;border-radius:10px;background:#f7fafc;padding:9px}.purchase-money small{display:block;color:#63768a;font-size:11px}.purchase-money b{display:block;margin-top:4px;font-size:14px}@media(max-width:440px){.purchase-money{grid-template-columns:1fr 1fr}.purchase-money b{font-size:12px}}
 </style>
@@ -1036,29 +1037,46 @@ function custForm(id){
  const f=(label,key,type='text',placeholder='')=>`<label>${label}<input name="${key}" type="${type}" value="${esc(c[key]||'')}" placeholder="${esc(placeholder)}"></label>`;
  const m=modal(id?'Sửa khách hàng':'Thêm khách hàng',`
  <div class="customer-type-bar"><label>Loại khách hàng<select name="customerType"><option value="individual" ${(c.customerType||'individual')==='individual'?'selected':''}>Cá nhân</option><option value="company" ${c.customerType==='company'?'selected':''}>Doanh nghiệp / Công ty</option></select></label></div>
- <div class="cust-section"><strong>Thông tin chung</strong><div class="cust-form-grid">
- ${f('Mã khách hàng (tùy chọn)','customerCode','text','VD: KH001')}
- ${f('Họ tên / Tên doanh nghiệp *','name','text','Nhập tên khách hàng')}
- ${f('Điện thoại','phone','tel')}${f('Zalo','zalo','tel')}
- ${f('Email','email','email')}${f('Website / trang cá nhân','website','text')}
- ${f('Địa chỉ liên hệ','addr')}${f('Địa chỉ giao / thi công','deliveryAddress')}
- ${f('Nguồn khách hàng','source','text','Facebook, Zalo, giới thiệu...')}
- ${f('Nhóm khách hàng','customerGroup','text','Khách lẻ, đại lý, thân thiết...')}
+ <div class="cust-section"><strong>Thông tin khách hàng</strong><div class="cust-form-grid">
+ ${f('Tên khách hàng / Công ty *','name','text','Nhập tên khách hàng hoặc doanh nghiệp')}
+ ${f('Số điện thoại','phone','tel')}
+ ${f('Email','email','email')}
+ ${f('Địa chỉ','addr')}
  </div></div>
- <div class="cust-section" data-cust-company><strong>Thông tin doanh nghiệp</strong><div class="cust-form-grid">
- ${f('Mã số thuế','taxCode')}${f('Tên viết tắt / thương hiệu','brandName')}
- ${f('Người đại diện pháp luật','legalRepresentative')}${f('Chức vụ người đại diện','legalTitle')}
- ${f('Địa chỉ xuất hóa đơn','invoiceAddress')}${f('Email nhận hóa đơn','invoiceEmail','email')}
- ${f('Ngành nghề / lĩnh vực','industry')}${f('Phòng ban phụ trách','department')}
+ <div class="cust-section" data-cust-company><strong>Thông tin doanh nghiệp & người liên hệ</strong><div class="cust-form-grid">
+ ${f('Mã số thuế','taxCode')}
+ ${f('Tên người liên hệ','contactName')}
+ ${f('SĐT người liên hệ','contactPhone','tel')}
+ ${f('Chức vụ người liên hệ','contactTitle')}
  </div></div>
- <div class="cust-section" data-cust-company><strong>Người liên hệ trực tiếp</strong><div class="cust-form-grid">
- ${f('Tên người liên hệ','contactName')}${f('Chức vụ người liên hệ','contactTitle')}
- ${f('Điện thoại người liên hệ','contactPhone','tel')}${f('Zalo người liên hệ','contactZalo','tel')}
- ${f('Email người liên hệ','contactEmail','email')}${f('Bộ phận','contactDepartment')}
+ <details class="cust-section cust-more-details" id="customerMoreDetails">
+ <summary>Thông tin bổ sung (không bắt buộc)</summary>
+ <div class="cust-form-grid">
+ ${f('Mã khách hàng','customerCode','text','VD: KH001')}
+ ${f('Zalo','zalo','tel')}
+ ${f('Website','website')}
+ ${f('Địa chỉ giao / thi công','deliveryAddress')}
+ ${f('Nguồn khách hàng','source')}
+ ${f('Nhóm khách hàng','customerGroup')}
+ </div>
+ <div data-cust-company class="cust-extra-company"><strong>Thông tin công ty mở rộng</strong><div class="cust-form-grid">
+ ${f('Tên viết tắt / thương hiệu','brandName')}
+ ${f('Người đại diện pháp luật','legalRepresentative')}
+ ${f('Chức vụ người đại diện','legalTitle')}
+ ${f('Địa chỉ xuất hóa đơn','invoiceAddress')}
+ ${f('Email nhận hóa đơn','invoiceEmail','email')}
+ ${f('Ngành nghề / lĩnh vực','industry')}
+ ${f('Phòng ban phụ trách','department')}
+ ${f('Zalo người liên hệ','contactZalo','tel')}
+ ${f('Email người liên hệ','contactEmail','email')}
+ ${f('Bộ phận liên hệ','contactDepartment')}
  </div></div>
- <div class="cust-section"><strong>Ghi chú & chăm sóc khách hàng</strong><div class="cust-form-grid">
- ${f('Người phụ trách','assignedStaff')}${f('Ngày cần liên hệ lại','followUpDate','date')}
- </div><label>Ghi chú nội bộ<textarea name="customerNote" rows="3" placeholder="Thông tin cần nhớ, nhu cầu, sở thích, lịch sử trao đổi...">${esc(c.customerNote||'')}</textarea></label></div>
+ <div class="cust-form-grid">
+ ${f('Nhân viên phụ trách','assignedStaff')}
+ ${f('Ngày cần liên hệ lại','followUpDate','date')}
+ </div>
+ <label>Ghi chú nội bộ<textarea name="customerNote" rows="2" placeholder="Ghi chú thêm nếu cần">${esc(c.customerNote||'')}</textarea></label>
+ </details>
  `,fd=>{
  const d={};for(const [key,value] of fd.entries())d[key]=String(value||'').trim();
  if(!d.name){alert('Vui lòng nhập tên khách hàng / doanh nghiệp');return false}
@@ -2467,20 +2485,7 @@ function orderCostBreakdown(o){
 function profitView(){
   const active=db.orders.filter(o=>valid(o)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
   const shown=active.filter(o=>!o.archived);
-  const rev=active.reduce((s,o)=>s+orderRevenue(o),0),actual=active.reduce((s,o)=>s+orderActualCosts(o),0),estimated=active.reduce((s,o)=>s+cogs(o),0);
-  const supplierGroups=new Map();
-  active.forEach(o=>{
-    const name=orderSupplierName(o)||'Chưa gắn NCC';
-    if(!supplierGroups.has(name))supplierGroups.set(name,{name,orders:0,revenue:0,buys:0,expenses:0,profit:0});
-    const g=supplierGroups.get(name),bd=orderCostBreakdown(o);
-    g.orders++;g.revenue+=orderRevenue(o);g.buys+=bd.buys;g.expenses+=bd.exp;g.profit+=orderRevenue(o)-bd.buys-bd.exp;
-  });
-  const bySupplier=[...supplierGroups.values()].sort((a,b)=>a.name==='Chưa gắn NCC'?1:b.name==='Chưa gắn NCC'?-1:a.name.localeCompare(b.name,'vi'));
-  return `<div class="row sp"><div><h2>Lãi lỗ đơn hàng</h2><div class="mut">Tổng hợp doanh thu trước VAT, NCC/xưởng chính, tiền mua hàng và chi phí đã gắn mã đơn.</div></div></div>
-  <div class="grid"><div class="card kpi"><small>Doanh thu trước VAT</small><b>${vnd(rev)}</b></div><div class="card kpi"><small>Chi phí đã gắn đơn</small><b>${vnd(actual)}</b></div><div class="card kpi"><small>Chênh lệch sau khoản chi đã ghi nhận</small><b class="${rev-actual<0?'neg':'pos'}">${vnd(rev-actual)}</b></div><div class="card kpi"><small>Giá vốn tham khảo từ sản phẩm</small><b>${vnd(estimated)}</b></div></div>
-  <div class="card"><b>Cách đọc số liệu</b><p class="mut">“Chênh lệch sau chi phí đã ghi nhận” = doanh thu trước VAT − phiếu mua hàng gắn đơn − chi phí gắn đơn. Đây chưa phải lợi nhuận cuối cùng nếu còn thiếu hóa đơn xưởng, giao hàng hoặc phí khác. Những đơn chưa có giao dịch chi phí sẽ được ghi rõ là chưa đủ dữ liệu.</p><p class="mut">“Giá vốn tham khảo” lấy từ trường giá vốn trong danh mục sản phẩm để so sánh nhanh; không cộng vào chi phí thực tế nhằm tránh tính trùng với tiền xưởng đã ghi ở Mua hàng. Báo cáo theo NCC nhóm doanh thu/lãi của đơn theo NCC chính đã chọn; mọi phiếu mua gắn với đơn vẫn được cộng vào chi phí của đơn để không bỏ sót nhà cung cấp phụ.</p></div>
-  <div class="card supplier-report"><div class="row sp"><b>Lãi lỗ theo nhà cung cấp chính</b><span class="mut">${bySupplier.length} nhóm</span></div>
-  ${bySupplier.length?bySupplier.map(g=>`<div class="supplier-report-row"><div class="row sp"><b>${esc(g.name)}</b><span class="badge ${g.profit<0?'bd':'ok'}">${vnd(g.profit)}</span></div><div class="supplier-report-metrics"><span>${g.orders} đơn</span><span>Doanh thu ${vnd(g.revenue)}</span><span>Mua hàng/xưởng ${vnd(g.buys)}</span><span>Chi phí khác ${vnd(g.expenses)}</span></div></div>`).join(''):'<div class="empty">Chưa có dữ liệu</div>'}</div>
+  return `<div class="row sp"><h2>Lãi lỗ theo đơn hàng</h2></div>
   ${fbar('profit',shown)}
   ${fapply('profit',shown).length?fapply('profit',shown).map(o=>{const rev=orderRevenue(o),bd=orderCostBreakdown(o),profit=rev-bd.buys-bd.exp,est=cogs(o),custName=orderCustomerName(o),supplierName=orderSupplierName(o);return `<div class="card"><div class="row sp"><div><b>${esc(o.code)} · ${esc(custName)}</b><div class="mut">${esc(o.date)} · ${esc(o.status||'Mới')}</div><div style="margin-top:5px">${supplierName?`<span class="badge vendor-badge">${ic('store')} NCC chính: ${esc(supplierName)}</span>`:'<span class="badge vendor-missing">Chưa gắn NCC chính</span>'}</div></div><span class="badge ${profit<0?'bd':bd.count?'ok':'wr'}">${bd.count?'Đã ghi '+bd.count+' khoản':'Chưa ghi chi phí'}</span></div><div class="grid" style="margin-top:10px"><div><small class="mut">Doanh thu trước VAT</small><div><b>${vnd(rev)}</b></div></div><div><small class="mut">Mua hàng / xưởng</small><div><b>${vnd(bd.buys)}</b></div></div><div><small class="mut">Chi phí khác</small><div><b>${vnd(bd.exp)}</b></div></div><div><small class="mut">Lãi theo khoản đã ghi</small><div><b class="${bd.count===0?'mut':profit<0?'neg':'pos'}">${bd.count===0?'Chưa đủ dữ liệu':vnd(profit)}</b></div></div></div><div class="mut" style="margin-top:8px">Giá vốn tham khảo trong danh mục: ${vnd(est)} · ${bd.count?'Đã ghi '+bd.count+' giao dịch liên quan':'Chưa có giao dịch mua hàng/chi phí gắn với đơn này'}.</div><div class="row" style="margin-top:8px"><button class="btn gh sm" data-a="newPurchaseForOrder" data-id="${o.id}">＋ Ghi tiền xưởng</button><button class="btn gh sm" data-a="newExpForOrder" data-id="${o.id}">＋ Ghi chi phí</button><button class="btn gh sm" data-a="editOrder" data-id="${o.id}">Xem / sửa đơn</button></div></div>`}).join(''):'<div class="empty">Chưa có đơn hàng để tính lãi lỗ.</div>'}`;
 }
