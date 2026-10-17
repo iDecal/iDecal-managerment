@@ -512,12 +512,12 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
 
 
 
-/* Process nổi bật, tối với chữ vàng ngả xanh */
+/* Process: khung navy, danh sách nền trắng và icon rõ theo từng trạng thái */
 .orders-alt .oc-mid-sec:has(> .st){background:linear-gradient(135deg,#172c4a 0%,#203d60 100%);border:1px solid #426b94;box-shadow:0 5px 14px rgba(17,49,89,.16)}
-.orders-alt .oc-mid-sec:has(> .st) small{color:#9edfff;letter-spacing:.85px;font-weight:800}
-.orders-alt .oc-mid-sec .st{background-color:#0c233f!important;color:#e4f7ff!important;border:1px solid #5795c3!important;font-weight:750!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
+.orders-alt .oc-mid-sec:has(> .st) small{color:#b9e7ff;letter-spacing:.85px;font-weight:800}
+.orders-alt .oc-mid-sec .st{background:#fff!important;color:#174c75!important;border:1px solid #9bc8e7!important;font-weight:750!important;box-shadow:0 2px 7px rgba(0,0,0,.09);padding-left:14px}
 .orders-alt .oc-mid-sec .st:focus{outline:2px solid #7ed8ff;outline-offset:2px}
-.orders-alt .oc-mid-sec .st option{background:#112c4e;color:#e4f7ff}
+.orders-alt .oc-mid-sec .st option{background:#fff!important;color:#174c75!important;font-weight:650}
 
 /* Nội bộ: giao việc và trò chuyện */
 .collab-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
@@ -848,6 +848,7 @@ function cloudSave(){
 }
 const hasLocal=()=>{try{const d=JSON.parse(LS.getItem(KEY));return !!d&&COLS.some(k=>(d[k]||[]).length)}catch(e){return false}};
 const STATUS=['Mới','Đang thiết kế','Đang in','Hoàn thành','Huỷ'];
+const STATUS_ICONS={'Mới':'🆕','Đang thiết kế':'🎨','Đang in':'🖨️','Hoàn thành':'✅','Huỷ':'⛔'};
 const normOrderStatus=s=>s==='Đã giao'?'Hoàn thành':(s||'Mới');
 const TABS=[
   {id:'home',icon:'home',label:'Tổng quan',group:'',req:'all',color:'sky'},
@@ -953,7 +954,7 @@ function orderForm(id){
     <div class="mut">Chọn xưởng/NCC thực hiện đơn này để nhóm báo cáo lãi lỗ theo NCC. Nếu chưa có trong danh sách, thêm ở menu Nhà cung cấp hoặc tạo phiếu mua hàng trước.</div>
     <label>Hàng hoá</label><div id="items"></div>
     <button type="button" class="btn gh sm" id="addI" style="margin-top:8px">${ic('plus')} Thêm dòng</button>
-    <label>Trạng thái<select name="status">${STATUS.map(s=>`<option ${s===normOrderStatus(o.status)?'selected':''}>${s}</option>`).join('')}</select></label>
+    <label>Trạng thái<select name="status">${STATUS.map(s=>`<option value="${esc(s)}" ${s===normOrderStatus(o.status)?'selected':''}>${STATUS_ICONS[s]||'•'} ${esc(s)}</option>`).join('')}</select></label>
     <label class="chk"><input type="checkbox" name="paid" ${o.paid?'checked':''}> Đã thanh toán toàn bộ (không còn công nợ)</label>
     ${fld('Ghi chú','note',o.note||'')}
     <div class="tot">Tổng: <b id="tot">0đ</b></div>`,
@@ -1253,7 +1254,7 @@ function orderCard(o){
     <div class="oc-mid">
       <div class="oc-mid-sec">
         <small>Process / tiến độ</small>
-        <select class="st" data-id="${o.id}">${STATUS.map(s=>`<option ${s===normOrderStatus(o.status)?'selected':''}>${s}</option>`).join('')}</select>
+        <select class="st" data-id="${o.id}">${STATUS.map(s=>`<option value="${esc(s)}" ${s===normOrderStatus(o.status)?'selected':''}>${STATUS_ICONS[s]||'•'} ${esc(s)}</option>`).join('')}</select>
       </div>
       ${dep(o)?`<div class="oc-mid-sec"><small>Đã tạm ứng</small><div class="oc-mid-badges"><span class="badge">${ic('banknote')} ${vnd(dep(o))}</span></div></div>`:''}
       <div class="oc-mid-sec">
