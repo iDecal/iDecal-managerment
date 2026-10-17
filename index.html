@@ -457,55 +457,60 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
 .itd ul{margin:4px 0 2px;padding-left:18px;color:var(--mut);font-size:13px}.itd li{margin:2px 0}
 
 /* ===== Đơn hàng gọn ===== */
-.oc{padding:16px 18px;margin-bottom:14px;border-radius:22px;position:relative;overflow:hidden;box-shadow:0 4px 14px rgba(14,44,77,.04)}
+.oc{padding:14px 16px;margin-bottom:12px;border-radius:20px;position:relative;overflow:hidden;box-shadow:0 4px 14px rgba(14,44,77,.04)}
 .orders-alt .oc:nth-child(odd){background:linear-gradient(180deg,#ffffff 0%,#fcfdff 100%);border:1px solid #dfe8f1;border-left:5px solid #e4edf6}
 .orders-alt .oc:nth-child(even){background:linear-gradient(180deg,#f6faff 0%,#f1f7fd 100%);border:1px solid #d7e5f2;border-left:5px solid #cfe1f1}
 .orders-alt .oc:hover{box-shadow:0 8px 18px rgba(14,44,77,.07);transform:translateY(-1px);transition:.18s ease}
-.oc-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(260px,.95fr) minmax(250px,auto);gap:18px;align-items:start}
-.oc-left,.oc-mid,.oc-right{min-width:0}
-.oc-code{font-size:19px;font-weight:800;letter-spacing:.2px;color:#10263d}
-.oc-customer{margin-top:2px;font-size:16px;font-weight:600;color:#21384d}
-.oc-schedule{margin-top:10px;display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;background:#eef6ff;border:1px solid #cfe1f4;color:#154d7d}
-.oc-schedule.install{background:#eef8f2;border-color:#cde5d7;color:#176749}
-.oc-schedule .oc-type{font-weight:800}
-.oc-schedule .oc-dt{font-weight:700;font-size:15px}
-.oc-schedule .oc-dt.empty{opacity:.78;font-weight:600}
-.oc-sub{margin-top:10px;font-size:13px;color:#5d7085}
-.oc-note{margin-top:7px;font-size:13px;color:#5d7085;display:flex;align-items:flex-start;gap:6px}
-.oc-note .i{width:14px;height:14px;flex:none;margin-top:1px}
-.oc-worker{margin-top:10px;padding:8px 10px;background:#effaf8;border-radius:10px;color:#46617b;font-size:13px}
-.oc-mid{display:grid;gap:12px;align-content:start}
-.oc-statusbox{padding:12px;border-radius:14px;background:rgba(255,255,255,.66);border:1px solid #d9e8f3}
-.oc-statusbox .cap{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#6f8196;font-weight:700;margin-bottom:7px}
-.oc-statusbox .st{width:100%;min-width:0;height:38px;padding:0 30px 0 13px;font-size:14px;font-weight:600;border-radius:11px;background:#eef3ff;border:1px solid #d8e0f3;color:#345}
-.oc-tags{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-.oc-tags .badge{padding:6px 11px;font-size:12.5px;display:inline-flex;align-items:center;gap:4px}
-.oc-tags .badge .i{width:13px;height:13px}
-.oc-right{display:flex;flex-direction:column;align-items:flex-end;gap:12px}
-.oc-p{font-size:18px;font-weight:800;color:#10263d;line-height:1.15}
-.oc-a{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
-.oc-a .btn.sm{min-height:35px;padding:6px 11px;white-space:nowrap}
+.oc-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.oc-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px;line-height:1.35}
+.oc-t b{font-size:18px}
+.oc-p{flex:none;font-size:18px;color:#0d2742;padding-top:2px}
+.oc-main,.oc-mid{min-width:0}
+.oc-schedule{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;padding:10px 12px;border-radius:14px;background:#eef7ff;border:1px solid #d6e8f7}
+.oc-kind{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:#fff;color:#16618f;border:1px solid #bfdaf0;font-size:12px;font-weight:700;white-space:nowrap}
+.oc-time{font-size:14px;color:#20405f}
+.oc-time b{font-size:15px;color:#123859}
+.oc-sub{margin-top:9px;font-size:13px;color:#607287}
+.oc-sub b{color:#153654}
+.oc-note{margin-top:8px;font-size:13px;color:#5f7185;display:flex;align-items:center;gap:6px;overflow-wrap:anywhere}
+.oc-note .i{width:13px;height:13px}
+.oc-worker{margin-top:10px;padding:8px 11px;background:#effaf8;border-radius:12px;color:#496276;font-size:13px}
+.oc-worker b{color:#23475e}
+.oc-mid{display:grid;gap:10px;align-content:start}
+.oc-mid-sec{padding:10px 11px;border-radius:14px;background:#f8fbfe;border:1px solid #deebf5}
+.oc-mid-sec small{display:block;color:#6f8296;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;font-weight:700}
+.oc-mid .st{width:100%;height:38px;padding:0 30px 0 12px;font-size:14px;font-weight:600;border-radius:12px;background-color:#edf3ff;color:#2856b2;border-color:#dbe5ff}
+.oc-mid-badges{display:flex;flex-wrap:wrap;gap:7px}
+.oc-mid .badge{padding:6px 11px;font-size:12px;display:inline-flex;align-items:center;gap:5px}
+.oc-mid .badge .i{width:13px;height:13px}
+.oc-a{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-self:start}
+.oc-a .btn.sm{min-height:35px;padding:6px 10px;white-space:nowrap;justify-content:center}
+.oc-a .mm{margin-left:0}
+.oc-a .mm summary{width:100%;min-height:35px}
 .mm{position:relative}
-.mm summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:38px;padding:0}
+.mm summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .mm summary::-webkit-details-marker{display:none}
-.mm-pop{position:absolute;right:0;top:calc(100% + 6px);z-index:8;min-width:160px;background:var(--card);border:1px solid var(--bd);border-radius:14px;box-shadow:0 10px 30px rgba(15,18,40,.18);padding:6px;display:flex;flex-direction:column}
+.mm-pop{position:absolute;right:0;bottom:calc(100% + 6px);z-index:8;min-width:160px;background:var(--card);border:1px solid var(--bd);border-radius:14px;box-shadow:0 10px 30px rgba(15,18,40,.18);padding:6px;display:flex;flex-direction:column}
 .mm-pop button{display:flex;align-items:center;gap:8px;border:0;background:none;color:var(--tx);font:500 14px 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;padding:10px 12px;border-radius:10px;cursor:pointer;text-align:left}
 .mm-pop button:hover{background:var(--soft)}.mm-pop button.dg{color:var(--bad)}
-@media(max-width:960px){
-  .oc-grid{grid-template-columns:1fr;gap:14px}
-  .oc-right{align-items:flex-start}
-  .oc-a{justify-content:flex-start}
-  .oc-p{font-size:19px}
+@media(min-width:920px){
+  .oc{display:grid;grid-template-columns:minmax(360px,1.4fr) minmax(260px,1fr) 270px;gap:18px;align-items:start}
+}
+@media(max-width:919px){
+  .oc{display:grid;gap:12px}
 }
 @media(max-width:560px){
   .stage{min-height:50px;padding:4px 8px}.stage .stage-n{font-size:17px}
-  .oc{padding:14px}
-  .oc-customer{font-size:15px}
-  .oc-schedule{display:flex}
-  .oc-a .btn.sm{flex:1 1 calc(50% - 6px);padding:5px 8px}
-  .mm{flex:1 1 calc(50% - 6px)}
-  .mm summary{width:100%}
+  .oc{padding:13px 13px 14px}
+  .oc-h{flex-direction:column;gap:6px}
+  .oc-t{white-space:normal}
+  .oc-p{font-size:19px}
+  .oc-schedule{padding:9px 10px}
+  .oc-mid{gap:8px}
+  .oc-a{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .oc-a .btn.sm{padding:6px}
 }
+
 
 /* Nội bộ: giao việc và trò chuyện */
 .collab-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
@@ -1156,61 +1161,58 @@ function stageBar(){
 function orderCard(o){
   const sup=orderSupplierName(o);
   const done=['Hoàn thành','Đã giao','Huỷ'].includes(o.status);
-  const n=(o.items||[]).length;
   const note=o.note&&!/^Từ BG\d+/.test(o.note)?o.note:'';
   const type=orderFulfillment(o);
-  const rawDue=type==='installation'?o.installDue:o.deliveryDue;
-  const dueText=(()=>{
-    if(!rawDue)return 'Chưa hẹn lịch';
-    const m=String(rawDue).match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
-    if(m){
-      const [,y,mo,d,h,mi]=m;
-      return h?`${h}:${mi} · ${d}/${mo}/${y}`:`${d}/${mo}/${y}`;
-    }
-    return String(rawDue).replace('T',' · ');
-  })();
+  const isInstall=type==='installation';
+  const dueRaw=isInstall?o.installDue:o.deliveryDue;
+  const dueDisplay=dueRaw?String(dueRaw).replace('T',' · '):'Chưa hẹn lịch';
   return`<div class="card oc">
-    <div class="oc-grid">
-      <div class="oc-left">
-        <div class="oc-code">${esc(o.code)}</div>
-        <div class="oc-customer">${esc(orderCustomerName(o))}</div>
-        <div class="oc-schedule ${type==='installation'?'install':''}">
-          <span class="oc-type">${type==='installation'?'🛠️ Thi công':'🚚 Giao hàng'}</span>
-          <span class="oc-dt ${rawDue?'':'empty'}">${esc(dueText)}</span>
-        </div>
-        <div class="oc-sub">${n} mặt hàng · Đơn giá / tổng đơn: <b>${vnd(total(o))}</b></div>
-        ${note?`<div class="oc-note">${ic('pencil')} <span>${esc(note)}</span></div>`:''}
-        ${type==='installation'&&o.workerIds?.length?`<div class="oc-worker">${ic('users')} <b>Thợ thi công:</b> ${esc(assignedWorkers(o).join(', '))} · ${esc(o.installStatus||'Đã phân công')}</div>`:''}
+    <div class="oc-main">
+      <div class="oc-h">
+        <div class="oc-t"><b>${esc(o.code)}</b> · ${esc(orderCustomerName(o))}</div>
+        <b class="oc-p">${vnd(total(o))}</b>
       </div>
-      <div class="oc-mid">
-        <div class="oc-statusbox">
-          <div class="cap">Tiến độ xử lý</div>
-          <select class="st" data-id="${o.id}">${STATUS.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select>
-        </div>
-        <div class="oc-tags">
+      <div class="oc-schedule">
+        <span class="oc-kind">${isInstall?'🛠️ Thi công':'🚚 Giao hàng'}</span>
+        <div class="oc-time"><b>${esc(dueDisplay)}</b></div>
+      </div>
+      <div class="oc-sub">Đơn giá / giá trị đơn: <b>${vnd(total(o))}</b></div>
+      ${isInstall&&o.workerIds?.length?`<div class="oc-worker">${ic('users')} <b>Thợ thi công:</b> ${esc(assignedWorkers(o).join(', '))} · ${esc(o.installStatus||'Đã phân công')}</div>`:''}
+      ${note?`<div class="oc-note">${ic('pencil')} ${esc(note)}</div>`:''}
+    </div>
+    <div class="oc-mid">
+      <div class="oc-mid-sec">
+        <small>Process / tiến độ</small>
+        <select class="st" data-id="${o.id}">${STATUS.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select>
+      </div>
+      <div class="oc-mid-sec">
+        <small>Thanh toán</small>
+        <div class="oc-mid-badges">
           <span class="badge ${o.paid?'ok':'wr'}" data-a="pay" data-id="${o.id}" style="cursor:pointer">${o.paid?'Đã thu':'Chưa thu'}</span>
           ${dep(o)?`<span class="badge ${o.paid?'ok':'wr'}" title="Đã tạm ứng ${vnd(dep(o))}">${ic('banknote')} ${o.paid?'Ứng '+vnd(dep(o)):'Ứng '+vnd(dep(o))+' · còn '+vnd(orderDue(o))}</span>`:''}
+        </div>
+      </div>
+      <div class="oc-mid-sec">
+        <small>NCC / đơn vị thực hiện</small>
+        <div class="oc-mid-badges">
           ${sup?`<span class="badge vendor-badge">${ic('store')} ${esc(sup)}</span>`:'<span class="badge vendor-missing">Chưa gắn NCC</span>'}
         </div>
       </div>
-      <div class="oc-right">
-        <b class="oc-p">${vnd(total(o))}</b>
-        <div class="oc-a">
-          <button class="btn gh sm" data-a="previewOrder" data-id="${o.id}">${ic('eye')} Xem</button>
-          <button class="btn gh sm" data-a="previewWorkSlip" data-id="${o.id}">${ic('filetext')} ${type==='installation'?'Đơn thi công':'Phiếu giao hàng'}</button>
-          <button class="btn gh sm" data-a="editOrder" data-id="${o.id}">${ic('pencil')} Sửa</button>
-          ${o.paid?'':`<button class="btn gh sm" data-a="depositOrder" data-id="${o.id}">${ic('banknote')} Tạm ứng</button>`}
-          <details class="mm"><summary class="btn gh sm" aria-label="Thêm thao tác">${ic('more')}</summary><div class="mm-pop">
-            ${done?`<button type="button" data-a="archiveOrder" data-id="${o.id}">${ic('archive')} Lưu trữ</button>`:''}
-            ${isMgr()?`<button type="button" class="dg" data-a="delOrder" data-id="${o.id}">${ic('trash')} Xoá đơn</button>`:''}
-            ${!done&&!isMgr()?'<span class="mut" style="padding:8px 10px;display:block">Không có thao tác khác</span>':''}
-          </div></details>
-        </div>
-      </div>
+    </div>
+    <div class="oc-a">
+      <button class="btn gh sm" data-a="previewOrder" data-id="${o.id}">${ic('eye')} Xem</button>
+      <button class="btn gh sm" data-a="previewWorkSlip" data-id="${o.id}">${ic('filetext')} ${isInstall?'Đơn thi công':'Phiếu giao hàng'}</button>
+      <button class="btn gh sm" data-a="editOrder" data-id="${o.id}">${ic('pencil')} Sửa</button>
+      ${o.paid?'':`<button class="btn gh sm" data-a="depositOrder" data-id="${o.id}">${ic('banknote')} Tạm ứng</button>`}
+      <details class="mm"><summary class="btn gh sm" aria-label="Thêm thao tác">${ic('more')}</summary><div class="mm-pop">
+        ${done?`<button type="button" data-a="archiveOrder" data-id="${o.id}">${ic('archive')} Lưu trữ</button>`:''}
+        ${isMgr()?`<button type="button" class="dg" data-a="delOrder" data-id="${o.id}">${ic('trash')} Xoá đơn</button>`:''}
+        ${!done&&!isMgr()?'<span class="mut" style="padding:8px 10px;display:block">Không có thao tác khác</span>':''}
+      </div></details>
     </div>
   </div>`;
 }
-function orderFulfillmentfunction orderFulfillment(o){return o.fulfillmentType==='installation'?'installation':o.fulfillmentType==='delivery'?'delivery':((o.workerIds?.length||o.installDue)?'installation':'delivery')}
+function orderFulfillment(o){return o.fulfillmentType==='installation'?'installation':o.fulfillmentType==='delivery'?'delivery':((o.workerIds?.length||o.installDue)?'installation':'delivery')}
 function orders(){
   const base=db.orders.filter(o=>!o.archived&&(filter==='Tất cả'||o.status===filter)&&true).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
   const list=fapply('orders',base);
