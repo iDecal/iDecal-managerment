@@ -1770,13 +1770,18 @@ function purchaseForm(id, presetOrderId=''){
     <button type="button" class="btn gh sm" id="addI" style="margin-top:8px">${ic('plus')} Thêm dòng</button>
     <div class="card" style="padding:12px;margin:12px 0;border:1px solid #b5d8e9;background:#f1f9fe;border-radius:12px">
       <div style="font-weight:800;color:#155981;margin-bottom:5px">${ic('banknote')} THANH TOÁN / TẠM ỨNG THEO PHIẾU MUA</div>
-      ${!id?`<div class="mut" style="margin-bottom:8px">Nhập khoản tạm ứng ngay khi lập phiếu mua. Nếu chưa tạm ứng, để 0; có thể bổ sung nhiều lần về sau.</div>
-        ${fld('Số tiền tạm ứng ban đầu (đ)','initialAdvance',0,'number','min="0" step="1"')}
+      <div class="row sp"><span>Giá trị phiếu mua</span><b id="purchaseFormTotal">0đ</b></div>
+      <div class="row sp"><span>Đã tạm ứng NCC</span><b id="purchaseFormAdvanced">${vnd(purchaseAdvTotal(o))}</b></div>
+      <div class="row sp"><span>Còn phải thanh toán</span><b id="purchaseFormDue">0đ</b></div>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid #d2e5ee">
+        <b>${id?'Thêm tạm ứng / thanh toán lần này':'Tạm ứng ban đầu cho NCC'}</b>
+        ${fld('Số tiền tạm ứng (đ)','initialAdvance',0,'number','min="0" step="1" placeholder="Ví dụ: 5000000"')}
         ${fld('Ngày tạm ứng','advanceDate',today(),'date')}
-        <label>Hình thức tạm ứng<select name="advanceMethod"><option>Chuyển khoản</option><option>Tiền mặt</option><option>Khác</option></select></label>`:
-        `<div class="row sp"><span>Đã tạm ứng NCC</span><b>${vnd(purchaseAdvTotal(o))}</b></div>
-        <div class="row sp"><span>Còn phải thanh toán</span><b>${vnd(purchaseOutstanding(o))}</b></div>
-        <div class="mut" style="margin-top:7px">Muốn tạm ứng thêm, hãy lưu phiếu rồi bấm nút <b>Tạm ứng / Thanh toán</b> trên chính phiếu mua này.</div>`}
+        <label>Hình thức thanh toán<select name="advanceMethod"><option>Chuyển khoản</option><option>Tiền mặt</option><option>Khác</option></select></label>
+        <label>Nội dung / ghi chú tạm ứng<input name="advanceNote" placeholder="Ví dụ: Đặt cọc cho NCC đợt 1"></label>
+        <div class="mut">Điền số tiền rồi bấm <b>Lưu</b> để ghi nhận ngay trên phiếu mua. Để 0 nếu chưa chuyển tiền.</div>
+      </div>
+      ${id&&(o.advances||[]).length?`<details style="margin-top:10px" open><summary><b>Lịch sử thanh toán / tạm ứng (${o.advances.length})</b></summary>${o.advances.map(a=>`<div class="row sp" style="font-size:12px;gap:10px;border-bottom:1px solid #dce8f1;padding:6px 0"><span>${esc(a.date||'')} · ${esc(a.method||'')} ${a.note?'· '+esc(a.note):''}</span><b>${vnd(a.amount)}</b></div>`).join('')}</details>`:''}
     </div>
     <label class="chk"><input type="checkbox" name="paid" ${o.paid?'checked':''}> Đã thanh toán toàn bộ</label>
     ${fld('Ghi chú','note',o.note||'')}
@@ -1804,13 +1809,16 @@ function purchaseForm(id, presetOrderId=''){
     const paid=fd.get('paid')==='on';
     const initialAdvance=Number(fd.get('initialAdvance')||0);
     const total=items.reduce((sum,i)=>sum+lineCost(i),0);
-    if(!id&&(!Number.isSafeInteger(initialAdvance)||initialAdvance<0||initialAdvance>total)){alert('Tạm ứng ban đầu phải từ 0 đến tổng giá trị phiếu mua.');return false}
-    if(id&&purchaseAdvTotal(o)>total){alert('Tổng tiền phiếu mua đang nhỏ hơn số đã tạm ứng. Vui lòng điều chỉnh các khoản tạm ứng trước.');return false}
-    if(paid&&(!id?initialAdvance>0:purchaseAdvTotal(o)>0)){
-      if(!confirm('Đánh dấu đã thanh toán toàn bộ: các khoản tạm ứng vẫn được giữ trong lịch sử. Tiếp tục?'))return false;
+    const advancedBefore=purchaseAdvTotal(o);
+    if(!Number.isSafeInteger(initialAdvance)||initialAdvance<0||initialAdvance+advancedBefore>total){alert('Tạm ứng mới phải từ 0 đến số tiền còn lại của phiếu mua ('+vnd(Math.max(0,total-advancedBefore))+').');return false}
+    if(paid&&initialAdvance+advancedBefore<total){
+      if(!confirm('Bạn đánh dấu Đã thanh toán toàn bộ dù lịch sử tạm ứng chưa đủ giá trị phiếu. Hệ thống sẽ xem phiếu đã thanh toán đủ. Tiếp tục?'))return false;
     }
     const data={supplier,supplierId,supplierInfo,sourceType,date:fd.get('date'),orderId:fd.get('orderId')||'',paid,note:fd.get('note'),items};
-    if(!id&&initialAdvance>0)data.advances=[{id:uid(),date:String(fd.get('advanceDate')||fd.get('date')||today()),amount:initialAdvance,method:String(fd.get('advanceMethod')||''),note:'Tạm ứng khi lập phiếu mua'}];
+    if(initialAdvance>0){
+      const entry={id:uid(),date:String(fd.get('advanceDate')||fd.get('date')||today()),amount:initialAdvance,method:String(fd.get('advanceMethod')||'Chuyển khoản'),note:String(fd.get('advanceNote')||'').trim()||(!id?'Tạm ứng khi lập phiếu mua':'Tạm ứng bổ sung')};
+      data.advances=[...(o.advances||[]),entry];
+    }
     if(id)Object.assign(o,data);else db.purchases.push({id:uid(),code:'MH'+String(++db.pseq).padStart(4,'0'),...data});
     const linkedOrder=db.orders.find(x=>x.id===data.orderId);
     if(linkedOrder&&!orderSupplierName(linkedOrder)&&supplier&&supplier!=='Khách lẻ'){
@@ -1824,6 +1832,19 @@ function purchaseForm(id, presetOrderId=''){
   sourceTypeEl.addEventListener('change',syncSupplierFields);supplierSelectEl.addEventListener('change',syncSupplierFields);syncSupplierFields();
   itemEditor(m,o.items.map(i=>({...i,price:i.cost})));
   m.querySelectorAll('.pr').forEach(x=>x.placeholder='Giá nhập');
+  const refreshPurchaseBalance=()=>{
+    const items=readItems(m).map(i=>({qty:i.qty,cost:i.price}));
+    const value=items.reduce((sum,i)=>sum+lineCost(i),0);
+    const oldAdvance=purchaseAdvTotal(o);
+    const newAdvance=Math.max(0,Number(m.querySelector('[name="initialAdvance"]')?.value)||0);
+    m.querySelector('#purchaseFormTotal').textContent=vnd(value);
+    m.querySelector('#purchaseFormAdvanced').textContent=vnd(oldAdvance+newAdvance);
+    m.querySelector('#purchaseFormDue').textContent=vnd(Math.max(0,value-oldAdvance-newAdvance));
+  };
+  m.addEventListener('input',refreshPurchaseBalance);
+  m.addEventListener('change',refreshPurchaseBalance);
+  refreshPurchaseBalance();
+
   m.addEventListener('change',e=>{if(e.target.classList.contains('p')){const p=prod(e.target.value);if(p){const pr=e.target.closest('.it').querySelector('.pr');pr.value=p.cost;pr.dispatchEvent(new Event('input',{bubbles:true}))}}});
 }
 function buys(){
@@ -1835,7 +1856,7 @@ function buys(){
   const debt=db.purchases.reduce((sum,p)=>sum+purchaseOutstanding(p),0);
   const adv=db.purchases.reduce((sum,p)=>sum+purchaseAdvTotal(p),0);
   return`<div class="row sp"><div><h2>Mua hàng</h2><div class="mut">Ghi tiền xưởng in/gia công, vật tư và công nợ NCC. Chọn mã đơn để tự cộng vào báo cáo lãi lỗ.</div></div><button class="btn" data-a="newPurchase">${ic('plus')} Phiếu mua</button></div>
-  <div class="mut" style="margin:7px 0 12px">Tạm ứng và công nợ được quản lý <b>riêng theo từng phiếu mua hàng</b>. Bấm <b>+ Phiếu mua</b> để ghi tạm ứng ban đầu, hoặc <b>Tạm ứng / Thanh toán</b> trên phiếu để ghi thêm từng lần.</div>
+  <div class="mut" style="margin:7px 0 12px">Tạm ứng và công nợ được quản lý <b>riêng theo từng phiếu mua hàng</b>. Vào <b>+ Phiếu mua</b> hoặc <b>Sửa</b> bất kỳ phiếu nào để nhập tạm ứng trực tiếp. Lọc theo tình trạng tạm ứng và công nợ ngay bên dưới.</div>
   <div class="grid"><div class="card kpi"><small>Mua tháng này</small><b>${vnd(mon)}</b></div><div class="card kpi"><small>Nợ nhà cung cấp</small><b class="${debt?'neg':''}">${vnd(debt)}</b></div><div class="card kpi"><small>Đã tạm ứng cho NCC</small><b>${vnd(adv)}</b></div></div>
   ${fbar('purchases',all)}
   ${list.length?list.map(p=>`<div class="card">
@@ -2147,7 +2168,7 @@ const FDEF={
   cust:[['all','Tất cả',()=>true],['individual','Cá nhân',c=>c.customerType!=='company'],['company','Doanh nghiệp',c=>c.customerType==='company'],['debt','Còn nợ',c=>custDue(c)>0],['has','Đã có đơn',c=>custOrders(c)>0],['none','Chưa có đơn',c=>custOrders(c)===0]],
   deposits:[['all','Tất cả',()=>true],['open','Chưa thu đủ',o=>!o.paid],['done','Đã thu đủ',o=>!!o.paid]],
   prod:[['all','Tất cả',()=>true],['product','Sản phẩm',p=>p.kind!=='service'],['service','Dịch vụ',p=>p.kind==='service']],
-  purchases:[['all','Tất cả',()=>true],['unpaid','Chưa trả',p=>purchaseOutstanding(p)>0],['paid','Đã trả',p=>!!p.paid],['month','Tháng này',p=>thisMonth(p.date)],['noord','Chưa gắn đơn',p=>!p.orderId]],
+  purchases:[['all','Tất cả',()=>true],['notadvanced','Chưa tạm ứng',p=>!p.paid&&purchaseAdvTotal(p)===0],['advanced','Đã tạm ứng',p=>purchaseAdvTotal(p)>0],['unpaid','Còn công nợ',p=>purchaseOutstanding(p)>0],['paid','Đã thanh toán',p=>!!p.paid||ptotal(p)>0&&purchaseAdvTotal(p)>=ptotal(p)],['month','Tháng này',p=>thisMonth(p.date)],['noord','Chưa gắn đơn',p=>!p.orderId]],
   suppliers:[['all','Tất cả',()=>true],...Object.entries(SUP_CAT).map(([k,v])=>[k,v,x=>(x.category||'in-an')===k])],
   exp:[['all','Tất cả',()=>true],['month','Tháng này',e=>thisMonth(e.date)],['ord','Đã gắn đơn',e=>!!e.orderId],['noord','Chưa gắn đơn',e=>!e.orderId]],
   profit:[['all','Tất cả',()=>true],['nocost','Chưa ghi chi phí',o=>orderCostBreakdown(o).count===0],['gain','Có lãi',o=>orderCostBreakdown(o).count>0&&orderRevenue(o)-orderActualCosts(o)>=0],['loss','Lỗ',o=>orderCostBreakdown(o).count>0&&orderRevenue(o)-orderActualCosts(o)<0],['nosup','Chưa gắn NCC',o=>!orderSupplierName(o)]],
