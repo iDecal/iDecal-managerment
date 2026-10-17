@@ -590,7 +590,36 @@ body[data-view="gemini"] #gem-panel .gm-compose textarea{min-height:84px}
 </style>
 <style id="worker-cccd-area-style">.worker-area-filter{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 8px}.worker-area-mark{background:#eff8fb;border:1px solid #d5eaf1;border-radius:9px;padding:8px;font-size:12px;color:#225e78}.worker-area-mark .mut{margin-top:4px}.worker-fieldset{border:1px solid #deebf1;border-radius:12px;padding:12px;margin:12px 0;background:#f7fafc}.worker-fieldset>b{display:block;color:#165e82;margin-bottom:9px}.worker-fieldset .mut{font-size:11px}</style>
 
-</head>
+<style id="idecal-wide-dialogs">
+@media (min-width:701px) {
+  .ov .md:not(.pv-md) {
+    width:75vw !important; max-width:75vw !important;
+    max-height:92vh; border-radius:18px;
+    padding:22px 26px 24px;
+  }
+  .ov .md:not(.pv-md)>h3:first-child{font-size:22px}
+}
+@media (max-width:700px) {
+  .ov{align-items:stretch;justify-content:stretch;padding:0}
+  .ov .md:not(.pv-md){
+    width:100vw !important; max-width:100vw !important;
+    height:100dvh;max-height:100dvh !important;
+    border-radius:0 !important;
+    padding:18px 16px calc(20px + env(safe-area-inset-bottom));
+  }
+}
+.worker-check[hidden]{display:none!important}
+</style>
+<style id="idecal-order-quote-emphasis">
+.order-quote-link{padding:14px 16px;margin-bottom:15px;border:1.5px solid #80bbe3;border-left:5px solid #187cb5;border-radius:13px;background:linear-gradient(125deg,#eaf6ff,#f7fbff);box-shadow:0 3px 11px rgba(20,105,163,.07)}
+.order-quote-heading{display:flex;align-items:center;gap:8px;color:#075989;flex-wrap:wrap;margin-bottom:9px}
+.order-quote-heading strong{font-size:15px;letter-spacing:.4px}
+.order-quote-heading span{margin-left:auto;font-size:11px;font-weight:500;color:#4c7891}
+.order-quote-link select{width:100%;background:white!important;border:1px solid #9bcce9!important;font-weight:600;color:#163e57}
+.order-quote-link .mut{margin-top:7px;font-size:11.5px}
+#installTimeField[hidden],#deliveryTimeField[hidden]{display:none!important}
+@media(max-width:700px){.order-quote-heading span{margin-left:0;flex:1 1 100%}}
+</style></head>
 <body>
 <header><button class="burger" id="navToggle" data-a="toggleNav" aria-label="Mở menu" aria-expanded="false" aria-controls="nav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button><span class="logo"><img class="brand" src="data:image/png;base64,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" alt="iDecal" width="30" height="30"><span class="lname">iDecal</span></span><div class="htxt"><small id="hsub"></small><span class="htitle" id="htitle"></span></div><span class="hact" id="hact"></span><span id="who" class="who"></span></header>
 <main id="app"></main>
@@ -830,19 +859,27 @@ const fld=(label,name,val='',type='text',extra='')=>`<label>${label}<input name=
 function orderForm(id){
   const o=db.orders.find(x=>x.id===id)||{date:today(),status:'Mới',items:[{}],paid:false};
   const supplierOpts=supplierChoices();
+  const selectedQuote=(db.quotes||[]).find(q=>q.orderId===o.id)||(db.quotes||[]).find(q=>q.id===o.quoteId);
   const currentSupplier=supplierOpts.find(x=>x.id===o.supplierId)||supplierOpts.find(x=>String(x.name).toLocaleLowerCase('vi')===String(o.supplierName||'').toLocaleLowerCase('vi'));
   const m=modal(id?'Sửa đơn '+o.code:'Đơn mới',`
+    <div class="order-quote-link"><div class="order-quote-heading">${ic('filetext')} <strong>BÁO GIÁ LIÊN KẾT</strong><span>Ưu tiên chọn báo giá để nhập nhanh đơn hàng</span></div>
+      <select name="quoteId" id="orderQuoteId" aria-label="Chọn báo giá liên kết"><option value="">— Chưa liên kết báo giá / nhập đơn thủ công —</option>${(db.quotes||[]).filter(q=>!q.orderId||q.orderId===o.id||q.id===selectedQuote?.id).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).map(q=>`<option value="${esc(q.id)}" ${selectedQuote?.id===q.id?'selected':''}>${esc(q.code)} · ${esc(qname(q))} · ${vnd(qtotal(q))}</option>`).join('')}</select>
+      <div class="mut">Chọn báo giá sẽ tự điền khách hàng và danh sách sản phẩm / dịch vụ. Bạn có thể sửa lại trước khi lưu.</div>
+    </div>
     <label>Khách hàng<select name="cid"><option value="">Khách lẻ</option>${db.customers.map(c=>`<option value="${c.id}" ${c.id===o.cid?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
     ${fld('Tên khách (nhập tay nếu là khách lẻ)','cname',o.cname||'','text','placeholder="VD: Nha khoa VIN OCP"')}
     <label>Loại thực hiện đơn hàng<select name="fulfillmentType" id="fulfillmentType"><option value="delivery" ${(o.fulfillmentType||((o.workerIds?.length||o.installDue)?'installation':'delivery'))==='delivery'?'selected':''}>🚚 Giao hàng</option><option value="installation" ${(o.fulfillmentType||((o.workerIds?.length||o.installDue)?'installation':'delivery'))==='installation'?'selected':''}>🛠️ Thi công / lắp đặt</option></select></label>
     <div class="mut">Mỗi loại có phiếu riêng để gửi cho người giao hàng hoặc thợ thi công.</div>
     ${fld('Ngày','date',o.date,'date','required')}
-    <div class="reminder-dates">${fld('Giờ in ấn','printDue',o.printDue||'','datetime-local')}${fld('Giờ thi công','installDue',o.installDue||'','datetime-local')}${fld('Giờ giao hàng','deliveryDue',o.deliveryDue||'','datetime-local')}</div>
-    <div class="mut" style="margin:5px 0 12px">Nhắc trước giờ thực hiện 3 tiếng. Các lịch cũ chỉ có ngày cần bổ sung giờ để hệ thống nhắc chính xác.</div>
+    <div class="reminder-dates">
+      <div id="installTimeField">${fld('Ngày & giờ thi công','installDue',o.installDue||'','datetime-local')}</div>
+      <div id="deliveryTimeField">${fld('Ngày & giờ giao hàng','deliveryDue',o.deliveryDue||'','datetime-local')}</div>
+    </div>
+    <div class="mut" style="margin:5px 0 12px">Chỉ nhập lịch tương ứng với loại đơn. Hệ thống nhắc trước 3 giờ khi có thời gian thực hiện.</div>
     <div class="worker-fieldset" style="margin:12px 0"><b>${ic('map-pin')} Khu vực thực hiện đơn hàng</b>
       <label>Tỉnh / thành phố<select name="orderArea" id="orderArea"><option value="">— Chọn tỉnh / thành —</option>${WORKER_AREAS.map(a=>`<option value="${esc(a)}" ${normWorkerArea(o.orderArea)===a?'selected':''}>${esc(a)}</option>`).join('')}</select></label>
       <label>Quận / huyện (nếu có)<select name="orderDistrict" id="orderDistrict">${workerDistrictOptions(o.orderArea,o.orderDistrict||'')}</select></label>
-      <div class="mut">Dùng khu vực này để ưu tiên gợi ý thợ gần nơi giao hàng hoặc thi công.</div>
+      <div class="mut">Chỉ hiển thị thợ thuộc tỉnh/thành đã chọn để phân công nhanh.</div>
     </div>
     <div class="card" style="padding:12px;margin:9px 0;background:#f6fafb"><b>${ic('users')} Phân công thợ thi công</b><div class="mut" style="margin:5px 0 9px">Có thể chọn nhiều thợ cho một đơn hàng; quản lý tiến độ ngay tại đây.</div>
     <div id="orderWorkerHint" class="mut" style="margin:6px 0">Chọn tỉnh/thành để gợi ý thợ phù hợp.</div>
@@ -868,9 +905,28 @@ function orderForm(id){
     const picked=supplierOpts.find(x=>x.id===pickedSupplier);
     const supplierId=picked&&!picked.legacy?picked.id:'';
     const supplierName=picked?picked.name:'';
-    const data={orderArea:String(fd.get('orderArea')||''),orderDistrict:String(fd.get('orderDistrict')||''),fulfillmentType:String(fd.get('fulfillmentType')||'delivery'),cid:fd.get('cid'),cname:String(fd.get('cname')||'').trim(),date:fd.get('date'),printDue:fd.get('printDue')||'',installDue:fd.get('installDue')||'',deliveryDue:fd.get('deliveryDue')||'',status:fd.get('status'),paid:fd.get('paid')==='on',note:fd.get('note'),items,supplierId,supplierName,workerIds:fd.getAll('workerIds').filter(w=>db.workers.some(x=>x.id===w)),installStatus:String(fd.get('installStatus')||'Chưa bắt đầu'),installAddress:String(fd.get('installAddress')||'').trim(),installNote:String(fd.get('installNote')||'').trim()};
+    const data={quoteId:String(fd.get('quoteId')||''),orderArea:String(fd.get('orderArea')||''),orderDistrict:String(fd.get('orderDistrict')||''),fulfillmentType:String(fd.get('fulfillmentType')||'delivery'),cid:fd.get('cid'),cname:String(fd.get('cname')||'').trim(),date:fd.get('date'),printDue:'',installDue:fd.get('fulfillmentType')==='installation'?(fd.get('installDue')||''):'',deliveryDue:fd.get('fulfillmentType')==='delivery'?(fd.get('deliveryDue')||''):'',status:fd.get('status'),paid:fd.get('paid')==='on',note:fd.get('note'),items,supplierId,supplierName,workerIds:fd.getAll('workerIds').filter(w=>db.workers.some(x=>x.id===w)),installStatus:String(fd.get('installStatus')||'Chưa bắt đầu'),installAddress:String(fd.get('installAddress')||'').trim(),installNote:String(fd.get('installNote')||'').trim()};
     if(id)Object.assign(o,data);else db.orders.push({id:uid(),code:'DH'+String(++db.seq).padStart(4,'0'),...data});
     save();render();refreshAlerts();
+  });
+  const fulfillment=m.querySelector('#fulfillmentType');
+  const applyFulfillment=()=>{
+    const isInstall=fulfillment.value==='installation';
+    m.querySelector('#installTimeField').hidden=!isInstall;
+    m.querySelector('#deliveryTimeField').hidden=isInstall;
+  };
+  fulfillment.addEventListener('change',applyFulfillment);applyFulfillment();
+  const quoteSelect=m.querySelector('#orderQuoteId');
+  quoteSelect.addEventListener('change',()=>{
+    const q=(db.quotes||[]).find(x=>x.id===quoteSelect.value);
+    if(!q)return;
+    if(m.querySelector('[name="cid"]'))m.querySelector('[name="cid"]').value=q.cid||'';
+    if(m.querySelector('[name="cname"]'))m.querySelector('[name="cname"]').value=q.cid?'':(q.cname||'');
+    const itemBox=m.querySelector('#items');
+    itemBox.innerHTML='';
+    (q.items||[]).forEach(i=>addRow({pid:i.pid||'',name:i.name,qty:i.qty,price:i.price,unit:i.unit}));
+    if(!itemBox.children.length)addRow({});
+    calc();
   });
   const areaSelect=m.querySelector('#orderArea'),districtSelect=m.querySelector('#orderDistrict');
   const highlightWorkers=()=>{
@@ -879,6 +935,10 @@ function orderForm(id){
     for(const entry of entries){
       const sameArea=!!area&&entry.dataset.area===area;
       const sameDistrict=!!district&&entry.dataset.district===district;
+      const visible=!area||sameArea;
+      entry.hidden=!visible;
+      entry.style.display=visible?'':'none';
+      if(!visible){const checkbox=entry.querySelector('input[type="checkbox"]');if(checkbox)checkbox.checked=false;}
       entry.classList.toggle('worker-suggested',sameArea);
       entry.classList.toggle('worker-suggested-exact',sameArea&&sameDistrict);
       entry.style.order=sameArea?(sameDistrict?'-2':'-1'):'0';
@@ -887,7 +947,7 @@ function orderForm(id){
       if(sameArea){const t=document.createElement('small');t.className='area-suggest-tag';t.textContent=sameDistrict?'★ Cùng quận/huyện':'✓ Cùng tỉnh/thành';entry.appendChild(t)}
     }
     const hint=m.querySelector('#orderWorkerHint');
-    if(hint)hint.textContent=area?(matches?`Gợi ý ${matches} thợ ở ${area}; người cùng quận/huyện được đưa lên đầu. Bạn vẫn có thể chọn thợ ở khu vực khác.`:`Chưa có thợ tại ${area}. Bạn vẫn có thể chọn thợ ở khu vực khác.`):'Chọn tỉnh/thành để gợi ý thợ phù hợp.';
+    if(hint)hint.textContent=area?(matches?`Đang hiển thị ${matches} thợ tại ${area}. Người cùng quận/huyện được ưu tiên lên đầu.`:`Chưa có thợ ở ${area}. Đổi tỉnh/thành nếu cần phân công khu vực khác.`):'Chọn tỉnh/thành để gợi ý thợ phù hợp.';
   };
   areaSelect.onchange=()=>{districtSelect.innerHTML=workerDistrictOptions(areaSelect.value,'');highlightWorkers()};
   districtSelect.onchange=highlightWorkers;
@@ -1082,7 +1142,7 @@ function orderCard(o){
   const src=(o.note||'').match(/^Từ (BG\d+)/);
   return`<div class="card oc">
     <div class="oc-h"><div class="oc-t"><b>${esc(o.code)}</b> <span class="badge ${orderFulfillment(o)==='installation'?'ok':''}">${orderFulfillment(o)==='installation'?'🛠️ Thi công':'🚚 Giao hàng'}</span> · ${esc(orderCustomerName(o))}</div><b class="oc-p">${vnd(total(o))}</b></div>
-    ${(o.printDue||o.installDue||o.deliveryDue)?`<div class="mut" style="margin:4px 0">${[['🖨️',o.printDue],['🛠️',o.installDue],['🚚',o.deliveryDue]].filter(x=>x[1]).map(x=>x[0]+' '+esc(x[1])).join(' · ')}</div>`:''}
+    ${(orderFulfillment(o)==='installation'?o.installDue:o.deliveryDue)?`<div class="mut" style="margin:4px 0">${orderFulfillment(o)==='installation'?'🛠️ Thi công':'🚚 Giao hàng'}: ${esc(orderFulfillment(o)==='installation'?o.installDue:o.deliveryDue)}</div>`:''}
     <div class="oc-m">${esc(o.date)}${src?' · '+src[1]:''} · <details class="itd oc-it"><summary>${n} mặt hàng</summary><ul>${(o.items||[]).map(i=>`<li>${esc(i.name)} <b>×${fq(i.qty)}</b></li>`).join('')}</ul></details></div>
     ${note?`<div class="oc-n" title="${esc(note)}">${ic('pencil')} ${esc(note)}</div>`:''}
     ${o.workerIds?.length?`<div class="mut" style="margin:6px 0;padding:6px 9px;background:#effaf8;border-radius:8px">${ic('users')} <b>Thợ thi công:</b> ${esc(assignedWorkers(o).join(', '))} · ${esc(o.installStatus||'Đã phân công')}</div>`:''}
@@ -1826,10 +1886,10 @@ function supplierForm(id){
 
 /* ---------- Thợ thi công & phân công theo đơn hàng ---------- */
 const INSTALL_STATES=['Chưa bắt đầu','Đã phân công','Đang thi công','Hoàn thành','Tạm hoãn'];
-const WORKER_AREAS=['Hà Nội','Quy Nhơn','Đà Nẵng','Sài Gòn','Bình Dương','Đồng Nai','Nha Trang'];
+const WORKER_AREAS=['Hà Nội','Quy Nhơn','Đà Nẵng','TP. Hồ Chí Minh','Bình Dương','Đồng Nai','Nha Trang'];
 const WORKER_DISTRICTS={
  'Hà Nội':['Ba Đình','Hoàn Kiếm','Đống Đa','Hai Bà Trưng','Tây Hồ','Cầu Giấy','Thanh Xuân','Hoàng Mai','Long Biên','Hà Đông','Nam Từ Liêm','Bắc Từ Liêm','Gia Lâm','Đông Anh','Sóc Sơn','Thanh Trì','Hoài Đức','Đan Phượng','Thanh Oai','Thường Tín','Quốc Oai','Thạch Thất','Phúc Thọ','Mê Linh','Chương Mỹ','Sơn Tây','Ba Vì','Mỹ Đức','Ứng Hòa','Phú Xuyên'],
- 'Sài Gòn':['Quận 1','Quận 3','Quận 4','Quận 5','Quận 6','Quận 7','Quận 8','Quận 10','Quận 11','Quận 12','Bình Thạnh','Phú Nhuận','Tân Bình','Tân Phú','Gò Vấp','Bình Tân','Thủ Đức','Bình Chánh','Hóc Môn','Củ Chi','Nhà Bè','Cần Giờ'],
+ 'TP. Hồ Chí Minh':['Quận 1','Quận 3','Quận 4','Quận 5','Quận 6','Quận 7','Quận 8','Quận 10','Quận 11','Quận 12','Bình Thạnh','Phú Nhuận','Tân Bình','Tân Phú','Gò Vấp','Bình Tân','Thủ Đức','Bình Chánh','Hóc Môn','Củ Chi','Nhà Bè','Cần Giờ'],
  'Đà Nẵng':['Hải Châu','Thanh Khê','Sơn Trà','Ngũ Hành Sơn','Liên Chiểu','Cẩm Lệ','Hòa Vang'],
  'Quy Nhơn':['Quy Nhơn','Nhơn Hội','Nhơn Lý','Nhơn Hải','Ghềnh Ráng','Bùi Thị Xuân','Trần Quang Diệu'],
  'Bình Dương':['Thủ Dầu Một','Thuận An','Dĩ An','Tân Uyên','Bến Cát','Bàu Bàng','Bắc Tân Uyên','Phú Giáo','Dầu Tiếng'],
@@ -1838,7 +1898,7 @@ const WORKER_DISTRICTS={
 };
 // Tên quận/huyện theo cách gọi quen thuộc để dễ tìm kiếm và phân công.
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='workerDistrictFilter'){workerDistrictFilter=e.target.value||'Tất cả';render()}});
-const normWorkerArea=a=>a==='HN'?'Hà Nội':a==='HCM'?'Sài Gòn':(a||'');
+const normWorkerArea=a=>a==='HN'?'Hà Nội':(['HCM','Sài Gòn','Sài gòn','TP.HCM','TP HCM','Tp. Hồ Chí Minh'].includes(a)?'TP. Hồ Chí Minh':(a||''));
 let workerDistrictFilter='Tất cả';
 function workerDistrictOptions(area,selected=''){
  const arr=WORKER_DISTRICTS[normWorkerArea(area)]||[];
