@@ -457,10 +457,10 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
 .itd ul{margin:4px 0 2px;padding-left:18px;color:var(--mut);font-size:13px}.itd li{margin:2px 0}
 
 /* ===== Đơn hàng gọn ===== */
-.oc{padding:14px 16px;margin-bottom:12px;border-radius:20px;position:relative;overflow:hidden;box-shadow:0 4px 14px rgba(14,44,77,.04)}
-.orders-alt .oc:nth-child(odd){background:linear-gradient(180deg,#ffffff 0%,#fcfdff 100%);border:1px solid #dfe8f1;border-left:5px solid #e4edf6}
-.orders-alt .oc:nth-child(even){background:linear-gradient(180deg,#f6faff 0%,#f1f7fd 100%);border:1px solid #d7e5f2;border-left:5px solid #cfe1f1}
-.orders-alt .oc:hover{box-shadow:0 8px 18px rgba(14,44,77,.07);transform:translateY(-1px);transition:.18s ease}
+.oc{padding:15px 16px;margin-bottom:18px;border-radius:22px;position:relative;overflow:hidden;box-shadow:0 8px 22px rgba(14,44,77,.05)}
+.orders-alt .oc:nth-child(odd){background:linear-gradient(180deg,#ffffff 0%,#fbfdff 100%);border:1px solid #d9e4ef;border-left:7px solid #d6e5f4}
+.orders-alt .oc:nth-child(even){background:linear-gradient(180deg,#f4f9ff 0%,#eef6ff 100%);border:1px solid #cfe0ef;border-left:7px solid #bdd6ee}
+.orders-alt .oc:hover{box-shadow:0 12px 24px rgba(14,44,77,.08);transform:translateY(-1px);transition:.18s ease}
 .oc-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .oc-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px;line-height:1.35}
 .oc-t b{font-size:18px}
@@ -839,7 +839,7 @@ function cloudSave(){
   }
 }
 const hasLocal=()=>{try{const d=JSON.parse(LS.getItem(KEY));return !!d&&COLS.some(k=>(d[k]||[]).length)}catch(e){return false}};
-const STATUS=['Mới','Đang thiết kế','Đang in','Hoàn thành','Đã giao','Huỷ'];
+const STATUS=['Mới','Đang thiết kế','Đang in','Hoàn thành','Huỷ'];
 const TABS=[
   {id:'home',icon:'home',label:'Tổng quan',group:'',req:'all',color:'sky'},
   {id:'orders',icon:'clipboard',label:'Đơn hàng',group:'Bán hàng',req:'all',color:'green'},
@@ -893,7 +893,7 @@ const cogs=o=>o.items.reduce((s,i)=>s+lineCost(i),0);
 const cust=id=>db.customers.find(c=>c.id===id);
 const prod=id=>db.products.find(p=>p.id===id);
 const valid=o=>o.status!=='Huỷ';
-const STEPS=['Mới','Đang thiết kế','Đang in','Hoàn thành','Đã giao'];
+const STEPS=['Mới','Đang thiết kế','Đang in','Hoàn thành'];
 const statusCounts=()=>{const c={};for(const s of STATUS)c[s]=0;for(const o of db.orders)if(!o.archived)c[o.status]=(c[o.status]||0)+1;return c};
 const openJobs=c=>(c['Mới']||0)+(c['Đang thiết kế']||0)+(c['Đang in']||0);
 
@@ -1202,11 +1202,11 @@ function orderCard(o){
   const isInstall=type==='installation';
   const dueRaw=isInstall?o.installDue:o.deliveryDue;
   const dueDisplay=dueRaw?String(dueRaw).replace('T',' · '):'Chưa hẹn lịch';
+  const statusValue=o.status==='Đã giao'?'Hoàn thành':o.status;
   return`<div class="card oc">
     <div class="oc-main">
       <div class="oc-h">
         <div class="oc-t"><b>${esc(o.code)}</b> · ${esc(orderCustomerName(o))}</div>
-        <b class="oc-p">${vnd(total(o))}</b>
       </div>
       <div class="oc-schedule">
         <span class="oc-kind">${isInstall?'🛠️ Thi công':'🚚 Giao hàng'}</span>
@@ -1219,7 +1219,7 @@ function orderCard(o){
     <div class="oc-mid">
       <div class="oc-mid-sec">
         <small>Process / tiến độ</small>
-        <select class="st" data-id="${o.id}">${STATUS.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select>
+        <select class="st" data-id="${o.id}">${STATUS.map(s=>`<option ${s===statusValue?'selected':''}>${s}</option>`).join('')}</select>
       </div>
       ${dep(o)?`<div class="oc-mid-sec"><small>Đã tạm ứng</small><div class="oc-mid-badges"><span class="badge">${ic('banknote')} ${vnd(dep(o))}</span></div></div>`:''}
       <div class="oc-mid-sec">
@@ -1242,7 +1242,7 @@ function orderCard(o){
     </div>
   </div>`;
 }
-function orderFulfillment(o){return o.fulfillmentType==='installation'?'installation':o.fulfillmentType==='delivery'?'delivery':((o.workerIds?.length||o.installDue)?'installation':'delivery')}
+function orderFulfillmentction orderFulfillmentfunction orderFulfillment(o){return o.fulfillmentType==='installation'?'installation':o.fulfillmentType==='delivery'?'delivery':((o.workerIds?.length||o.installDue)?'installation':'delivery')}
 function orders(){
   const base=db.orders.filter(o=>!o.archived&&(filter==='Tất cả'||o.status===filter)&&true).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
   const list=fapply('orders',base);
