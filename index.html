@@ -406,7 +406,7 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
   .pv-paper .doc h1{font-size:18px}
   .pv-paper .doc h2{font-size:17px;margin:16px 0 4px;letter-spacing:.3px}
   .pv-paper .doc .qhead{flex-wrap:wrap;gap:10px;padding-bottom:12px}
-  .pv-paper .doc .qhead img{max-height:52px;max-width:120px}
+  .pv-paper .doc .qbrand>img{max-height:52px;max-width:120px}.pv-paper .doc .qhead-qr img{width:78px;height:78px;max-width:none;max-height:none}
   .pv-paper .doc .qhead>div{min-width:0;flex:1 1 180px;overflow-wrap:anywhere}
   .pv-paper .doc .meta{flex-direction:column;gap:8px;padding:10px}
   .pv-paper .doc .meta>div{flex:none}
@@ -840,8 +840,17 @@ function orderForm(id){
 /* ---------- Simple CRUD forms ---------- */
 function custForm(id){
   const c=cust(id)||{};
-  modal(id?'Sửa khách':'Khách mới',fld('Tên','name',c.name,'text','required')+fld('SĐT','phone',c.phone,'tel')+fld('Địa chỉ','addr',c.addr),fd=>{
-    const d={name:fd.get('name'),phone:fd.get('phone'),addr:fd.get('addr')};
+  modal(id?'Sửa khách':'Khách mới',
+    `<label>Loại khách hàng<select name="customerType"><option value="individual" ${(c.customerType||'individual')==='individual'?'selected':''}>Cá nhân</option><option value="company" ${c.customerType==='company'?'selected':''}>Công ty / doanh nghiệp</option></select></label>`+
+    fld('Tên khách hàng / tên công ty','name',c.name,'text','required')+
+    fld('SĐT chung','phone',c.phone,'tel')+
+    fld('Địa chỉ','addr',c.addr)+
+    `<div class="card" style="padding:10px"><b>Thông tin người liên hệ (nếu là công ty)</b>
+      ${fld('Tên người liên hệ','contactName',c.contactName||'')}
+      ${fld('SĐT người liên hệ','contactPhone',c.contactPhone||'','tel')}
+      ${fld('Email người liên hệ','contactEmail',c.contactEmail||'','email')}
+    </div>`,fd=>{
+    const d={name:fd.get('name'),phone:fd.get('phone'),addr:fd.get('addr'),customerType:fd.get('customerType')||'individual',contactName:String(fd.get('contactName')||'').trim(),contactPhone:String(fd.get('contactPhone')||'').trim(),contactEmail:String(fd.get('contactEmail')||'').trim()};
     if(id)Object.assign(c,d);else db.customers.push({id:uid(),...d});save();render();
   });
 }
@@ -1085,6 +1094,9 @@ function itemEditor(m,items,forQuote=false){
   items.forEach(addRow);
   m.querySelector('#addI').onclick=()=>addRow();
 }
+const QUOTE_FOOTER_DEFAULT='Trân trọng cảm ơn Quý khách hàng đã tin tưởng và lựa chọn dịch vụ của iDecal! Chúng tôi rất hân hạnh được đồng hành và hợp tác cùng Quý khách.';
+const QUOTE_DEPOSIT_DEFAULT='Quý khách đặt cọc 50% giá trị đơn hàng khi xác nhận báo giá.';
+const QUOTE_PAYMENT_DEFAULT='50% giá trị còn lại được thanh toán sau khi hoàn thiện hoặc bàn giao hàng hóa.';
 const meName=()=>CLOUD&&me?String(me.name||me.email||'').trim():'';
 function quoteForm(id){
   const q=db.quotes.find(x=>x.id===id)||{date:today(),until:addDays(today(),7),status:'Nháp',items:[{}],discount:0};
@@ -1100,10 +1112,10 @@ function quoteForm(id){
     ${fld('Giảm giá (đ)','discount',q.discount||0,'number','min=0 step=any')}
     ${fld('VAT (%)','vatRate',q.vatRate??8,'number','min=0 max=100 step=1')}
     <label>Thời gian bảo hành<input name="warranty" type="text" value="${esc(q.warranty||'')}" placeholder="Ví dụ: 12 tháng kể từ ngày bàn giao"></label>
-    <label>Điều khoản đặt cọc<textarea name="depositTerms" rows="2" placeholder="Ví dụ: Đặt cọc 50% khi xác nhận đơn hàng">${esc(q.depositTerms||'')}</textarea></label>
-    <label>Điều khoản thanh toán<textarea name="paymentTerms" rows="2" placeholder="Ví dụ: Thanh toán phần còn lại sau khi nghiệm thu / giao hàng">${esc(q.paymentTerms||'')}</textarea></label>
-    ${fld('Ghi chú / điều khoản khác','note',q.note||'')}
-    <div class="card quote-calc"><div class="row sp"><span>Tạm tính sản phẩm</span><b id="sub">0đ</b></div><div class="row sp"><span>VAT (<span id="vatLabel">8</span>%)</span><b id="vat">0đ</b></div><div class="tot">Tổng thanh toán: <b id="tot">0đ</b></div></div>`,
+    <label>Điều khoản đặt cọc<textarea name="depositTerms" rows="2" placeholder="Ví dụ: Đặt cọc 50% khi xác nhận đơn hàng">${esc(q.depositTerms??QUOTE_DEPOSIT_DEFAULT)}</textarea></label>
+    <label>Điều khoản thanh toán<textarea name="paymentTerms" rows="2" placeholder="Ví dụ: Thanh toán phần còn lại sau khi nghiệm thu / giao hàng">${esc(q.paymentTerms??QUOTE_PAYMENT_DEFAULT)}</textarea></label>
+    <div class="card quote-calc"><div class="row sp"><span>Tạm tính sản phẩm</span><b id="sub">0đ</b></div><div class="row sp"><span>VAT (<span id="vatLabel">8</span>%)</span><b id="vat">0đ</b></div><div class="tot">Tổng thanh toán: <b id="tot">0đ</b></div></div>
+    <label style="margin-top:12px">Ghi chú thêm (không bắt buộc)<textarea name="note" rows="2" placeholder="Để trống nếu chưa cần ghi chú">${esc(q.note||'')}</textarea></label>`,
   (fd,m)=>{
     const items=readItems(m);
     if(!items.length){alert('Cần ít nhất 1 dòng hàng hợp lệ');return false}
@@ -1129,7 +1141,7 @@ function shopForm(){
     ${field('users','Tên chủ tài khoản','bankOwner',s.bankOwner||'','text','Tên chủ tài khoản')}
     ${field('tag','Số tài khoản','bankNumber',s.bankNumber||'','text','Số tài khoản')}
     <label><span style="display:flex;align-items:center;gap:6px;color:var(--tx)">${ic('filetext')} Thông tin thanh toán bổ sung</span><textarea name="bank" rows="2" placeholder="Chi nhánh, nội dung chuyển khoản…">${esc(s.bank||'')}</textarea></label>
-    <label><span style="display:flex;align-items:center;gap:6px;color:var(--tx)">${ic('pencil')} Lời cảm ơn / chân trang báo giá</span><textarea name="foot" rows="2" placeholder="Cảm ơn Quý khách…">${esc(s.foot||'')}</textarea></label>`,fd=>{
+    <label><span style="display:flex;align-items:center;gap:6px;color:var(--tx)">${ic('pencil')} Lời cảm ơn / chân trang báo giá</span><textarea name="foot" rows="2" placeholder="Cảm ơn Quý khách…">${esc(s.foot||QUOTE_FOOTER_DEFAULT)}</textarea></label>`,fd=>{
     const keys=['name','phone','email','addr','taxCode','website','facebook','bankName','bankOwner','bankNumber','bank','foot'];
     const data={};keys.forEach(k=>data[k]=String(fd.get(k)||'').trim());
     db.shop=Object.assign({},db.shop,data);save();render();
@@ -1142,6 +1154,7 @@ const DOC_CSS=`.doc{font:13px/1.55 'Inter',-apple-system,BlinkMacSystemFont,'Seg
 .doc table{width:100%;border-collapse:collapse;margin-top:15px;font-size:11.5px}.doc th,.doc td{border:1px solid #dce5ed;padding:8px 8px;text-align:left;color:#26384b;vertical-align:middle}.doc th{background:#eaf3f9;color:#143b5b;font-weight:700}.doc tbody tr:nth-child(even){background:#f8fbfd}.doc .r{text-align:right;white-space:nowrap}.doc .tt{text-align:right;margin-top:7px;color:#53677c}.doc .summary{width:56%;margin:14px 0 0 auto;border-collapse:collapse}.doc .summary td{padding:5px 8px;border:0;border-bottom:1px solid #e5edf3}.doc .summary .grand td{background:#eaf5fb;color:#075b8e;font-weight:800;font-size:14px;border-top:2px solid var(--ac,#087bbd)}.doc .tgrand{color:var(--ac,#087bbd)}.doc .summary .amount-words td{font-size:10.5px;font-style:italic;color:#40566c;background:#f9fbfd;white-space:normal;overflow-wrap:anywhere;line-height:1.45;padding:7px 9px}.doc .summary .amount-words b{font-style:normal;color:#193f5d}
 .doc .sig{display:flex;justify-content:space-between;gap:30px;margin-top:42px;text-align:center;break-inside:avoid}.doc .sig>div{width:45%}.doc .sig i{font-size:10px;color:#77869a}.doc .pimgs{width:42px;height:42px;object-fit:cover;border-radius:4px;display:block}.doc .terms{margin-top:16px;padding:10px 12px;background:#f7fafc;border-left:3px solid var(--ac,#087bbd);font-size:11px;color:#42556a;break-inside:avoid}.doc .paybox{display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:center;margin-top:12px;padding:9px;border:1px solid #dce8f1;border-radius:12px;background:#f8fbfe;break-inside:avoid}.doc .payqr{display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #dce8f1;border-radius:8px;padding:5px;min-height:88px}.doc .payqr img{width:78px;height:78px;object-fit:contain;display:block}.doc .payinfo b{display:block;color:#143b5b;margin-bottom:4px}.doc .payinfo .payline{margin:4px 0;color:#42556a}.doc .payinfo small{display:block;color:#708197;margin-top:6px}.doc .foot{margin-top:25px;padding-top:9px;border-top:1px solid #e0e8ef;text-align:center;color:#7b8b9d;font-size:10px}
 .doc .quote-conditions{padding:8px 11px}.doc .quote-conditions>div{margin-top:4px;white-space:normal;overflow-wrap:anywhere}.doc .quote-conditions strong{color:#263c52;font-weight:700}.doc .description{white-space:pre-wrap;overflow-wrap:anywhere;color:#4c6071;font-size:10.5px}.doc .payinfo .payline b{display:inline;font-weight:600;margin:0}.doc .payinfo{font-size:10.5px}.doc .payinfo small{font-size:9px;margin-top:3px}.doc .payinfo .payline{margin:2px 0}.doc table{font-size:10.8px}.doc th,.doc td{padding:6px 5px}.doc .summary{margin-top:10px}.doc .qhead{padding:12px 14px}.doc .qhead h1{font-size:20px}.doc .qchips{gap:5px;margin-top:7px}.doc .qchip{padding:3px 7px;font-size:9.5px}.doc .meta{margin:9px 0;padding:7px 9px}.doc .terms{margin-top:11px;padding:7px 9px} 
+.doc .qhead-qr{flex:0 0 96px;position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center}.doc .qhead-qr img{width:86px;height:86px;max-width:none;max-height:none;object-fit:contain;background:white;padding:3px;border:1px solid #d8e7f1;border-radius:7px}.doc .qhead-qr span{font-size:8px;letter-spacing:.5px;font-weight:700;color:#53718c}.doc .qbrand{flex:1 1 auto;min-width:0}.doc .qinfo{min-width:0}.doc .foot{line-height:1.5;font-size:10.5px;color:#51677b}@media(max-width:460px){.doc .qhead{flex-wrap:nowrap;gap:7px;padding:10px}.doc .qhead-qr{flex-basis:76px}.doc .qhead-qr img{width:69px;height:69px}.doc .qhead-qr span{font-size:7px}.doc .qbrand{gap:6px}.doc .qbrand>img{max-width:58px;max-height:42px}.doc .qhead h1{font-size:16px}}\n.doc .quote-bottom-note{margin-top:18px;padding:7px 9px;border-top:1px solid #e5ecf2;font-size:10.5px;color:#526477;overflow-wrap:anywhere;break-inside:avoid}
 .doc.mod h2{text-align:center;border:0;padding-bottom:0;margin-top:22px}.doc.mod .c{text-align:center}.doc.mod th{background:var(--ac);color:#fff;border-color:var(--ac)}.doc.mod td{border-left:0;border-right:0}.doc .nowrap{white-space:nowrap}`;
 const TPL_DEF={style:'classic',accent:'#111111',font:14,title:'BÁO GIÁ',logo:'',showLogo:true,showShop:true,intro:'',greet:'Kính gửi:',
   colIdx:true,colUnit:true,colImg:false,showUntil:true,showNote:true,showBank:true,showSig:true,sigL:'Khách hàng',sigR:'',terms:''};
@@ -1154,7 +1167,7 @@ function tplOf(){
 }
 const docAttrs=t=>`class="doc${t.style==='modern'?' mod':''}" style="--ac:${t.accent};font-size:${t.font}px"`;
 const nl=x=>String(x).replace(/\n/g,'<br>');
-function shopHead(t){
+function shopHead(t,q=null){
   const s=db.shop||{};t=t||tplOf();
   const logo=t.showLogo&&t.logo?`<img src="${esc(t.logo)}" alt="">`:'';
   const chips=[
@@ -1165,7 +1178,9 @@ function shopHead(t){
     s.facebook?['users',String(s.facebook).replace(/^https?:\/\//i,'').replace(/^www\./i,'').replace(/\/$/,'')]:null,
     s.taxCode?['tag',s.taxCode]:null
   ].filter(Boolean).map(([icon,val])=>`<span class="qchip">${ic(icon,13)}<span>${esc(val)}</span></span>`).join('');
-  return`<div class="qhead"><div class="qbrand">${logo}<div class="qinfo"><h1>${esc(s.name||'iDecal')}</h1><div class="qsub">Báo giá chuyên nghiệp · Nhanh chóng · Rõ ràng</div>${t.showShop&&chips?`<div class="qchips">${chips}</div>`:''}</div></div></div>`;
+  const qr=q&&t.showBank?paymentQrUrl(s.bankName,s.bankNumber,s.bankOwner,qtotal(q),paymentRefForQuote(q)):'';
+  const right=qr?`<div class="qhead-qr"><img src="${esc(qr)}" alt="Mã QR thanh toán" referrerpolicy="no-referrer"><span>QUÉT QR THANH TOÁN</span></div>`:'';
+  return`<div class="qhead"><div class="qbrand">${logo}<div class="qinfo"><h1>${esc(s.name||'iDecal')}</h1><div class="qsub">Báo giá chuyên nghiệp · Nhanh chóng · Rõ ràng</div>${t.showShop&&chips?`<div class="qchips">${chips}</div>`:''}</div></div>${right}</div>`;
 }
 const BANK_QR_MAP={
   vcb:'vcb',vietcombank:'vcb',vietcom:'vcb',
@@ -1269,27 +1284,30 @@ function tienBangChu(value){
 function quoteHTML(q,t){
   t=t||tplOf();
   const c=cust(q.cid),s=db.shop||{},sub=q.items.reduce((sum,i)=>sum+lineAmt(i),0);
+  const isCompany=!!(c&&(c.customerType==='company'||c.contactName));
+  const person=isCompany?(c.contactName||''):'';
+  const phone=isCompany?(c.contactPhone||c.phone||''):(c&&c.phone||'');
+  const contactEmail=isCompany?(c.contactEmail||''):'';
   const unitOf=i=>i.unit||(prod(i.pid)||{}).unit||'';
   const imgOf=i=>{const p=prod(i.pid);return p&&p.img?`<img class="pimgs" src="${esc(p.img)}" alt="" referrerpolicy="no-referrer">`:''};
   const head='<tr>'+(t.colIdx?'<th style="width:26px">#</th>':'')+'<th>Hàng hoá / dịch vụ</th><th style="width:26%">Diễn giải</th><th style="width:48px">ĐVT</th><th class="r" style="width:38px">SL</th><th class="r" style="width:82px">Đơn giá</th><th class="r" style="width:88px">Thành tiền</th></tr>';
   const rows=q.items.map((i,n)=>'<tr>'+(t.colIdx?`<td>${n+1}</td>`:'')+`<td>${esc(i.name)}</td><td class="description">${i.description?nl(esc(i.description)):'—'}</td><td>${esc(unitOf(i)||'—')}</td><td class="r">${fq(i.qty)}</td><td class="r">${vnd(i.price)}</td><td class="r"><b>${vnd(lineAmt(i))}</b></td></tr>`).join('');
-  return`${shopHead(t)}
+  return`${shopHead(t,q)}
   <h2>${esc(t.title||TPL_DEF.title)}</h2><div class="c">BÁO GIÁ DỊCH VỤ · ${esc(q.code)}</div>
-  <div class="meta"><div><small>Khách hàng</small><b>${esc(qname(q))}</b>${c&&c.phone?`<div>${esc(c.phone)}</div>`:''}</div><div><small>Ngày báo giá</small><b>${esc(q.date||'—')}</b></div>${t.showUntil&&q.until?`<div><small>Hiệu lực đến</small><b>${esc(q.until)}</b></div>`:''}${q.completionDate?`<div><small>Thời gian hoàn thành dự kiến</small><b>${esc(q.completionDate)}</b></div>`:''}${q.by?`<div><small>Người báo giá</small><b>${esc(q.by)}</b></div>`:''}</div>
+  <div class="meta"><div><small>${isCompany?'Đơn vị / Công ty':'Khách hàng'}</small><b>${esc(qname(q))}</b>${person?`<div>Liên hệ: ${esc(person)}</div>`:''}${phone?`<div>SĐT: ${esc(phone)}</div>`:''}${contactEmail?`<div>Email: ${esc(contactEmail)}</div>`:''}</div><div><small>Ngày báo giá</small><b>${esc(q.date||'—')}</b></div>${t.showUntil&&q.until?`<div><small>Hiệu lực đến</small><b>${esc(q.until)}</b></div>`:''}${q.completionDate?`<div><small>Thời gian hoàn thành dự kiến</small><b>${esc(q.completionDate)}</b></div>`:''}${q.by?`<div><small>Người báo giá</small><b>${esc(q.by)}</b></div>`:''}</div>
   ${c&&c.addr?`<p style="margin:0 0 10px;color:#53677c"><b>Địa chỉ:</b> ${esc(c.addr)}</p>`:''}
   ${t.intro?`<p>${nl(esc(t.intro))}</p>`:''}
-  ${t.greet?`<p style="margin:10px 0"><b>${esc(t.greet)}</b> ${esc(qname(q))},</p>`:''}
+  ${t.greet?`<p style="margin:10px 0"><b>${esc(t.greet)}</b> ${esc(person||qname(q))}${isCompany&&person?` – ${esc(qname(q))}`:''},</p>`:''}
   <table><thead>${head}</thead><tbody>${rows}</tbody></table>
   <table class="summary"><tbody><tr><td>Tạm tính sản phẩm</td><td class="r">${vnd(sub)}</td></tr>
   ${q.discount?`<tr><td>Chiết khấu</td><td class="r">− ${vnd(q.discount)}</td></tr>`:''}
   <tr><td>VAT (${qvatRate(q)}%)</td><td class="r">${vnd(qvat(q))}</td></tr>
   <tr class="grand"><td>TỔNG THANH TOÁN</td><td class="r">${vnd(qtotal(q))}</td></tr><tr class="amount-words"><td colspan="2"><b>Bằng chữ:</b> ${esc(tienBangChu(qtotal(q)))}</td></tr></tbody></table>
-  ${(q.warranty||q.depositTerms||q.paymentTerms)?`<div class="terms quote-conditions"><b>ĐIỀU KHOẢN BẢO HÀNH & THANH TOÁN</b>${q.warranty?`<div><strong>Bảo hành:</strong> ${nl(esc(q.warranty))}</div>`:''}${q.depositTerms?`<div><strong>Đặt cọc:</strong> ${nl(esc(q.depositTerms))}</div>`:''}${q.paymentTerms?`<div><strong>Thanh toán:</strong> ${nl(esc(q.paymentTerms))}</div>`:''}</div>`:''}
-  ${t.showNote&&q.note?`<p style="margin-top:10px"><b>Ghi chú:</b> ${nl(esc(q.note))}</p>`:''}
+  ${(q.warranty||q.depositTerms!==''||q.paymentTerms!=='')?`<div class="terms quote-conditions"><b>ĐIỀU KHOẢN BẢO HÀNH & THANH TOÁN</b>${q.warranty?`<div><strong>Bảo hành:</strong> ${nl(esc(q.warranty))}</div>`:''}${(q.depositTerms??QUOTE_DEPOSIT_DEFAULT)?`<div><strong>Đặt cọc:</strong> ${nl(esc(q.depositTerms??QUOTE_DEPOSIT_DEFAULT))}</div>`:''}${(q.paymentTerms??QUOTE_PAYMENT_DEFAULT)?`<div><strong>Thanh toán:</strong> ${nl(esc(q.paymentTerms??QUOTE_PAYMENT_DEFAULT))}</div>`:''}</div>`:''}
   ${t.terms?`<div class="terms"><b>ĐIỀU KHOẢN & LƯU Ý</b><br>${nl(esc(t.terms))}</div>`:''}
-  ${quotePayHTML(q,t)}
   ${t.showSig?`<div class="sig"><div><b>${esc(t.sigL||'KHÁCH HÀNG')}</b><br><i>(Ký, ghi rõ họ tên)</i></div><div><b>${esc(t.sigR||s.name||'iDecal')}</b><br><i>(Ký, đóng dấu)</i></div></div>`:''}
-  ${s.foot?`<div class="foot">${esc(s.foot)}</div>`:''}`;
+  ${t.showNote&&q.note?`<div class="quote-bottom-note"><b>Ghi chú thêm:</b> ${nl(esc(q.note))}</div>`:''}
+  <div class="foot">${esc(QUOTE_FOOTER_DEFAULT)}</div>`;
 }
 function purchaseHTML(p,t){
   t=t||tplOf();
