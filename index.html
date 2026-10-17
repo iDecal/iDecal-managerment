@@ -726,7 +726,6 @@ const TABS=[
   {id:'archive',icon:'archive',label:'Lưu trữ',group:'Bán hàng',req:'all',color:'slate'},
   {id:'prod',icon:'box',label:'Sản phẩm & Dịch vụ',group:'Danh mục',req:'all',color:'teal'},
   {id:'purchases',icon:'cart',label:'Mua hàng',group:'Mua hàng & Chi phí',req:'mgr',color:'amber'},
-  {id:'supplierQuotes',icon:'filetext',label:'Báo giá NCC',group:'Mua hàng & Chi phí',req:'mgr',color:'purple'},
   {id:'suppliers',icon:'store',label:'Nhà cung cấp',group:'Mua hàng & Chi phí',req:'mgr',color:'teal'},
   {id:'exp',icon:'wallet',label:'Chi phí',group:'Mua hàng & Chi phí',req:'mgr',color:'rose'},
   {id:'profit',icon:'chart',label:'Lãi lỗ đơn hàng',group:'Mua hàng & Chi phí',req:'mgr',color:'green'},
@@ -1763,13 +1762,83 @@ function supplierQuoteToPurchase(id){
  db.purchases.push(o);save();view='purchases';render();toast('Đã tạo phiếu mua '+o.code,'ok');
 }
 
+
+/* Hồ sơ báo giá đính kèm trực tiếp từng nhà cung cấp */
+function supplierFilesDialog(sid){
+ if(!isMgr())return;
+ const supplier=(db.suppliers||[]).find(x=>x.id===sid);if(!supplier)return;
+ const records=(db.supplierQuotes||[]).filter(q=>q.supplierId===sid)
+   .sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+ const list=records.length?records.map(q=>`
+ <div class="card" style="padding:11px;margin:7px 0">
+  <div style="font-weight:700;overflow-wrap:anywhere">${ic('filetext')} ${esc(q.attachment?.name||q.code||'Báo giá')}</div>
+  <div class="mut">${esc(q.date||'')} ${q.note?' · '+esc(q.note):''}</div>
+  <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px">
+   ${q.attachment?`<button type="button" class="btn gh sm" data-ncc-open="${esc(q.id)}">${ic('eye')} Xem / tải file</button>`:''}
+   ${isMgr()?`<button type="button" class="btn dg sm" data-ncc-delete="${esc(q.id)}">${ic('trash')} Xóa</button>`:''}
+  </div>
+ </div>`).join(''):'<div class="mut" style="margin:12px 0">Nhà cung cấp này chưa có file báo giá.</div>';
+ const m=modal('Báo giá · '+supplier.name,`
+ <div class="mut">Lưu file PDF hoặc Excel do nhà cung cấp gửi để mở lại khi cần, không cần nhập từng dòng giá.</div>
+ <div style="max-height:38vh;overflow:auto;margin:10px 0">${list}</div>
+ <div style="border-top:1px solid var(--bd);padding-top:12px">
+  <label>Tải báo giá mới (PDF / Excel)<input name="nccFile" type="file" accept=".pdf,.xls,.xlsx,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required></label>
+  ${fld('Ngày nhận báo giá','nccDate',today(),'date')}
+  <label>Ghi chú (không bắt buộc)<input name="nccNote" placeholder="Ví dụ: Bảng giá tháng 10"></label>
+  <p class="mut">${CLOUD?'Tối đa 10 MB. Tệp lưu qua Firebase Storage.':'Tối đa 750 KB khi lưu trực tiếp trên trình duyệt.'}</p>
+ </div>`,()=>false);
+ const form=m.querySelector('form'), saveBtn=form.querySelector('button:not([type])');
+ if(saveBtn)saveBtn.textContent='Tải lên & lưu';
+ m.querySelectorAll('[data-ncc-open]').forEach(b=>b.onclick=()=>downloadSupplierQuote(b.dataset.nccOpen));
+ m.querySelectorAll('[data-ncc-delete]').forEach(b=>b.onclick=()=>{
+   const q=(db.supplierQuotes||[]).find(x=>x.id===b.dataset.nccDelete);
+   if(!q||!confirm('Xóa file báo giá "'+(q.attachment?.name||q.code)+'" khỏi danh sách?'))return;
+   db.supplierQuotes=db.supplierQuotes.filter(x=>x.id!==q.id);
+   save();m.remove();render();supplierFilesDialog(sid);
+ });
+ form.onsubmit=async e=>{
+  e.preventDefault();
+  const file=form.querySelector('[name=nccFile]').files[0];
+  if(!file){alert('Vui lòng chọn tệp PDF hoặc Excel.');return}
+  if(!/\.(pdf|xls|xlsx)$/i.test(file.name)){alert('Chỉ hỗ trợ PDF, XLS và XLSX.');return}
+  const max=CLOUD?10*1024*1024:750*1024;
+  if(file.size>max){alert('Tệp vượt quá '+(CLOUD?'10 MB':'750 KB')+'.');return}
+  const fd=new FormData(form);
+  const data={id:uid(),code:'NCC-'+Date.now().toString(36).toUpperCase(),
+   supplierId:sid,supplierName:supplier.name,orderId:'',
+   date:String(fd.get('nccDate')||today()),note:String(fd.get('nccNote')||'').trim(),
+   items:[],createdAt:new Date().toISOString()};
+  const btn=form.querySelector('.row.end .btn:not([type])');
+  if(btn){btn.disabled=true;btn.textContent='Đang tải lên…'}
+  try{
+   if(CLOUD){
+     if(!firebase.storage||!FB.storageBucket)throw new Error('Chưa cấu hình Firebase Storage.');
+     const path='supplier-quotes/'+encodeURIComponent(data.id)+'/'+Date.now()+'-'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+     await firebase.storage().ref(path).put(file,{contentType:file.type||'application/octet-stream'});
+     data.attachment={name:file.name,type:file.type,size:file.size,path,storage:'firebase'};
+   }else{
+     const dataUrl=await new Promise((resolve,reject)=>{
+       const reader=new FileReader();
+       reader.onload=()=>resolve(reader.result);
+       reader.onerror=()=>reject(new Error('Không đọc được tệp.'));
+       reader.readAsDataURL(file);
+     });
+     data.attachment={name:file.name,type:file.type,size:file.size,dataUrl,storage:'local'};
+   }
+   (db.supplierQuotes||(db.supplierQuotes=[])).push(data);
+   save();m.remove();render();toast('Đã lưu file báo giá của '+supplier.name,'ok');
+   supplierFilesDialog(sid);
+  }catch(err){alert('Lưu báo giá không thành công: '+err.message)}
+  finally{if(btn){btn.disabled=false;btn.textContent='Tải lên & lưu'}}
+ };
+}
 function suppliersView(){
   const supAll=[...(db.suppliers||[])].sort((a,b)=>String(a.name).localeCompare(String(b.name),'vi'));
   const sup=fapply('suppliers',supAll);
   return`<div class="row sp"><div><h2>Nhà cung cấp</h2><div class="mut">Danh bạ và thông tin liên hệ nhà cung cấp.</div></div><button class="btn" data-a="newSupplier">${ic('plus')} Thêm NCC</button></div>
     <div class="grid"><div class="card kpi"><small>Tổng nhà cung cấp</small><b>${supAll.length}</b></div></div>
     ${fbar('suppliers',supAll)}
-    ${sup.length?sup.map(s=>`<div class="card"><div class="row sp"><div><b>${esc(s.name)}</b><div class="mut">${esc(s.phone||'Chưa có SĐT')}${s.contact?' · '+esc(s.contact):''}</div><div class="mut">${esc(s.address||'Chưa có địa chỉ')}${s.email?' · '+esc(s.email):''}</div><div style="margin:5px 0"><span class="badge">${ic('store')} ${esc(({ 'in-an':'In ấn','shop-decal':'Shop Decal','film-noi-that':'Film nội thất','film-cach-nhiet':'Film cách nhiệt' })[s.category]||'In ấn')}</span></div>${s.taxCode?`<div class="mut">MST: ${esc(s.taxCode)}</div>`:''}${s.note?`<div class="mut">${esc(s.note)}</div>`:''}</div><div class="row"><button class="btn gh sm" data-a="editSupplier" data-id="${s.id}">Sửa</button><button class="btn dg sm" data-a="delSupplier" data-id="${s.id}">${ic('ban')} Xóa</button></div></div></div>`).join(''):emp(supAll.length,'Chưa có nhà cung cấp. Bấm “Thêm NCC” để nhập thông tin.')}`;
+    ${sup.length?sup.map(s=>`<div class="card"><div class="row sp"><div><b>${esc(s.name)}</b><div class="mut">${esc(s.phone||'Chưa có SĐT')}${s.contact?' · '+esc(s.contact):''}</div><div class="mut">${esc(s.address||'Chưa có địa chỉ')}${s.email?' · '+esc(s.email):''}</div><div style="margin:5px 0"><span class="badge">${ic('store')} ${esc(({ 'in-an':'In ấn','shop-decal':'Shop Decal','film-noi-that':'Film nội thất','film-cach-nhiet':'Film cách nhiệt' })[s.category]||'In ấn')}</span></div>${s.taxCode?`<div class="mut">MST: ${esc(s.taxCode)}</div>`:''}${s.note?`<div class="mut">${esc(s.note)}</div>`:''}</div><div class="row" style="flex-wrap:wrap;gap:6px"><button class="btn gh sm" data-a="supplierFiles" data-id="${s.id}">${ic('filetext')} Xem báo giá${(db.supplierQuotes||[]).filter(q=>q.supplierId===s.id&&q.attachment).length?' ('+(db.supplierQuotes||[]).filter(q=>q.supplierId===s.id&&q.attachment).length+')':''}</button><button class="btn gh sm" data-a="editSupplier" data-id="${s.id}">Sửa</button><button class="btn dg sm" data-a="delSupplier" data-id="${s.id}">${ic('ban')} Xóa</button></div></div></div>`).join(''):emp(supAll.length,'Chưa có nhà cung cấp. Bấm “Thêm NCC” để nhập thông tin.')}`;
 }
 function expensesView(){
   const mk=today().slice(0,7),expenses=[...db.expenses].sort((a,b)=>b.date.localeCompare(a.date));
@@ -2047,7 +2116,7 @@ const setNav=open=>{document.body.classList.toggle('nav-open',open);const b=$('#
 const acts={
   alerts:()=>showAlerts(),allowNotify:()=>enableSystemAlerts(),addTask:()=>taskForm(),editTask:id=>taskForm(id),delTask:id=>deleteTask(id),taskStatus:id=>changeTaskStatus(id),sendChat:()=>sendChat(),
   tab:id=>{view=id;moduleSearch='';setNav(false);render();scrollTo(0,0)},
-  quickAdd:()=>{const m={quote:'newQuote',cust:'newCust',purchases:'newPurchase',suppliers:'newSupplier',supplierQuotes:'newSupplierQuote',exp:'newExp',prod:'newProd'};let k=m[view]||'newOrder';if((k==='newProd'||k==='newPurchase'||k==='newSupplier'||k==='newSupplierQuote'||k==='newExp')&&!isMgr())k='newOrder';acts[k]()},
+  quickAdd:()=>{const m={quote:'newQuote',cust:'newCust',purchases:'newPurchase',suppliers:'newSupplier',exp:'newExp',prod:'newProd'};let k=m[view]||'newOrder';if((k==='newProd'||k==='newPurchase'||k==='newSupplier'||k==='newExp')&&!isMgr())k='newOrder';acts[k]()},
   clearSearch:()=>{moduleSearch='';const el=$('#moduleSearch');if(el)el.value='';applyModuleSearch();if(el)el.focus()},
   filter:id=>{filter=id;render()},
   vf:s=>{const i=s.indexOf('|');VF[s.slice(0,i)]=s.slice(i+1);render()},
@@ -2068,7 +2137,7 @@ const acts={
   toggleNav:()=>setNav(!document.body.classList.contains('nav-open')),
   closeNav:()=>setNav(false),
   toOrder:id=>convertQuote(db.quotes.find(x=>x.id===id)),viewOrder:()=>{filter='Tất cả';view='orders';setNav(false);render();scrollTo(0,0)},
-  newSupplierQuote:()=>supplierQuoteForm(),editSupplierQuote:id=>supplierQuoteForm(id),downloadSupplierQuote:id=>downloadSupplierQuote(id),deleteSupplierQuote:id=>deleteSupplierQuote(id),supplierQuotePurchase:id=>supplierQuoteToPurchase(id),
+  supplierFiles:id=>supplierFilesDialog(id),newSupplierQuote:()=>supplierQuoteForm(),editSupplierQuote:id=>supplierQuoteForm(id),downloadSupplierQuote:id=>downloadSupplierQuote(id),deleteSupplierQuote:id=>deleteSupplierQuote(id),supplierQuotePurchase:id=>supplierQuoteToPurchase(id),
   newPurchase:()=>purchaseForm(),editPurchase:id=>purchaseForm(id),newPurchaseForOrder:id=>purchaseForm('',id),newExpForOrder:id=>expForm(id),newSupplier:()=>supplierForm(),editSupplier:id=>supplierForm(id),
   delSupplier:id=>{const supplier=(db.suppliers||[]).find(x=>x.id===id);if(!supplier)return;const linked=(db.orders||[]).filter(o=>o.supplierId===id).length;if(!confirm('Xóa nhà cung cấp “'+supplier.name+'” khỏi danh bạ?'+(linked?' '+linked+' đơn hàng đang liên kết sẽ được bỏ liên kết NCC.':'')+' Phiếu mua hàng cũ vẫn được giữ nguyên.'))return;db.suppliers=db.suppliers.filter(x=>x.id!==id);db.orders.forEach(o=>{if(o.supplierId===id)o.supplierId=''});save();render()},
   ppay:id=>{const p=db.purchases.find(x=>x.id===id);p.paid=!p.paid;save();render()},
@@ -2164,8 +2233,8 @@ if(CLOUD)initCloud();else render();
   const pending=bubble('ai','Gemini đang trả lời…');busy=true;by('gm-send').disabled=true;statusMsg('Đang gửi yêu cầu…');
   try{
    const contents=[...turns,{role:'user',parts}];
-   const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',{
-    method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify({contents,generationConfig:{maxOutputTokens:2048}})
+   const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',{
+    method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify({contents,generationConfig:{maxOutputTokens:4096}})
    });
    const data=await response.json();if(!response.ok)throw Error(data.error?.message||'HTTP '+response.status);
    const answer=(data.candidates?.[0]?.content?.parts||[]).filter(p=>typeof p.text==='string').map(p=>p.text).join('\n').trim()||'Gemini không trả về nội dung văn bản.';
