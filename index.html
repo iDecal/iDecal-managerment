@@ -1099,12 +1099,15 @@ function quoteForm(id){
     <button type="button" class="btn gh sm" id="addI" style="margin-top:8px">${ic('plus')} Thêm dòng</button>
     ${fld('Giảm giá (đ)','discount',q.discount||0,'number','min=0 step=any')}
     ${fld('VAT (%)','vatRate',q.vatRate??8,'number','min=0 max=100 step=1')}
-    ${fld('Ghi chú / điều khoản','note',q.note||'')}
+    <label>Thời gian bảo hành<input name="warranty" type="text" value="${esc(q.warranty||'')}" placeholder="Ví dụ: 12 tháng kể từ ngày bàn giao"></label>
+    <label>Điều khoản đặt cọc<textarea name="depositTerms" rows="2" placeholder="Ví dụ: Đặt cọc 50% khi xác nhận đơn hàng">${esc(q.depositTerms||'')}</textarea></label>
+    <label>Điều khoản thanh toán<textarea name="paymentTerms" rows="2" placeholder="Ví dụ: Thanh toán phần còn lại sau khi nghiệm thu / giao hàng">${esc(q.paymentTerms||'')}</textarea></label>
+    ${fld('Ghi chú / điều khoản khác','note',q.note||'')}
     <div class="card quote-calc"><div class="row sp"><span>Tạm tính sản phẩm</span><b id="sub">0đ</b></div><div class="row sp"><span>VAT (<span id="vatLabel">8</span>%)</span><b id="vat">0đ</b></div><div class="tot">Tổng thanh toán: <b id="tot">0đ</b></div></div>`,
   (fd,m)=>{
     const items=readItems(m);
     if(!items.length){alert('Cần ít nhất 1 dòng hàng hợp lệ');return false}
-    const data={cid:fd.get('cid'),cname:fd.get('cname'),date:fd.get('date'),until:fd.get('until'),completionDate:fd.get('completionDate'),discount:+fd.get('discount')||0,vatRate:Math.max(0,+fd.get('vatRate')||0),note:fd.get('note'),items};
+    const data={cid:fd.get('cid'),cname:fd.get('cname'),date:fd.get('date'),until:fd.get('until'),completionDate:fd.get('completionDate'),warranty:String(fd.get('warranty')||'').trim(),depositTerms:String(fd.get('depositTerms')||'').trim(),paymentTerms:String(fd.get('paymentTerms')||'').trim(),discount:+fd.get('discount')||0,vatRate:Math.max(0,+fd.get('vatRate')||0),note:fd.get('note'),items};
     if(id)Object.assign(q,data);else db.quotes.push({id:uid(),code:'BG'+String(++db.qseq).padStart(4,'0'),status:'Nháp',by:meName(),byEmail:CLOUD&&me?me.email||'':'',...data});
     save();render();
   });
@@ -1136,9 +1139,9 @@ const slug=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/
 const DOC_CSS=`.doc{font:13px/1.55 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#203047;background:#fff;padding:0;text-align:left;--ac:#087bbd}
 .doc *{box-sizing:border-box}.doc h1{margin:0;font-size:23px;letter-spacing:.2px;color:#0e3150;font-weight:800}.doc h2{text-align:center;margin:22px 0 4px;font-size:22px;letter-spacing:1px;color:#0b2340;font-weight:800}
 .doc .qhead{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:18px 20px;border:1px solid #dbe8f2;border-radius:18px;background:radial-gradient(circle at top right,rgba(8,123,189,.16),transparent 32%),radial-gradient(circle at 18% 24%,rgba(8,123,189,.08),transparent 22%),linear-gradient(135deg,#fafdff 0%,#f3f8fc 55%,#eef5fb 100%);box-shadow:0 8px 24px rgba(21,74,117,.08);position:relative;overflow:hidden}.doc .qhead:after{content:'';position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(8,123,189,.06) 1px, transparent 1px);background-size:14px 14px;mask-image:linear-gradient(135deg,rgba(0,0,0,.4),transparent 70%);opacity:.7}.doc .qhead img{max-height:72px;max-width:170px;object-fit:contain;position:relative;z-index:1}.doc .qbrand{display:flex;gap:14px;align-items:flex-start;min-width:0;position:relative;z-index:1}.doc .qinfo{min-width:0}.doc .qsub{color:#62748a;font-size:11px;margin-top:4px}.doc .qchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;position:relative;z-index:1}.doc .qchip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.82);border:1px solid rgba(177,203,224,.9);color:#486075;font-size:10.5px;line-height:1.35;max-width:100%}.doc .qchip .i{width:13px;height:13px;color:var(--ac,#087bbd);flex:0 0 auto}.doc .qchip span:last-child{overflow-wrap:anywhere}.doc .c{text-align:center;color:#68788d;font-size:11px}.doc .meta{display:flex;justify-content:space-between;gap:12px;margin:13px 0;padding:10px 12px;background:#f2f7fb;border:1px solid #dce8f1;border-radius:7px}.doc .meta>div{flex:1;min-width:0}.doc .meta small{display:block;color:#708197;font-size:10px;text-transform:uppercase;letter-spacing:.5px}.doc .meta b{color:#142f4d;font-size:12px;overflow-wrap:anywhere}
-.doc table{width:100%;border-collapse:collapse;margin-top:15px;font-size:11.5px}.doc th,.doc td{border:1px solid #dce5ed;padding:8px 8px;text-align:left;color:#26384b;vertical-align:middle}.doc th{background:#eaf3f9;color:#143b5b;font-weight:700}.doc tbody tr:nth-child(even){background:#f8fbfd}.doc .r{text-align:right;white-space:nowrap}.doc .tt{text-align:right;margin-top:7px;color:#53677c}.doc .summary{width:56%;margin:14px 0 0 auto;border-collapse:collapse}.doc .summary td{padding:5px 8px;border:0;border-bottom:1px solid #e5edf3}.doc .summary .grand td{background:#eaf5fb;color:#075b8e;font-weight:800;font-size:14px;border-top:2px solid var(--ac,#087bbd)}.doc .tgrand{color:var(--ac,#087bbd)}
+.doc table{width:100%;border-collapse:collapse;margin-top:15px;font-size:11.5px}.doc th,.doc td{border:1px solid #dce5ed;padding:8px 8px;text-align:left;color:#26384b;vertical-align:middle}.doc th{background:#eaf3f9;color:#143b5b;font-weight:700}.doc tbody tr:nth-child(even){background:#f8fbfd}.doc .r{text-align:right;white-space:nowrap}.doc .tt{text-align:right;margin-top:7px;color:#53677c}.doc .summary{width:56%;margin:14px 0 0 auto;border-collapse:collapse}.doc .summary td{padding:5px 8px;border:0;border-bottom:1px solid #e5edf3}.doc .summary .grand td{background:#eaf5fb;color:#075b8e;font-weight:800;font-size:14px;border-top:2px solid var(--ac,#087bbd)}.doc .tgrand{color:var(--ac,#087bbd)}.doc .summary .amount-words td{font-size:10.5px;font-style:italic;color:#40566c;background:#f9fbfd;white-space:normal;overflow-wrap:anywhere;line-height:1.45;padding:7px 9px}.doc .summary .amount-words b{font-style:normal;color:#193f5d}
 .doc .sig{display:flex;justify-content:space-between;gap:30px;margin-top:42px;text-align:center;break-inside:avoid}.doc .sig>div{width:45%}.doc .sig i{font-size:10px;color:#77869a}.doc .pimgs{width:42px;height:42px;object-fit:cover;border-radius:4px;display:block}.doc .terms{margin-top:16px;padding:10px 12px;background:#f7fafc;border-left:3px solid var(--ac,#087bbd);font-size:11px;color:#42556a;break-inside:avoid}.doc .paybox{display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:center;margin-top:12px;padding:9px;border:1px solid #dce8f1;border-radius:12px;background:#f8fbfe;break-inside:avoid}.doc .payqr{display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #dce8f1;border-radius:8px;padding:5px;min-height:88px}.doc .payqr img{width:78px;height:78px;object-fit:contain;display:block}.doc .payinfo b{display:block;color:#143b5b;margin-bottom:4px}.doc .payinfo .payline{margin:4px 0;color:#42556a}.doc .payinfo small{display:block;color:#708197;margin-top:6px}.doc .foot{margin-top:25px;padding-top:9px;border-top:1px solid #e0e8ef;text-align:center;color:#7b8b9d;font-size:10px}
-.doc .description{white-space:pre-wrap;overflow-wrap:anywhere;color:#4c6071;font-size:10.5px}.doc .payinfo .payline b{display:inline;font-weight:600;margin:0}.doc .payinfo{font-size:10.5px}.doc .payinfo small{font-size:9px;margin-top:3px}.doc .payinfo .payline{margin:2px 0}.doc table{font-size:10.8px}.doc th,.doc td{padding:6px 5px}.doc .summary{margin-top:10px}.doc .qhead{padding:12px 14px}.doc .qhead h1{font-size:20px}.doc .qchips{gap:5px;margin-top:7px}.doc .qchip{padding:3px 7px;font-size:9.5px}.doc .meta{margin:9px 0;padding:7px 9px}.doc .terms{margin-top:11px;padding:7px 9px} 
+.doc .quote-conditions{padding:8px 11px}.doc .quote-conditions>div{margin-top:4px;white-space:normal;overflow-wrap:anywhere}.doc .quote-conditions strong{color:#263c52;font-weight:700}.doc .description{white-space:pre-wrap;overflow-wrap:anywhere;color:#4c6071;font-size:10.5px}.doc .payinfo .payline b{display:inline;font-weight:600;margin:0}.doc .payinfo{font-size:10.5px}.doc .payinfo small{font-size:9px;margin-top:3px}.doc .payinfo .payline{margin:2px 0}.doc table{font-size:10.8px}.doc th,.doc td{padding:6px 5px}.doc .summary{margin-top:10px}.doc .qhead{padding:12px 14px}.doc .qhead h1{font-size:20px}.doc .qchips{gap:5px;margin-top:7px}.doc .qchip{padding:3px 7px;font-size:9.5px}.doc .meta{margin:9px 0;padding:7px 9px}.doc .terms{margin-top:11px;padding:7px 9px} 
 .doc.mod h2{text-align:center;border:0;padding-bottom:0;margin-top:22px}.doc.mod .c{text-align:center}.doc.mod th{background:var(--ac);color:#fff;border-color:var(--ac)}.doc.mod td{border-left:0;border-right:0}.doc .nowrap{white-space:nowrap}`;
 const TPL_DEF={style:'classic',accent:'#111111',font:14,title:'BÁO GIÁ',logo:'',showLogo:true,showShop:true,intro:'',greet:'Kính gửi:',
   colIdx:true,colUnit:true,colImg:false,showUntil:true,showNote:true,showBank:true,showSig:true,sigL:'Khách hàng',sigR:'',terms:''};
@@ -1225,6 +1228,44 @@ function quotePayHTML(q,t){
   if(!(t.showBank&&(qr||s.bankName||s.bankOwner||note)))return'';
   return`<div class="paybox"><div class="payqr">${qr?`<img src="${qr}" alt="QR thanh toán" referrerpolicy="no-referrer">`:'<div class="mut">Chưa có QR</div>'}</div><div class="payinfo"><b>THANH TOÁN QR</b>${s.bankName?`<div class="payline"><b>Ngân hàng:</b> ${esc(s.bankName)}</div>`:''}${s.bankOwner?`<div class="payline"><b>Chủ tài khoản:</b> ${esc(s.bankOwner)}</div>`:''}${ref?`<div class="payline"><b>Nội dung chuyển tiền:</b> ${esc(ref)}</div>`:''}<small>Quét QR để thanh toán.</small>${note?`<div class="payline" style="margin-top:8px">${note}</div>`:''}</div></div>`;
 }
+// Đọc số tiền VNĐ bằng chữ, tính từ tổng báo giá sau giảm giá và VAT.
+function tienBangChu(value){
+  const amount=Math.round(Number(value));
+  if(!Number.isFinite(amount)||amount<0)return '';
+  if(amount===0)return 'Không đồng';
+  const digits=['không','một','hai','ba','bốn','năm','sáu','bảy','tám','chín'];
+  const units=['','nghìn','triệu','tỷ','nghìn tỷ','triệu tỷ'];
+  const groups=[];let rest=amount;
+  while(rest>0){groups.push(rest%1000);rest=Math.floor(rest/1000)}
+  const readGroup=(n,fill)=>{
+    const hundred=Math.floor(n/100),ten=Math.floor(n%100/10),one=n%10;
+    const words=[];
+    if(hundred)words.push(digits[hundred],'trăm');
+    else if(fill)words.push('không','trăm');
+    if(ten>1){
+      words.push(digits[ten],'mươi');
+      if(one===1)words.push('mốt');
+      else if(one===5)words.push('lăm');
+      else if(one)words.push(digits[one]);
+    }else if(ten===1){
+      words.push('mười');
+      if(one===5)words.push('lăm');
+      else if(one)words.push(digits[one]);
+    }else if(one){
+      if(hundred||fill)words.push('lẻ');
+      words.push(digits[one]);
+    }
+    return words.join(' ');
+  };
+  const chunks=[];
+  for(let i=groups.length-1;i>=0;i--){
+    if(!groups[i])continue;
+    const words=readGroup(groups[i],i<groups.length-1&&groups[i]<100);
+    chunks.push(words+(units[i]?' '+units[i]:''));
+  }
+  const result=chunks.join(' ').replace(/\s+/g,' ').trim();
+  return result.charAt(0).toUpperCase()+result.slice(1)+' đồng';
+}
 function quoteHTML(q,t){
   t=t||tplOf();
   const c=cust(q.cid),s=db.shop||{},sub=q.items.reduce((sum,i)=>sum+lineAmt(i),0);
@@ -1242,8 +1283,9 @@ function quoteHTML(q,t){
   <table class="summary"><tbody><tr><td>Tạm tính sản phẩm</td><td class="r">${vnd(sub)}</td></tr>
   ${q.discount?`<tr><td>Chiết khấu</td><td class="r">− ${vnd(q.discount)}</td></tr>`:''}
   <tr><td>VAT (${qvatRate(q)}%)</td><td class="r">${vnd(qvat(q))}</td></tr>
-  <tr class="grand"><td>TỔNG THANH TOÁN</td><td class="r">${vnd(qtotal(q))}</td></tr></tbody></table>
-  ${t.showNote&&q.note?`<p style="margin-top:14px"><b>Ghi chú:</b> ${nl(esc(q.note))}</p>`:''}
+  <tr class="grand"><td>TỔNG THANH TOÁN</td><td class="r">${vnd(qtotal(q))}</td></tr><tr class="amount-words"><td colspan="2"><b>Bằng chữ:</b> ${esc(tienBangChu(qtotal(q)))}</td></tr></tbody></table>
+  ${(q.warranty||q.depositTerms||q.paymentTerms)?`<div class="terms quote-conditions"><b>ĐIỀU KHOẢN BẢO HÀNH & THANH TOÁN</b>${q.warranty?`<div><strong>Bảo hành:</strong> ${nl(esc(q.warranty))}</div>`:''}${q.depositTerms?`<div><strong>Đặt cọc:</strong> ${nl(esc(q.depositTerms))}</div>`:''}${q.paymentTerms?`<div><strong>Thanh toán:</strong> ${nl(esc(q.paymentTerms))}</div>`:''}</div>`:''}
+  ${t.showNote&&q.note?`<p style="margin-top:10px"><b>Ghi chú:</b> ${nl(esc(q.note))}</p>`:''}
   ${t.terms?`<div class="terms"><b>ĐIỀU KHOẢN & LƯU Ý</b><br>${nl(esc(t.terms))}</div>`:''}
   ${quotePayHTML(q,t)}
   ${t.showSig?`<div class="sig"><div><b>${esc(t.sigL||'KHÁCH HÀNG')}</b><br><i>(Ký, ghi rõ họ tên)</i></div><div><b>${esc(t.sigR||s.name||'iDecal')}</b><br><i>(Ký, đóng dấu)</i></div></div>`:''}
