@@ -801,11 +801,13 @@ function orderForm(id){
   const m=modal(id?'Sửa đơn '+o.code:'Đơn mới',`
     <label>Khách hàng<select name="cid"><option value="">Khách lẻ</option>${db.customers.map(c=>`<option value="${c.id}" ${c.id===o.cid?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
     ${fld('Tên khách (nhập tay nếu là khách lẻ)','cname',o.cname||'','text','placeholder="VD: Nha khoa VIN OCP"')}
+    <label>Loại thực hiện đơn hàng<select name="fulfillmentType" id="fulfillmentType"><option value="delivery" ${(o.fulfillmentType||((o.workerIds?.length||o.installDue)?'installation':'delivery'))==='delivery'?'selected':''}>🚚 Giao hàng</option><option value="installation" ${(o.fulfillmentType||((o.workerIds?.length||o.installDue)?'installation':'delivery'))==='installation'?'selected':''}>🛠️ Thi công / lắp đặt</option></select></label>
+    <div class="mut">Mỗi loại có phiếu riêng để gửi cho người giao hàng hoặc thợ thi công.</div>
     ${fld('Ngày','date',o.date,'date','required')}
     <div class="reminder-dates">${fld('Giờ in ấn','printDue',o.printDue||'','datetime-local')}${fld('Giờ thi công','installDue',o.installDue||'','datetime-local')}${fld('Giờ giao hàng','deliveryDue',o.deliveryDue||'','datetime-local')}</div>
     <div class="mut" style="margin:5px 0 12px">Nhắc trước giờ thực hiện 3 tiếng. Các lịch cũ chỉ có ngày cần bổ sung giờ để hệ thống nhắc chính xác.</div>
     <div class="card" style="padding:12px;margin:9px 0;background:#f6fafb"><b>${ic('users')} Phân công thợ thi công</b><div class="mut" style="margin:5px 0 9px">Có thể chọn nhiều thợ cho một đơn hàng; quản lý tiến độ ngay tại đây.</div>
-    ${(db.workers||[]).length?`<div class="worker-select">${db.workers.map(w=>`<label class="worker-check"><input type="checkbox" name="workerIds" value="${esc(w.id)}" ${(o.workerIds||[]).includes(w.id)?'checked':''} ${w.active===false?'disabled':''}><span>${esc(w.name)}${w.skill?' · '+esc(w.skill):''}${w.area?' · 📍 '+esc(w.area):''}</span></label>`).join('')}</div>`:'<div class="mut">Chưa có danh sách thợ. Vào mục Thợ thi công để thêm thợ.</div>'}
+    ${(db.workers||[]).length?`<div class="worker-select">${db.workers.map(w=>`<label class="worker-check"><input type="checkbox" name="workerIds" value="${esc(w.id)}" ${(o.workerIds||[]).includes(w.id)?'checked':''} ${w.active===false?'disabled':''}><span>${esc(w.name)}${w.skill?' · '+esc(w.skill):''}${w.area?' · 📍 '+esc(normWorkerArea(w.area))+(w.district?' / '+esc(w.district):''):''}</span></label>`).join('')}</div>`:'<div class="mut">Chưa có danh sách thợ. Vào mục Thợ thi công để thêm thợ.</div>'}
     <label style="margin-top:9px">Tiến độ thi công<select name="installStatus">${INSTALL_STATES.map(st=>`<option value="${st}" ${(o.installStatus||'Chưa bắt đầu')===st?'selected':''}>${st}</option>`).join('')}</select></label>
     ${fld('Địa điểm / địa chỉ thi công','installAddress',o.installAddress||'')}
     <label>Ghi chú giao việc cho thợ<textarea name="installNote" rows="2">${esc(o.installNote||'')}</textarea></label></div>
@@ -827,7 +829,7 @@ function orderForm(id){
     const picked=supplierOpts.find(x=>x.id===pickedSupplier);
     const supplierId=picked&&!picked.legacy?picked.id:'';
     const supplierName=picked?picked.name:'';
-    const data={cid:fd.get('cid'),cname:String(fd.get('cname')||'').trim(),date:fd.get('date'),printDue:fd.get('printDue')||'',installDue:fd.get('installDue')||'',deliveryDue:fd.get('deliveryDue')||'',status:fd.get('status'),paid:fd.get('paid')==='on',note:fd.get('note'),items,supplierId,supplierName,workerIds:fd.getAll('workerIds').filter(w=>db.workers.some(x=>x.id===w)),installStatus:String(fd.get('installStatus')||'Chưa bắt đầu'),installAddress:String(fd.get('installAddress')||'').trim(),installNote:String(fd.get('installNote')||'').trim()};
+    const data={fulfillmentType:String(fd.get('fulfillmentType')||'delivery'),cid:fd.get('cid'),cname:String(fd.get('cname')||'').trim(),date:fd.get('date'),printDue:fd.get('printDue')||'',installDue:fd.get('installDue')||'',deliveryDue:fd.get('deliveryDue')||'',status:fd.get('status'),paid:fd.get('paid')==='on',note:fd.get('note'),items,supplierId,supplierName,workerIds:fd.getAll('workerIds').filter(w=>db.workers.some(x=>x.id===w)),installStatus:String(fd.get('installStatus')||'Chưa bắt đầu'),installAddress:String(fd.get('installAddress')||'').trim(),installNote:String(fd.get('installNote')||'').trim()};
     if(id)Object.assign(o,data);else db.orders.push({id:uid(),code:'DH'+String(++db.seq).padStart(4,'0'),...data});
     save();render();refreshAlerts();
   });
@@ -1019,7 +1021,7 @@ function orderCard(o){
   const note=o.note&&!/^Từ BG\d+/.test(o.note)?o.note:'';
   const src=(o.note||'').match(/^Từ (BG\d+)/);
   return`<div class="card oc">
-    <div class="oc-h"><div class="oc-t"><b>${esc(o.code)}</b> · ${esc(orderCustomerName(o))}</div><b class="oc-p">${vnd(total(o))}</b></div>
+    <div class="oc-h"><div class="oc-t"><b>${esc(o.code)}</b> <span class="badge ${orderFulfillment(o)==='installation'?'ok':''}">${orderFulfillment(o)==='installation'?'🛠️ Thi công':'🚚 Giao hàng'}</span> · ${esc(orderCustomerName(o))}</div><b class="oc-p">${vnd(total(o))}</b></div>
     ${(o.printDue||o.installDue||o.deliveryDue)?`<div class="mut" style="margin:4px 0">${[['🖨️',o.printDue],['🛠️',o.installDue],['🚚',o.deliveryDue]].filter(x=>x[1]).map(x=>x[0]+' '+esc(x[1])).join(' · ')}</div>`:''}
     <div class="oc-m">${esc(o.date)}${src?' · '+src[1]:''} · <details class="itd oc-it"><summary>${n} mặt hàng</summary><ul>${(o.items||[]).map(i=>`<li>${esc(i.name)} <b>×${fq(i.qty)}</b></li>`).join('')}</ul></details></div>
     ${note?`<div class="oc-n" title="${esc(note)}">${ic('pencil')} ${esc(note)}</div>`:''}
@@ -1033,6 +1035,7 @@ function orderCard(o){
     <details class="oc-cost"><summary class="${bd.count===0?'mut':diff<0?'neg':'pos'}">${bd.count===0?'Chưa đủ chi phí để tính lãi':'Chênh lệch '+vnd(diff)}</summary><div class="mut">Giá vốn tham khảo: <b>${vnd(cogs(o))}</b> · Chi phí đã gắn: <b>${vnd(orderActualCosts(o))}</b></div></details>
     <div class="oc-a">
       <button class="btn gh sm" data-a="previewOrder" data-id="${o.id}">${ic('eye')} Xem</button>
+      <button class="btn gh sm" data-a="previewWorkSlip" data-id="${o.id}">${ic('filetext')} ${orderFulfillment(o)==='installation'?'Đơn thi công':'Phiếu giao hàng'}</button>
       <button class="btn gh sm" data-a="editOrder" data-id="${o.id}">${ic('pencil')} Sửa</button>
       ${o.paid?'':`<button class="btn gh sm" data-a="depositOrder" data-id="${o.id}">${ic('banknote')} Tạm ứng</button>`}
       <details class="mm"><summary class="btn gh sm" aria-label="Thêm thao tác">${ic('more')}</summary><div class="mm-pop">
@@ -1043,11 +1046,14 @@ function orderCard(o){
     </div>
   </div>`;
 }
+let orderFulfillmentFilter='all';
+function orderFulfillment(o){return o.fulfillmentType==='installation'?'installation':o.fulfillmentType==='delivery'?'delivery':((o.workerIds?.length||o.installDue)?'installation':'delivery')}
 function orders(){
-  const base=db.orders.filter(o=>!o.archived&&(filter==='Tất cả'||o.status===filter)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
+  const base=db.orders.filter(o=>!o.archived&&(filter==='Tất cả'||o.status===filter)&&(orderFulfillmentFilter==='all'||orderFulfillment(o)===orderFulfillmentFilter)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
   const list=fapply('orders',base);
   return`<div class="row sp"><h2>Đơn hàng</h2><div class="row">${(()=>{const n=db.orders.filter(o=>!o.archived&&o.paid&&DONE_ST.includes(o.status)).length;return n?`<button class="btn gh" data-a="archiveDone">${ic('archive')} Lưu trữ đơn xong (${n})</button>`:''})()}<button class="btn" data-a="newOrder">${ic('plus')} Đơn mới</button></div></div>
   ${stageBar()}
+  <div class="row" style="gap:7px;flex-wrap:wrap;margin:9px 0 12px"><button class="btn sm ${orderFulfillmentFilter==='all'?'':'gh'}" data-a="workTypeFilter" data-id="all">Tất cả loại đơn</button><button class="btn sm ${orderFulfillmentFilter==='delivery'?'':'gh'}" data-a="workTypeFilter" data-id="delivery">🚚 Giao hàng</button><button class="btn sm ${orderFulfillmentFilter==='installation'?'':'gh'}" data-a="workTypeFilter" data-id="installation">🛠️ Thi công</button></div>
   ${fbar('orders',base)}
   ${list.length?list.map(o=>orderCard(o)).join(''):emp(base.length,'Chưa có đơn nào')}`;
 }
@@ -1567,16 +1573,46 @@ function orderHTML(o,t){
   ${o.note?`<div class="terms"><b>Ghi chú:</b><br>${nl(esc(o.note))}</div>`:''}
   <div class="sig"><div><b>Người lập đơn</b><br><i>(Ký, ghi rõ họ tên)</i></div><div><b>Khách hàng</b><br><i>(Xác nhận đơn hàng)</i></div></div>`;
 }
+function workSlipHTML(o){
+  const t=tplOf(), c=cust(o.cid), isInstall=orderFulfillment(o)==='installation';
+  const work=(o.workerIds||[]).map(id=>(db.workers||[]).find(w=>w.id===id)).filter(Boolean);
+  const contact=(c?.contactName||c?.representative||'');
+  const mobile=c?.contactPhone||c?.phone||'';
+  const address=isInstall?(o.installAddress||c?.deliveryAddress||c?.addr||''):(c?.deliveryAddress||c?.addr||o.installAddress||'');
+  const due=isInstall?o.installDue:o.deliveryDue;
+  const kind=isInstall?'ĐƠN THI CÔNG':'PHIẾU GIAO HÀNG';
+  const rows=(o.items||[]).map((i,n)=>`<tr><td>${n+1}</td><td><b>${esc(i.name||'—')}</b>${i.description?`<div class="mut">${nl(esc(i.description))}</div>`:''}</td><td>${esc(i.unit||(prod(i.pid)||{}).unit||'—')}</td><td class="r">${fq(i.qty)}</td></tr>`).join('');
+  const workerSection=isInstall?`<div class="terms"><b>THÔNG TIN THỢ / ĐỘI THI CÔNG</b>${work.length?work.map((w,n)=>`<div style="margin-top:6px">${n+1}. <b>${esc(w.name)}</b>${w.phone?' · SĐT: '+esc(w.phone):''}${w.skill?' · '+esc(w.skill):''}${w.area?' · '+esc(normWorkerArea(w.area))+(w.district?' / '+esc(w.district):''):''}</div>`).join(''):'<div style="margin-top:5px">Chưa phân công thợ</div>'}${o.installStatus?`<div style="margin-top:5px">Tiến độ: ${esc(o.installStatus)}</div>`:''}</div>`:'';
+  const instr=isInstall?(o.installNote||''):(o.deliveryNote||o.note||'');
+  return `${shopHead(t)}<h2>${kind}</h2><div class="c">LIÊN KẾT ĐƠN HÀNG: ${esc(o.code)}</div>
+  <div class="meta"><div><small>Khách hàng / Công ty</small><b>${esc(orderCustomerName(o))}</b>${contact?`<div>Người liên hệ: ${esc(contact)}</div>`:''}${mobile?`<div>Điện thoại: ${esc(mobile)}</div>`:''}${c?.contactEmail?`<div>Email: ${esc(c.contactEmail)}</div>`:''}</div><div><small>Ngày lập</small><b>${esc(o.date||'—')}</b></div></div>
+  <div class="terms"><b>${isInstall?'ĐỊA ĐIỂM THI CÔNG':'ĐỊA CHỈ GIAO HÀNG'}</b><div style="margin-top:5px">${esc(address||'Chưa cập nhật')}</div>${due?`<div style="margin-top:5px"><b>${isInstall?'Lịch thi công':'Lịch giao hàng'}:</b> ${esc(due.replace('T',' '))}</div>`:''}</div>
+  <table><thead><tr><th style="width:38px">STT</th><th>Sản phẩm / Hạng mục</th><th style="width:70px">ĐVT</th><th class="r" style="width:60px">Số lượng</th></tr></thead><tbody>${rows}</tbody></table>
+  ${workerSection}
+  ${instr?`<div class="terms"><b>${isInstall?'Yêu cầu thi công':'Ghi chú giao hàng'}</b><div style="margin-top:5px">${nl(esc(instr))}</div></div>`:''}
+  <div class="sig"><div><b>${isInstall?'ĐẠI DIỆN THỢ THI CÔNG':'NGƯỜI GIAO HÀNG'}</b><br><i>(Ký, ghi rõ họ tên)</i></div><div><b>${isInstall?'KHÁCH HÀNG NGHIỆM THU':'NGƯỜI NHẬN HÀNG'}</b><br><i>(Ký, ghi rõ họ tên)</i></div></div>`;
+}
+function previewWorkSlip(id){
+ const o=db.orders.find(x=>x.id===id);if(!o)return;
+ const kind=orderFulfillment(o)==='installation'?'Đơn thi công':'Phiếu giao hàng',t=tplOf();
+ previewDoc(kind+' '+o.code,workSlipHTML(o),docAttrs(t),`<button type="button" class="btn" data-work-pdf>Xuất PDF</button><button type="button" class="btn gh" data-work-print>In phiếu</button>`);
+ const m=document.querySelector('body > .ov:last-child');
+ m.querySelector('[data-work-pdf]').onclick=()=>pdfWorkSlip(id);
+ m.querySelector('[data-work-print]').onclick=()=>printWorkSlip(id);
+}
+function printWorkSlip(id){const o=db.orders.find(x=>x.id===id);if(o)printDoc((orderFulfillment(o)==='installation'?'Đơn thi công ':'Phiếu giao hàng ')+o.code,workSlipHTML(o),docAttrs(tplOf()))}
+function pdfWorkSlip(id){const o=db.orders.find(x=>x.id===id);if(o)pdfDoc(o.code+(orderFulfillment(o)==='installation'?'-thi-cong':'-giao-hang')+'.pdf',o.code,workSlipHTML(o),docAttrs(tplOf()))}
 function printOrder(id){const o=db.orders.find(x=>x.id===id),t=tplOf();if(o)printDoc('Đơn hàng '+o.code,orderHTML(o,t),docAttrs(t))}
 function pdfOrder(id){const o=db.orders.find(x=>x.id===id),t=tplOf();if(o)pdfDoc(o.code+'-don-hang.pdf',o.code,orderHTML(o,t),docAttrs(t))}
 function previewOrder(id){
   const o=db.orders.find(x=>x.id===id);if(!o)return;
   const t=tplOf();previewDoc('Xem đơn hàng '+o.code,orderHTML(o,t),docAttrs(t),
-    `<button type="button" class="btn" data-preview-pdf>Xuất PDF</button><button type="button" class="btn gh" data-preview-print>In đơn</button>`
+    `<button type="button" class="btn" data-preview-pdf>Xuất PDF</button><button type="button" class="btn gh" data-preview-print>In đơn</button><button type="button" class="btn gh" data-work-slip>Mở ${orderFulfillment(o)==='installation'?'đơn thi công':'phiếu giao hàng'}</button>`
   );
   const m=document.querySelector('body > .ov:last-child');
   m.querySelector('[data-preview-pdf]').onclick=()=>pdfOrder(id);
   m.querySelector('[data-preview-print]').onclick=()=>printOrder(id);
+  m.querySelector('[data-work-slip]').onclick=()=>{m.remove();previewWorkSlip(id)};
 }
 function printQuote(id){const q=db.quotes.find(x=>x.id===id),t=tplOf();printDoc(q.code,quoteHTML(q,t),docAttrs(t))}
 function pdfQuote(id){const q=db.quotes.find(x=>x.id===id),t=tplOf();pdfDoc(q.code+'-'+(slug(qname(q))||'khach')+'.pdf',q.code,quoteHTML(q,t),docAttrs(t))}
@@ -1732,7 +1768,25 @@ function supplierForm(id){
 
 /* ---------- Thợ thi công & phân công theo đơn hàng ---------- */
 const INSTALL_STATES=['Chưa bắt đầu','Đã phân công','Đang thi công','Hoàn thành','Tạm hoãn'];
-const WORKER_AREAS=['HN','Quy Nhơn','Đà Nẵng','HCM','Bình Dương','Đồng Nai','Nha Trang'];
+const WORKER_AREAS=['Hà Nội','Quy Nhơn','Đà Nẵng','Sài Gòn','Bình Dương','Đồng Nai','Nha Trang'];
+const WORKER_DISTRICTS={
+ 'Hà Nội':['Ba Đình','Hoàn Kiếm','Đống Đa','Hai Bà Trưng','Tây Hồ','Cầu Giấy','Thanh Xuân','Hoàng Mai','Long Biên','Hà Đông','Nam Từ Liêm','Bắc Từ Liêm','Gia Lâm','Đông Anh','Sóc Sơn','Thanh Trì','Hoài Đức','Đan Phượng','Thanh Oai','Thường Tín','Quốc Oai','Thạch Thất','Phúc Thọ','Mê Linh','Chương Mỹ','Sơn Tây','Ba Vì','Mỹ Đức','Ứng Hòa','Phú Xuyên'],
+ 'Sài Gòn':['Quận 1','Quận 3','Quận 4','Quận 5','Quận 6','Quận 7','Quận 8','Quận 10','Quận 11','Quận 12','Bình Thạnh','Phú Nhuận','Tân Bình','Tân Phú','Gò Vấp','Bình Tân','Thủ Đức','Bình Chánh','Hóc Môn','Củ Chi','Nhà Bè','Cần Giờ'],
+ 'Đà Nẵng':['Hải Châu','Thanh Khê','Sơn Trà','Ngũ Hành Sơn','Liên Chiểu','Cẩm Lệ','Hòa Vang'],
+ 'Quy Nhơn':['Quy Nhơn','Nhơn Hội','Nhơn Lý','Nhơn Hải','Ghềnh Ráng','Bùi Thị Xuân','Trần Quang Diệu'],
+ 'Bình Dương':['Thủ Dầu Một','Thuận An','Dĩ An','Tân Uyên','Bến Cát','Bàu Bàng','Bắc Tân Uyên','Phú Giáo','Dầu Tiếng'],
+ 'Đồng Nai':['Biên Hòa','Long Khánh','Long Thành','Nhơn Trạch','Trảng Bom','Vĩnh Cửu','Thống Nhất','Định Quán','Tân Phú','Xuân Lộc','Cẩm Mỹ'],
+ 'Nha Trang':['Nha Trang','Vĩnh Hải','Vĩnh Hòa','Phước Long','Phước Hải','Vĩnh Thái','Vĩnh Trung','Vĩnh Ngọc']
+};
+// Tên quận/huyện theo cách gọi quen thuộc để dễ tìm kiếm và phân công.
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='workerDistrictFilter'){workerDistrictFilter=e.target.value||'Tất cả';render()}});
+const normWorkerArea=a=>a==='HN'?'Hà Nội':a==='HCM'?'Sài Gòn':(a||'');
+let workerDistrictFilter='Tất cả';
+function workerDistrictOptions(area,selected=''){
+ const arr=WORKER_DISTRICTS[normWorkerArea(area)]||[];
+ return `<option value="">— Tất cả quận/huyện / chưa chọn —</option>${arr.map(d=>`<option value="${esc(d)}" ${d===selected?'selected':''}>${esc(d)}</option>`).join('')}${selected&&!arr.includes(selected)?`<option value="${esc(selected)}" selected>${esc(selected)}</option>`:''}`;
+}
+
 let workerAreaFilter='Tất cả';
 const workerName=id=>(db.workers||[]).find(w=>w.id===id)?.name||'Thợ đã xoá';
 const assignedWorkers=o=>(o.workerIds||[]).map(id=>workerName(id));
@@ -1741,13 +1795,14 @@ function workerAreaOptions(selected=''){
 }
 function workersView(){
  const all=db.workers||[];
- const shown=workerAreaFilter==='Tất cả'?all:all.filter(w=>w.area===workerAreaFilter);
+ const shown=all.filter(w=>(workerAreaFilter==='Tất cả'||normWorkerArea(w.area)===workerAreaFilter)&&(workerDistrictFilter==='Tất cả'||w.district===workerDistrictFilter));
  const linked=db.orders.filter(o=>!o.archived&&o.workerIds?.length);
  return `<div class="row sp"><div><h2>Thợ thi công</h2><div class="mut">Lọc theo khu vực để ưu tiên thợ gần vị trí đơn hàng; thông tin CCCD chỉ hiển thị cho quản lý.</div></div>${isMgr()?`<button class="btn" data-a="newWorker">${ic('plus')} Thêm thợ</button>`:''}</div>
  <div class="grid"><div class="card kpi"><small>Tổng số thợ</small><b>${all.length}</b></div><div class="card kpi"><small>Đơn đã phân công</small><b>${linked.length}</b></div><div class="card kpi"><small>Đang thi công</small><b>${linked.filter(o=>o.installStatus==='Đang thi công').length}</b></div></div>
- <div class="worker-area-filter" aria-label="Lọc thợ theo khu vực">${['Tất cả',...WORKER_AREAS].map(a=>`<button type="button" class="btn sm ${workerAreaFilter===a?'':'gh'}" data-a="workerArea" data-id="${esc(a)}">${esc(a)}${a==='Tất cả'?` (${all.length})`:` (${all.filter(w=>w.area===a).length})`}</button>`).join('')}</div>
+ <div class="worker-area-filter" aria-label="Lọc thợ theo khu vực">${['Tất cả',...WORKER_AREAS].map(a=>`<button type="button" class="btn sm ${workerAreaFilter===a?'':'gh'}" data-a="workerArea" data-id="${esc(a)}">${esc(a)}${a==='Tất cả'?` (${all.length})`:` (${all.filter(w=>normWorkerArea(w.area)===a).length})`}</button>`).join('')}</div>
+ <div class="worker-area-filter" style="align-items:center;gap:8px;margin-top:8px"><label style="margin:0;min-width:230px;max-width:360px">Quận / huyện ưu tiên<select id="workerDistrictFilter" aria-label="Lọc theo quận huyện"><option value="Tất cả">Tất cả quận / huyện</option>${(WORKER_DISTRICTS[workerAreaFilter]||[]).map(d=>`<option value="${esc(d)}" ${workerDistrictFilter===d?'selected':''}>${esc(d)}</option>`).join('')}</select></label></div>
  <div class="mut" style="margin:8px 0">Hiển thị ${shown.length}/${all.length} thợ${workerAreaFilter==='Tất cả'?'':' tại '+esc(workerAreaFilter)}</div>
- <div class="worker-grid">${shown.length?shown.map(w=>{const jobs=db.orders.filter(o=>(o.workerIds||[]).includes(w.id));const doing=jobs.filter(o=>!o.archived&&o.installStatus!=='Hoàn thành'&&o.status!=='Huỷ');return `<div class="card worker-card"><div class="row sp"><div><b>${esc(w.name)}</b><div class="mut">${esc(w.skill||'Thợ thi công')}${w.group?' · '+esc(w.group):''}</div></div><span class="badge ${w.active===false?'wr':'ok'}">${w.active===false?'Tạm nghỉ':'Hoạt động'}</span></div><div class="worker-area-mark">${ic('map-pin')} ${esc(w.area||'Chưa chọn khu vực')}${w.areaNote?`<div class="mut">${esc(w.areaNote)}</div>`:''}</div><div class="mut">${ic('phone')} ${w.phone?`<a href="tel:${esc(w.phone)}">${esc(w.phone)}</a>`:'Chưa có SĐT'}</div>${w.note?`<div class="mut">${esc(w.note)}</div>`:''}<div class="worker-jobs"><b>Đơn phụ trách: ${jobs.length}</b> · Đang xử lý: ${doing.length}${jobs.length?`<details><summary>Xem các đơn đã giao</summary>${jobs.slice().reverse().map(o=>`<div class="worker-job">${esc(o.code)} · ${esc(orderCustomerName(o))}<span class="badge">${esc(o.installStatus||'Đã phân công')}</span></div>`).join('')}</details>`:''}</div>${isMgr()?`<div class="row" style="flex-wrap:wrap"><button class="btn gh sm" data-a="editWorker" data-id="${esc(w.id)}">Sửa hồ sơ</button>${w.cccdFile?`<button class="btn gh sm" data-a="viewWorkerCccd" data-id="${esc(w.id)}">${ic('filetext')} Xem CCCD</button>`:''}<button class="btn dg sm" data-a="delWorker" data-id="${esc(w.id)}">Xóa</button></div>`:''}</div>`}).join(''):'<div class="empty">Không có thợ thuộc khu vực đang chọn.</div>'}</div>
+ <div class="worker-grid">${shown.length?shown.map(w=>{const jobs=db.orders.filter(o=>(o.workerIds||[]).includes(w.id));const doing=jobs.filter(o=>!o.archived&&o.installStatus!=='Hoàn thành'&&o.status!=='Huỷ');return `<div class="card worker-card"><div class="row sp"><div><b>${esc(w.name)}</b><div class="mut">${esc(w.skill||'Thợ thi công')}${w.group?' · '+esc(w.group):''}</div></div><span class="badge ${w.active===false?'wr':'ok'}">${w.active===false?'Tạm nghỉ':'Hoạt động'}</span></div><div class="worker-area-mark">${ic('map-pin')} ${esc(normWorkerArea(w.area)||'Chưa chọn khu vực')}${w.district?' · '+esc(w.district):''}${w.areaNote?`<div class="mut">${esc(w.areaNote)}</div>`:''}</div><div class="mut">${ic('phone')} ${w.phone?`<a href="tel:${esc(w.phone)}">${esc(w.phone)}</a>`:'Chưa có SĐT'}</div>${w.note?`<div class="mut">${esc(w.note)}</div>`:''}<div class="worker-jobs"><b>Đơn phụ trách: ${jobs.length}</b> · Đang xử lý: ${doing.length}${jobs.length?`<details><summary>Xem các đơn đã giao</summary>${jobs.slice().reverse().map(o=>`<div class="worker-job">${esc(o.code)} · ${esc(orderCustomerName(o))}<span class="badge">${esc(o.installStatus||'Đã phân công')}</span></div>`).join('')}</details>`:''}</div>${isMgr()?`<div class="row" style="flex-wrap:wrap"><button class="btn gh sm" data-a="editWorker" data-id="${esc(w.id)}">Sửa hồ sơ</button>${w.cccdFile?`<button class="btn gh sm" data-a="viewWorkerCccd" data-id="${esc(w.id)}">${ic('filetext')} Xem CCCD</button>`:''}<button class="btn dg sm" data-a="delWorker" data-id="${esc(w.id)}">Xóa</button></div>`:''}</div>`}).join(''):'<div class="empty">Không có thợ thuộc khu vực đang chọn.</div>'}</div>
  <div class="sec-h"><h3>Đơn hàng có lịch thi công</h3><button class="btn gh sm" data-a="tab" data-id="orders">Mở Đơn hàng</button></div>${linked.length?linked.sort((a,b)=>String(b.installDue||b.date).localeCompare(String(a.installDue||a.date))).map(o=>`<div class="card worker-order"><div class="row sp"><b>${esc(o.code)} · ${esc(orderCustomerName(o))}</b><span class="badge">${esc(o.installStatus||'Đã phân công')}</span></div><div class="mut">${ic('users')} ${esc(assignedWorkers(o).join(', '))} ${o.installDue?' · 📅 '+esc(o.installDue.replace('T',' ')):''}</div><div class="row"><button class="btn gh sm" data-a="editOrder" data-id="${esc(o.id)}">Phân công / Sửa lịch</button></div></div>`).join(''):'<div class="empty">Chưa có đơn được giao cho thợ.</div>'}`;
 }
 function workerIdb(){return new Promise((resolve,reject)=>{const req=indexedDB.open('idecal-private-worker-docs',1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('cccd'))req.result.createObjectStore('cccd')};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
@@ -1768,13 +1823,15 @@ function workerForm(id){
  const m=modal(id?'Sửa thợ thi công':'Thêm thợ thi công',`
  ${fld('Họ tên thợ','name',w.name||'','text','required')}${fld('Số điện thoại','phone',w.phone||'','tel')}
  ${fld('Chuyên môn','skill',w.skill||'')}${fld('Đội / nhóm thi công','group',w.group||'')}
- <div class="worker-fieldset"><b>${ic('map-pin')} Khu vực ưu tiên nhận đơn</b><label>Khu vực chính<select name="area">${workerAreaOptions(w.area)}</select></label><label>Ghi chú khu vực / tuyến đường / phường / phạm vi di chuyển<textarea name="areaNote" rows="3" placeholder="Ví dụ: ưu tiên quận 1–7; nhận việc gần trung tâm, cách tối đa 15 km">${esc(w.areaNote||'')}</textarea></label><div class="mut">Khi có đơn ở khu vực này, ưu tiên phân công thợ phù hợp.</div></div>
+ <div class="worker-fieldset"><b>${ic('map-pin')} Khu vực ưu tiên nhận đơn</b><label>Khu vực chính<select name="area" id="workerAreaSelect">${workerAreaOptions(normWorkerArea(w.area))}</select></label><label>Quận / huyện ưu tiên<select name="district" id="workerDistrictSelect">${workerDistrictOptions(w.area,w.district||'')}</select></label><label>Ghi chú khu vực / tuyến đường / phường / phạm vi di chuyển<textarea name="areaNote" rows="3" placeholder="Ví dụ: ưu tiên quận 1–7; nhận việc gần trung tâm, cách tối đa 15 km">${esc(w.areaNote||'')}</textarea></label><div class="mut">Khi có đơn ở khu vực này, ưu tiên phân công thợ phù hợp.</div></div>
  <div class="worker-fieldset"><b>${ic('filetext')} CCCD dùng khi đăng ký ra/vào tòa nhà</b><label>Ảnh CCCD / PDF (tối đa 5 MB)<input type="file" name="cccdUpload" accept="image/jpeg,image/png,image/webp,application/pdf"></label><div class="mut">${w.cccdFile?'Đã lưu: '+esc(w.cccdFile.name||'Tệp CCCD'):'Chưa có tệp CCCD'}. Chỉ quản lý có nút xem. CCCD là dữ liệu nhạy cảm: chỉ tải lên khi được thợ đồng ý, tránh chia sẻ liên kết; Firebase Storage cần thiết lập quy tắc truy cập riêng.</div>${w.cccdFile?'<label class="chk"><input type="checkbox" name="removeCccd"> Xóa CCCD đã lưu</label>':''}<div class="mut" data-worker-status></div></div>
  <label class="chk"><input type="checkbox" name="active" ${w.active!==false?'checked':''}> Đang hoạt động</label><label>Ghi chú khác<textarea name="note" rows="2">${esc(w.note||'')}</textarea></label>`,()=>false);
  const form=m.querySelector('form');
+ const areaSelect=form.querySelector('#workerAreaSelect'),districtSelect=form.querySelector('#workerDistrictSelect');
+ areaSelect.onchange=()=>{districtSelect.innerHTML=workerDistrictOptions(areaSelect.value);};
  form.onsubmit=async e=>{
   e.preventDefault();const fd=new FormData(form);const file=fd.get('cccdUpload');const status=form.querySelector('[data-worker-status]');const submit=form.querySelector('button:not([type="button"])');
-  const data={name:String(fd.get('name')||'').trim(),phone:String(fd.get('phone')||'').trim(),skill:String(fd.get('skill')||'').trim(),group:String(fd.get('group')||'').trim(),area:String(fd.get('area')||''),areaNote:String(fd.get('areaNote')||'').trim(),active:fd.get('active')==='on',note:String(fd.get('note')||'').trim()};
+  const data={name:String(fd.get('name')||'').trim(),phone:String(fd.get('phone')||'').trim(),skill:String(fd.get('skill')||'').trim(),group:String(fd.get('group')||'').trim(),area:normWorkerArea(String(fd.get('area')||'')),district:String(fd.get('district')||''),areaNote:String(fd.get('areaNote')||'').trim(),active:fd.get('active')==='on',note:String(fd.get('note')||'').trim()};
   if(!data.name)return toast('Vui lòng nhập tên thợ','err');
   if(file&&file.size){if(!['image/jpeg','image/png','image/webp','application/pdf'].includes(file.type)||file.size>5*1024*1024)return toast('Chỉ nhận ảnh JPG/PNG/WebP hoặc PDF tối đa 5 MB','err')}
   const workerId=id||uid();const oldFile=w.cccdFile;let newFile=oldFile;submit.disabled=true;
@@ -2424,14 +2481,14 @@ function sendChat(){const input=document.getElementById('chatInput');if(!input)r
 /* ---------- Actions ---------- */
 const setNav=open=>{document.body.classList.toggle('nav-open',open);const b=$('#navToggle');if(b)b.setAttribute('aria-expanded',open?'true':'false')};
 const acts={
-  newWorker:()=>workerForm(),editWorker:id=>workerForm(id),delWorker:id=>deleteWorker(id),viewWorkerCccd:id=>openWorkerCccd(id),workerArea:id=>{workerAreaFilter=id;render()},
+  newWorker:()=>workerForm(),editWorker:id=>workerForm(id),delWorker:id=>deleteWorker(id),viewWorkerCccd:id=>openWorkerCccd(id),workerArea:id=>{workerAreaFilter=id;workerDistrictFilter='Tất cả';render()},
   alerts:()=>showAlerts(),allowNotify:()=>enableSystemAlerts(),addTask:()=>taskForm(),editTask:id=>taskForm(id),delTask:id=>deleteTask(id),taskStatus:id=>changeTaskStatus(id),sendChat:()=>sendChat(),
   tab:id=>{view=id;moduleSearch='';setNav(false);render();scrollTo(0,0)},
   quickAdd:()=>{const m={quote:'newQuote',cust:'newCust',purchases:'newPurchase',suppliers:'newSupplier',exp:'newExp',prod:'newProd'};let k=m[view]||'newOrder';if((k==='newProd'||k==='newPurchase'||k==='newSupplier'||k==='newExp')&&!isMgr())k='newOrder';acts[k]()},
   clearSearch:()=>{moduleSearch='';const el=$('#moduleSearch');if(el)el.value='';applyModuleSearch();if(el)el.focus()},
-  filter:id=>{filter=id;render()},
+  filter:id=>{filter=id;render()},workTypeFilter:id=>{orderFulfillmentFilter=id;render()},
   vf:s=>{const i=s.indexOf('|');VF[s.slice(0,i)]=s.slice(i+1);render()},
-  newOrder:()=>orderForm(),editOrder:id=>orderForm(id),previewOrder:id=>previewOrder(id),printOrder:id=>printOrder(id),pdfOrder:id=>pdfOrder(id),
+  newOrder:()=>orderForm(),editOrder:id=>orderForm(id),previewWorkSlip:id=>previewWorkSlip(id),previewOrder:id=>previewOrder(id),printOrder:id=>printOrder(id),pdfOrder:id=>pdfOrder(id),
   delOrder:id=>purgeOrders([id]),
   archiveOrder:id=>{const o=db.orders.find(x=>x.id===id);if(!o)return;if(!o.paid&&o.status!=='Huỷ'&&!confirm('Đơn '+o.code+' chưa thu đủ tiền. Vẫn chuyển vào Lưu trữ?'))return;o.archived=true;o.archivedAt=today();save();render();toast('Đã chuyển '+o.code+' vào Lưu trữ','ok')},
   unarchiveOrder:id=>{const o=db.orders.find(x=>x.id===id);if(!o)return;delete o.archived;delete o.archivedAt;save();render();toast('Đã khôi phục '+o.code,'ok')},
