@@ -631,7 +631,7 @@ const TABS=[
   {id:'cust',icon:'users',label:'Khách hàng',group:'Bán hàng',req:'all',color:'orange'},
   {id:'deposits',icon:'banknote',label:'Tạm ứng',group:'Bán hàng',req:'all',color:'green'},
   {id:'archive',icon:'archive',label:'Lưu trữ',group:'Bán hàng',req:'all',color:'slate'},
-  {id:'prod',icon:'box',label:'Sản phẩm',group:'Danh mục',req:'all',color:'teal'},
+  {id:'prod',icon:'box',label:'Sản phẩm & Dịch vụ',group:'Danh mục',req:'all',color:'teal'},
   {id:'purchases',icon:'cart',label:'Mua hàng',group:'Mua hàng & Chi phí',req:'mgr',color:'amber'},
   {id:'suppliers',icon:'store',label:'Nhà cung cấp',group:'Mua hàng & Chi phí',req:'mgr',color:'teal'},
   {id:'exp',icon:'wallet',label:'Chi phí',group:'Mua hàng & Chi phí',req:'mgr',color:'rose'},
@@ -728,7 +728,7 @@ function orderForm(id){
   const calc=()=>{let t=0;box.querySelectorAll('.it').forEach(r=>t+=Math.round((+r.querySelector('.q').value||0)*(+r.querySelector('.pr').value||0)));m.querySelector('#tot').textContent=vnd(t)};
   const addRow=(it={})=>{
     const r=document.createElement('div');r.className='it';
-    r.innerHTML=`<select class="p"><option value="">Khác (nhập tay)…</option>${db.products.map(p=>`<option value="${p.id}" ${p.id===it.pid?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
+    r.innerHTML=`<select class="p"><option value="">Khác (nhập tay)…</option>${[['product','Sản phẩm'],['service','Dịch vụ']].map(([kind,label])=>`<optgroup label="${label}">${db.products.filter(p=>(p.kind==='service'?'service':'product')===kind).map(p=>`<option value="${p.id}" ${p.id===it.pid?'selected':''}>${esc(p.name)}</option>`).join('')}</optgroup>`).join('')}</select>
       <input class="q" type="number" min="0" step="any" inputmode="decimal" title="Số lượng" value="${it.qty||1}"><input class="pr" type="number" step="any" inputmode="decimal" placeholder="Giá" value="${it.price??''}"><input class="u" placeholder="ĐVT" title="Đơn vị tính" value="${esc(it.unit||(prod(it.pid)||{}).unit||'cái')}"><button type="button" class="x">×</button>
       <input class="n" placeholder="Tên hàng / mô tả" value="${esc(it.pid?'':it.name||'')}" style="display:${it.pid?'none':'block'}">`;
     box.appendChild(r);
@@ -778,8 +778,10 @@ function prodForm(id){
   const p=prod(id)||{};
   let up=(p.img&&p.img.startsWith('data:'))?p.img:'';
   const link0=(p.img&&!p.img.startsWith('data:'))?p.img:'';
-  const m=modal(id?'Sửa sản phẩm':'Sản phẩm mới',
-    fld('Tên sản phẩm','name',p.name,'text','required')+fld('Đơn vị (cái, m², tờ…)','unit',p.unit||'cái')+fld('Giá bán','price',p.price||0,'number','min=0 step=any')+fld('Giá vốn tham khảo / đơn vị','cost',p.cost||0,'number','min=0 step=any')+
+  const kind=p.kind==='service'?'service':'product';
+  const m=modal(id?'Sửa sản phẩm / dịch vụ':'Thêm sản phẩm / dịch vụ',
+    `<label>Phân loại<select name="kind" required><option value="product" ${kind==='product'?'selected':''}>Sản phẩm</option><option value="service" ${kind==='service'?'selected':''}>Dịch vụ</option></select></label>`+
+    fld('Tên sản phẩm / dịch vụ','name',p.name,'text','required')+fld('Đơn vị tính (cái, m², tờ, lần…)','unit',p.unit||'cái')+fld('Giá bán','price',p.price||0,'number','min=0 step=any')+fld('Giá vốn tham khảo / đơn vị','cost',p.cost||0,'number','min=0 step=any')+
     `<label>Ảnh sản phẩm</label><div class="pv" id="pv"></div>
     <div class="row"><button type="button" class="btn gh sm" id="pUp">${ic('camera')} Tải ảnh lên</button><button type="button" class="btn dg sm" id="pDel">Xoá ảnh</button></div>
     <input type="file" id="pFile" accept="image/*" hidden>`+
@@ -787,7 +789,7 @@ function prodForm(id){
     fd=>{
       const raw=(fd.get('imgUrl')||'').trim(),link=normImg(raw);
       if(raw&&link===null){alert('Link ảnh không hợp lệ. Link phải bắt đầu bằng http:// hoặc https://');return false}
-      const d={name:fd.get('name'),unit:fd.get('unit'),price:+fd.get('price'),cost:+fd.get('cost'),img:link||up};
+      const d={kind:fd.get('kind')==='service'?'service':'product',name:fd.get('name'),unit:fd.get('unit'),price:+fd.get('price'),cost:+fd.get('cost'),img:link||up};
       if(id)Object.assign(p,d);else db.products.push({id:uid(),...d});save();render();
     });
   const pv=m.querySelector('#pv'),lk=m.querySelector('#pLink'),pf=m.querySelector('#pFile');
@@ -922,12 +924,15 @@ function custs(){
 const imgThumb=p=>p.img?`<img class="pth" src="${esc(p.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-a="zoom" data-id="${p.id}" onerror="imgFail(this)">`:'<div class="pth noimg">'+ic('image')+'</div>';
 function prods(){
   const all=db.products,list=fapply('prod',all);
-  return`<div class="row sp"><h2>Sản phẩm & kho</h2>${isMgr()?'<button class="btn" data-a="newProd">'+ic('plus')+' Sản phẩm</button>':''}</div>
+  const np=all.filter(p=>p.kind!=='service').length,ns=all.filter(p=>p.kind==='service').length;
+  return`<div class="row sp"><h2>Sản phẩm & dịch vụ</h2>${isMgr()?'<button class="btn" data-a="newProd">'+ic('plus')+' Thêm mới</button>':''}</div>
+  <div class="mut" style="margin-bottom:10px">${np} sản phẩm · ${ns} dịch vụ. Các mục đã tạo trước đây được giữ ở nhóm Sản phẩm, có thể sửa để chuyển sang Dịch vụ.</div>
   ${fbar('prod',all)}
   ${list.length?list.map(p=>`<div class="card pc">${imgThumb(p)}<div class="pbody">
     <div class="row sp"><b>${esc(p.name)}</b><b>${vnd(p.price)}</b></div>
-    <div class="mut">${isMgr()?`Giá vốn tham khảo ${vnd(p.cost)} · Chênh lệch ${vnd(p.price-p.cost)}/${esc(p.unit)}`:''}</div>
-    ${isMgr()?`<div class="row" style="margin-top:8px"><button class="btn gh sm" data-a="editProd" data-id="${p.id}">Sửa</button><button class="btn dg sm" data-a="delProd" data-id="${p.id}">Xoá</button></div>`:''}</div></div>`).join(''):emp(all.length,'Chưa có sản phẩm. Thêm sản phẩm để tạo đơn nhanh hơn.')}`;
+    <div class="row" style="margin-top:5px"><span class="badge ${p.kind==='service'?'':'ok'}">${p.kind==='service'?'Dịch vụ':'Sản phẩm'}</span><span class="mut">ĐVT: ${esc(p.unit||'cái')}</span></div>
+    <div class="mut">${isMgr()?`Giá vốn tham khảo ${vnd(p.cost)} · Chênh lệch ${vnd(p.price-p.cost)}/${esc(p.unit||'cái')}`:''}</div>
+    ${isMgr()?`<div class="row" style="margin-top:8px"><button class="btn gh sm" data-a="editProd" data-id="${p.id}">Sửa</button><button class="btn dg sm" data-a="delProd" data-id="${p.id}">Xoá</button></div>`:''}</div></div>`).join(''):emp(all.length,'Chưa có sản phẩm hoặc dịch vụ. Bấm Thêm mới để tạo danh mục.')}`;
 }
 function more(){
   const acct=CLOUD
@@ -1038,7 +1043,7 @@ const DOC_CSS=`.doc{font:13px/1.55 Roboto,Arial,sans-serif;color:#203047;backgro
 .doc .qhead{display:flex;align-items:center;gap:16px;padding:0 0 15px;border-bottom:2px solid var(--ac,#087bbd)}.doc .qhead img{max-height:68px;max-width:170px;object-fit:contain}.doc .qhead>div>div{color:#62748a;font-size:11px;margin-top:3px}
 .doc .c{text-align:center;color:#68788d;font-size:11px}.doc .meta{display:flex;justify-content:space-between;gap:12px;margin:13px 0;padding:10px 12px;background:#f2f7fb;border:1px solid #dce8f1;border-radius:7px}.doc .meta>div{flex:1;min-width:0}.doc .meta small{display:block;color:#708197;font-size:10px;text-transform:uppercase;letter-spacing:.5px}.doc .meta b{color:#142f4d;font-size:12px;overflow-wrap:anywhere}
 .doc table{width:100%;border-collapse:collapse;margin-top:15px;font-size:11.5px}.doc th,.doc td{border:1px solid #dce5ed;padding:8px 8px;text-align:left;color:#26384b;vertical-align:middle}.doc th{background:#eaf3f9;color:#143b5b;font-weight:700}.doc tbody tr:nth-child(even){background:#f8fbfd}.doc .r{text-align:right;white-space:nowrap}.doc .tt{text-align:right;margin-top:7px;color:#53677c}.doc .summary{width:56%;margin:14px 0 0 auto;border-collapse:collapse}.doc .summary td{padding:5px 8px;border:0;border-bottom:1px solid #e5edf3}.doc .summary .grand td{background:#eaf5fb;color:#075b8e;font-weight:800;font-size:14px;border-top:2px solid var(--ac,#087bbd)}.doc .tgrand{color:var(--ac,#087bbd)}
-.doc .sig{display:flex;justify-content:space-between;gap:30px;margin-top:42px;text-align:center;break-inside:avoid}.doc .sig>div{width:45%}.doc .sig i{font-size:10px;color:#77869a}.doc .pimgs{width:42px;height:42px;object-fit:cover;border-radius:4px;display:block}.doc .terms{margin-top:16px;padding:10px 12px;background:#f7fafc;border-left:3px solid var(--ac,#087bbd);font-size:11px;color:#42556a;break-inside:avoid}.doc .foot{margin-top:25px;padding-top:9px;border-top:1px solid #e0e8ef;text-align:center;color:#7b8b9d;font-size:10px}
+.doc .sig{display:flex;justify-content:space-between;gap:30px;margin-top:42px;text-align:center;break-inside:avoid}.doc .sig>div{width:45%}.doc .sig i{font-size:10px;color:#77869a}.doc .pimgs{width:42px;height:42px;object-fit:cover;border-radius:4px;display:block}.doc .terms{margin-top:16px;padding:10px 12px;background:#f7fafc;border-left:3px solid var(--ac,#087bbd);font-size:11px;color:#42556a;break-inside:avoid}.doc .paybox{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center;margin-top:16px;padding:12px;border:1px solid #dce8f1;border-radius:10px;background:#f8fbfe;break-inside:avoid}.doc .payqr{display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #dce8f1;border-radius:8px;padding:8px;min-height:150px}.doc .payqr img{width:132px;height:132px;object-fit:contain;display:block}.doc .payinfo b{display:block;color:#143b5b;margin-bottom:4px}.doc .payinfo .payline{margin:4px 0;color:#42556a}.doc .payinfo small{display:block;color:#708197;margin-top:6px}.doc .foot{margin-top:25px;padding-top:9px;border-top:1px solid #e0e8ef;text-align:center;color:#7b8b9d;font-size:10px}
 .doc.mod h2{text-align:center;border:0;padding-bottom:0;margin-top:22px}.doc.mod .c{text-align:center}.doc.mod th{background:var(--ac);color:#fff;border-color:var(--ac)}.doc.mod td{border-left:0;border-right:0}.doc .nowrap{white-space:nowrap}`;
 const TPL_DEF={style:'classic',accent:'#111111',font:14,title:'BÁO GIÁ',logo:'',showLogo:true,showShop:true,intro:'',greet:'Kính gửi:',
   colIdx:true,colUnit:true,colImg:false,showUntil:true,showNote:true,showBank:true,showSig:true,sigL:'Khách hàng',sigR:'',terms:''};
@@ -1055,8 +1060,68 @@ function shopHead(t){
   const s=db.shop||{};t=t||tplOf();
   const logo=t.showLogo&&t.logo?`<img src="${esc(t.logo)}" alt="">`:'';
   const details=[s.addr,s.phone?'ĐT/Zalo: '+s.phone:'',s.email?'Email: '+s.email:'',s.taxCode?'MST: '+s.taxCode:'',s.website,s.facebook].filter(Boolean).map(esc).join(' · ');
-  const pay=[s.bankName,s.bankOwner?'Chủ TK: '+s.bankOwner:'',s.bankNumber?'STK: '+s.bankNumber:''].filter(Boolean).map(esc).join(' · ');
-  return`<div class="qhead">${logo}<div><h1>${esc(s.name||'iDecal')}</h1>${t.showShop?`<div>${details}</div>`:''}${t.showShop&&pay?`<div>${pay}</div>`:''}</div></div>`;
+  return`<div class="qhead">${logo}<div><h1>${esc(s.name||'iDecal')}</h1>${t.showShop?`<div>${details}</div>`:''}</div></div>`;
+}
+const BANK_QR_MAP={
+  vcb:'vcb',vietcombank:'vcb',vietcom:'vcb',
+  mb:'mbbank',mbbank:'mbbank',quandoi:'mbbank',militarybank:'mbbank',
+  acb:'acb',asiacommercialbank:'acb',achau:'acb',
+  bidv:'bidv',bankforinvestmentanddevelopmentofvietnam:'bidv',
+  agribank:'agribank',nongnghiepvaphattriennongthon:'agribank',
+  techcombank:'techcombank',tcb:'techcombank',
+  vietinbank:'vietinbank',vietin:'vietinbank',ctg:'vietinbank',
+  sacombank:'sacombank',stb:'sacombank',
+  tpbank:'tpbank',tpb:'tpbank',
+  vpbank:'vpbank',vpb:'vpbank',
+  hdbank:'hdbank',hdb:'hdbank',
+  seabank:'seabank',ssb:'seabank',
+  eximbank:'eximbank',eib:'eximbank',
+  ocb:'ocb',orientcommercialbank:'ocb',
+  msb:'msb',maritimebank:'msb',
+  vib:'vib',vibbank:'vib',internationalbank:'vib',
+  shb:'shb',saigonhanoi:'shb',
+  bacabank:'bacabank',bab:'bacabank',
+  lpbank:'lpbank',lienvietpostbank:'lpbank',lienviet:'lpbank',
+  namabank:'namabank',nab:'namabank',
+  pvcombank:'pvcombank',pvcom:'pvcombank',
+  abbank:'abbank',
+  vietcapitalbank:'vietcapitalbank',banviet:'vietcapitalbank',bvb:'vietcapitalbank',
+  kienlongbank:'kienlongbank',klb:'kienlongbank',
+  oceanbank:'oceanbank',obb:'oceanbank',
+  wooribank:'woori',woori:'woori',
+  publicbank:'publicbank',pbvn:'publicbank',
+  cimb:'cimb',cimbbank:'cimb',
+  uob:'uob',uobbank:'uob',
+  hsbc:'hsbc',hongkongshanghaibankingcorporation:'hsbc',
+  standardchartered:'standardchartered',
+  scb:'scb',saigonbankforindustryandtrade:'scb'
+};
+const bankKey=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase().replace(/[^a-z0-9]+/g,'');
+function bankQrCode(name){const k=bankKey(name);return BANK_QR_MAP[k]||''}
+function paymentRefForQuote(q){const o=(db.orders||[]).find(x=>x.id===q.orderId);return(o&&o.code)||q.code||''}
+function paymentQrUrl(bankName,bankNumber,bankOwner,amount,addInfo){
+  const acct=String(bankNumber||'').replace(/\s+/g,'');
+  if(!acct)return'';
+  const info=String(addInfo||'').trim();
+  const owner=String(bankOwner||'').trim().toUpperCase();
+  const code=bankQrCode(bankName);
+  if(code){
+    const p=new URLSearchParams();
+    if(+amount>0)p.set('amount',Math.round(+amount));
+    if(info)p.set('addInfo',info);
+    if(owner)p.set('accountName',owner);
+    return`https://img.vietqr.io/image/${code}-${encodeURIComponent(acct)}-compact2.png?${p.toString()}`;
+  }
+  const raw=[bankName?`Ngân hàng: ${bankName}`:'',bankOwner?`Chủ TK: ${bankOwner}`:'',acct?`STK: ${acct}`:'',info?`Nội dung: ${info}`:'',amount?`Số tiền: ${Math.round(+amount)}`:''].filter(Boolean).join('\n');
+  return`https://quickchart.io/qr?size=220&text=${encodeURIComponent(raw)}`;
+}
+function quotePayHTML(q,t){
+  const s=db.shop||{};
+  const ref=paymentRefForQuote(q);
+  const qr=paymentQrUrl(s.bankName,s.bankNumber,s.bankOwner,qtotal(q),ref);
+  const note=s.bank?nl(esc(s.bank)):'';
+  if(!(t.showBank&&(qr||s.bankName||s.bankOwner||note)))return'';
+  return`<div class="paybox"><div class="payqr">${qr?`<img src="${qr}" alt="QR thanh toán" referrerpolicy="no-referrer">`:'<div class="mut">Chưa có QR</div>'}</div><div class="payinfo"><b>THÔNG TIN THANH TOÁN</b>${s.bankName?`<div class="payline"><b>Ngân hàng:</b> ${esc(s.bankName)}</div>`:''}${s.bankOwner?`<div class="payline"><b>Chủ tài khoản:</b> ${esc(s.bankOwner)}</div>`:''}${ref?`<div class="payline"><b>Nội dung chuyển tiền:</b> ${esc(ref)}</div>`:''}<small>Quét mã QR để thanh toán. Nội dung chuyển khoản dùng mã đơn hàng / mã báo giá để đối soát.</small>${note?`<div class="payline" style="margin-top:8px">${note}</div>`:''}</div></div>`;
 }
 function quoteHTML(q,t){
   t=t||tplOf();
@@ -1078,7 +1143,7 @@ function quoteHTML(q,t){
   <tr class="grand"><td>TỔNG THANH TOÁN</td><td class="r">${vnd(qtotal(q))}</td></tr></tbody></table>
   ${t.showNote&&q.note?`<p style="margin-top:14px"><b>Ghi chú:</b> ${nl(esc(q.note))}</p>`:''}
   ${t.terms?`<div class="terms"><b>ĐIỀU KHOẢN & LƯU Ý</b><br>${nl(esc(t.terms))}</div>`:''}
-  ${t.showBank&&s.bank?`<div class="terms"><b>THÔNG TIN THANH TOÁN</b><br>${nl(esc(s.bank))}</div>`:''}
+  ${quotePayHTML(q,t)}
   ${t.showSig?`<div class="sig"><div><b>${esc(t.sigL||'KHÁCH HÀNG')}</b><br><i>(Ký, ghi rõ họ tên)</i></div><div><b>${esc(t.sigR||s.name||'iDecal')}</b><br><i>(Ký, đóng dấu)</i></div></div>`:''}
   ${s.foot?`<div class="foot">${esc(s.foot)}</div>`:''}`;
 }
@@ -1289,7 +1354,7 @@ function tplForm(){
     ${fld('Lời chào khách (để trống nếu không cần)','greet',t.greet)}
     <label>Các cột trong bảng</label>${chk('colIdx','Số thứ tự')}${chk('colUnit','Đơn vị tính (m², cái…)')}${chk('colImg','Ảnh sản phẩm')}
     <div class="mut">Ảnh sản phẩm lấy từ link có thể không hiện khi xuất PDF; ảnh tải lên thì luôn hiện.</div>
-    <label>Hiển thị</label>${chk('showUntil','Ngày hiệu lực')}${chk('showNote','Ghi chú của từng báo giá')}${chk('showBank','Thông tin thanh toán (số tài khoản)')}${chk('showSig','Khối chữ ký')}
+    <label>Hiển thị</label>${chk('showUntil','Ngày hiệu lực')}${chk('showNote','Ghi chú của từng báo giá')}${chk('showBank','Thông tin thanh toán (QR)')}${chk('showSig','Khối chữ ký')}
     ${fld('Chữ ký bên trái','sigL',t.sigL)}${fld('Chữ ký bên phải (để trống = tên cửa hàng)','sigR',t.sigR)}
     <label>Điều khoản / lưu ý chung<textarea name="terms" rows="4" placeholder="VD: Giá chưa gồm VAT. Đặt cọc 50% khi chốt đơn. Báo giá có hiệu lực 7 ngày.">${esc(t.terms)}</textarea></label>
     <div class="mut">Lời cảm ơn / chân trang chỉnh ở "Thông tin cửa hàng".</div>
@@ -1558,7 +1623,7 @@ const FDEF={
   quote:[['all','Tất cả',()=>true],...QST.map(x=>[x,x,q=>q.status===x]),['conv','Đã thành đơn',q=>db.orders.some(o=>o.id===q.orderId)]],
   cust:[['all','Tất cả',()=>true],['debt','Còn nợ',c=>custDue(c)>0],['has','Đã có đơn',c=>custOrders(c)>0],['none','Chưa có đơn',c=>custOrders(c)===0]],
   deposits:[['all','Tất cả',()=>true],['open','Chưa thu đủ',o=>!o.paid],['done','Đã thu đủ',o=>!!o.paid]],
-  prod:[['all','Tất cả',()=>true],['img','Có ảnh',p=>!!p.img],['noimg','Chưa có ảnh',p=>!p.img]],
+  prod:[['all','Tất cả',()=>true],['product','Sản phẩm',p=>p.kind!=='service'],['service','Dịch vụ',p=>p.kind==='service']],
   purchases:[['all','Tất cả',()=>true],['unpaid','Chưa trả',p=>!p.paid],['paid','Đã trả',p=>!!p.paid],['month','Tháng này',p=>thisMonth(p.date)],['noord','Chưa gắn đơn',p=>!p.orderId]],
   suppliers:[['all','Tất cả',()=>true],...Object.entries(SUP_CAT).map(([k,v])=>[k,v,x=>(x.category||'in-an')===k])],
   exp:[['all','Tất cả',()=>true],['month','Tháng này',e=>thisMonth(e.date)],['ord','Đã gắn đơn',e=>!!e.orderId],['noord','Chưa gắn đơn',e=>!e.orderId]],
