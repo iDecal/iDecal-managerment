@@ -723,7 +723,6 @@ const TABS=[
   {id:'orders',icon:'clipboard',label:'Đơn hàng',group:'Bán hàng',req:'all',color:'green'},
   {id:'quote',icon:'filetext',label:'Báo giá',group:'Bán hàng',req:'all',color:'purple'},
   {id:'cust',icon:'users',label:'Khách hàng',group:'Bán hàng',req:'all',color:'orange'},
-  {id:'deposits',icon:'banknote',label:'Tạm ứng',group:'Bán hàng',req:'all',color:'green'},
   {id:'archive',icon:'archive',label:'Lưu trữ',group:'Bán hàng',req:'all',color:'slate'},
   {id:'prod',icon:'box',label:'Sản phẩm & Dịch vụ',group:'Danh mục',req:'all',color:'teal'},
   {id:'purchases',icon:'cart',label:'Mua hàng',group:'Mua hàng & Chi phí',req:'mgr',color:'amber'},
@@ -1770,14 +1769,14 @@ function purchaseForm(id, presetOrderId=''){
     <label>Dịch vụ / hàng mua</label><div id="items"></div>
     <button type="button" class="btn gh sm" id="addI" style="margin-top:8px">${ic('plus')} Thêm dòng</button>
     <div class="card" style="padding:12px;margin:12px 0;border:1px solid #b5d8e9;background:#f1f9fe;border-radius:12px">
-      <div style="font-weight:800;color:#155981;margin-bottom:5px">${ic('banknote')} TẠM ỨNG CHO NHÀ CUNG CẤP</div>
+      <div style="font-weight:800;color:#155981;margin-bottom:5px">${ic('banknote')} THANH TOÁN / TẠM ỨNG THEO PHIẾU MUA</div>
       ${!id?`<div class="mut" style="margin-bottom:8px">Nhập khoản tạm ứng ngay khi lập phiếu mua. Nếu chưa tạm ứng, để 0; có thể bổ sung nhiều lần về sau.</div>
         ${fld('Số tiền tạm ứng ban đầu (đ)','initialAdvance',0,'number','min="0" step="1"')}
         ${fld('Ngày tạm ứng','advanceDate',today(),'date')}
         <label>Hình thức tạm ứng<select name="advanceMethod"><option>Chuyển khoản</option><option>Tiền mặt</option><option>Khác</option></select></label>`:
         `<div class="row sp"><span>Đã tạm ứng NCC</span><b>${vnd(purchaseAdvTotal(o))}</b></div>
         <div class="row sp"><span>Còn phải thanh toán</span><b>${vnd(purchaseOutstanding(o))}</b></div>
-        <div class="mut" style="margin-top:7px">Muốn tạm ứng thêm, hãy lưu phiếu rồi bấm nút <b>Tạm ứng NCC</b> trên phiếu mua trong danh sách.</div>`}
+        <div class="mut" style="margin-top:7px">Muốn tạm ứng thêm, hãy lưu phiếu rồi bấm nút <b>Tạm ứng / Thanh toán</b> trên chính phiếu mua này.</div>`}
     </div>
     <label class="chk"><input type="checkbox" name="paid" ${o.paid?'checked':''}> Đã thanh toán toàn bộ</label>
     ${fld('Ghi chú','note',o.note||'')}
@@ -1836,6 +1835,7 @@ function buys(){
   const debt=db.purchases.reduce((sum,p)=>sum+purchaseOutstanding(p),0);
   const adv=db.purchases.reduce((sum,p)=>sum+purchaseAdvTotal(p),0);
   return`<div class="row sp"><div><h2>Mua hàng</h2><div class="mut">Ghi tiền xưởng in/gia công, vật tư và công nợ NCC. Chọn mã đơn để tự cộng vào báo cáo lãi lỗ.</div></div><button class="btn" data-a="newPurchase">${ic('plus')} Phiếu mua</button></div>
+  <div class="mut" style="margin:7px 0 12px">Tạm ứng và công nợ được quản lý <b>riêng theo từng phiếu mua hàng</b>. Bấm <b>+ Phiếu mua</b> để ghi tạm ứng ban đầu, hoặc <b>Tạm ứng / Thanh toán</b> trên phiếu để ghi thêm từng lần.</div>
   <div class="grid"><div class="card kpi"><small>Mua tháng này</small><b>${vnd(mon)}</b></div><div class="card kpi"><small>Nợ nhà cung cấp</small><b class="${debt?'neg':''}">${vnd(debt)}</b></div><div class="card kpi"><small>Đã tạm ứng cho NCC</small><b>${vnd(adv)}</b></div></div>
   ${fbar('purchases',all)}
   ${list.length?list.map(p=>`<div class="card">
@@ -1847,7 +1847,7 @@ function buys(){
     ${p.note?`<div class="mut">${ic('pencil')} ${esc(p.note)}</div>`:''}
     <div class="row" style="margin-top:8px">
       <span class="badge ${p.paid?'ok':'wr'}" data-a="ppay" data-id="${p.id}" style="cursor:pointer">${p.paid?'Đã trả':'Chưa trả'}</span>
-      ${!p.paid&&purchaseOutstanding(p)>0?`<button class="btn sm" data-a="purchaseAdvance" data-id="${p.id}">${ic('banknote')} Tạm ứng NCC</button>`:''}
+      ${!p.paid&&purchaseOutstanding(p)>0?`<button class="btn sm" data-a="purchaseAdvance" data-id="${p.id}">${ic('banknote')} Tạm ứng / Thanh toán</button>`:''}
       <button class="btn sm" data-a="pdfPurchase" data-id="${p.id}">${ic('pdf')} PDF</button>
       <button class="btn gh sm" data-a="printPurchase" data-id="${p.id}">${ic('printer')} In</button>
       <button class="btn gh sm" data-a="editPurchase" data-id="${p.id}">Sửa</button>
@@ -2195,7 +2195,7 @@ function navHTML(tabs){
   }
   return html;
 }
-function render(){
+function render(){if(view==='deposits')view='orders';
   $('#who').innerHTML=whoHTML();
   if(CLOUD&&session!=='ready'){$('#nav').innerHTML='';$('#tabbar').innerHTML='';$('#hact').innerHTML='';$('#hsub').textContent='';$('#htitle').textContent='';document.body.dataset.view='auth';$('#app').innerHTML=authView();return}
   const tabs=tabsFor();if(!tabs.some(t=>t.id===view))view='home';
