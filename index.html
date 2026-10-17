@@ -1115,11 +1115,11 @@ function shopHead(t){
   const logo=t.showLogo&&t.logo?`<img src="${esc(t.logo)}" alt="">`:'';
   const chips=[
     s.addr?['map',s.addr]:null,
-    s.phone?['phone','ĐT/Zalo: '+s.phone]:null,
-    s.email?['mail','Email: '+s.email]:null,
-    s.website?['globe',s.website]:null,
-    s.facebook?['users',s.facebook]:null,
-    s.taxCode?['tag','MST: '+s.taxCode]:null
+    s.phone?['phone',s.phone]:null,
+    s.email?['mail',s.email]:null,
+    s.website?['globe',String(s.website).replace(/^https?:\/\//i,'').replace(/^www\./i,'').replace(/\/$/,'')]:null,
+    s.facebook?['users',String(s.facebook).replace(/^https?:\/\//i,'').replace(/^www\./i,'').replace(/\/$/,'')]:null,
+    s.taxCode?['tag',s.taxCode]:null
   ].filter(Boolean).map(([icon,val])=>`<span class="qchip">${ic(icon,13)}<span>${esc(val)}</span></span>`).join('');
   return`<div class="qhead"><div class="qbrand">${logo}<div class="qinfo"><h1>${esc(s.name||'iDecal')}</h1><div class="qsub">Báo giá chuyên nghiệp · Nhanh chóng · Rõ ràng</div>${t.showShop&&chips?`<div class="qchips">${chips}</div>`:''}</div></div></div>`;
 }
