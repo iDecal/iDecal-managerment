@@ -804,7 +804,6 @@ function orderForm(id){
     <button type="button" class="btn gh sm" id="addI" style="margin-top:8px">${ic('plus')} Thêm dòng</button>
     <label>Trạng thái<select name="status">${STATUS.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select></label>
     <label class="chk"><input type="checkbox" name="paid" ${o.paid?'checked':''}> Đã thanh toán toàn bộ (không còn công nợ)</label>
-    ${!id?`<div class="card" style="padding:10px"><b>Tạm ứng cho NCC khi tạo phiếu</b><div class="mut">Có thể để trống và ghi tạm ứng sau.</div>${fld('Số tiền tạm ứng ban đầu (đ)','initialAdvance','','number','min="0" step="1"')}${fld('Ngày tạm ứng','advanceDate',today(),'date')}${fld('Hình thức tạm ứng','advanceMethod','Chuyển khoản')}</div>`:`<div class="mut">Đã tạm ứng: <b>${vnd(purchaseAdvTotal(o))}</b> · Còn phải trả: <b>${vnd(purchaseOutstanding(o))}</b>. Để ghi thêm tạm ứng, lưu phiếu và bấm “Tạm ứng NCC”.</div>`}
     ${fld('Ghi chú','note',o.note||'')}
     <div class="tot">Tổng: <b id="tot">0đ</b></div>`,
   (fd,m)=>{
@@ -1770,7 +1769,17 @@ function purchaseForm(id, presetOrderId=''){
     <div class="mut">Chọn đơn hàng nếu đây là tiền xưởng in/gia công hoặc vật tư dùng riêng cho đơn đó. Mỗi khoản chỉ nhập một lần.</div>
     <label>Dịch vụ / hàng mua</label><div id="items"></div>
     <button type="button" class="btn gh sm" id="addI" style="margin-top:8px">${ic('plus')} Thêm dòng</button>
-    <label class="chk"><input type="checkbox" name="paid" ${o.paid?'checked':''}> Đã thanh toán</label>
+    <div class="card" style="padding:12px;margin:12px 0;border:1px solid #b5d8e9;background:#f1f9fe;border-radius:12px">
+      <div style="font-weight:800;color:#155981;margin-bottom:5px">${ic('banknote')} TẠM ỨNG CHO NHÀ CUNG CẤP</div>
+      ${!id?`<div class="mut" style="margin-bottom:8px">Nhập khoản tạm ứng ngay khi lập phiếu mua. Nếu chưa tạm ứng, để 0; có thể bổ sung nhiều lần về sau.</div>
+        ${fld('Số tiền tạm ứng ban đầu (đ)','initialAdvance',0,'number','min="0" step="1"')}
+        ${fld('Ngày tạm ứng','advanceDate',today(),'date')}
+        <label>Hình thức tạm ứng<select name="advanceMethod"><option>Chuyển khoản</option><option>Tiền mặt</option><option>Khác</option></select></label>`:
+        `<div class="row sp"><span>Đã tạm ứng NCC</span><b>${vnd(purchaseAdvTotal(o))}</b></div>
+        <div class="row sp"><span>Còn phải thanh toán</span><b>${vnd(purchaseOutstanding(o))}</b></div>
+        <div class="mut" style="margin-top:7px">Muốn tạm ứng thêm, hãy lưu phiếu rồi bấm nút <b>Tạm ứng NCC</b> trên phiếu mua trong danh sách.</div>`}
+    </div>
+    <label class="chk"><input type="checkbox" name="paid" ${o.paid?'checked':''}> Đã thanh toán toàn bộ</label>
     ${fld('Ghi chú','note',o.note||'')}
     <div class="tot">Tổng: <b id="tot">0đ</b></div>`,
   (fd,m)=>{
