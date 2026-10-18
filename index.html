@@ -1044,7 +1044,9 @@ function orderForm(id){
     const supplierName=picked?picked.name:'';
     const isInstall=fd.get('fulfillmentType')==='installation';
     const data={quoteId:o.quoteId||selectedQuote?.id||'',orderArea:isInstall?String(fd.get('orderArea')||''):'',orderDistrict:isInstall?String(fd.get('orderDistrict')||''):'',fulfillmentType:String(fd.get('fulfillmentType')||'delivery'),cid:fd.get('cid'),cname:fd.get('cid')?'':String(fd.get('cname')||'').trim(),date:o.date||today(),printDue:'',installDue:fd.get('fulfillmentType')==='installation'?(fd.get('installDue')||''):'',deliveryDue:fd.get('fulfillmentType')==='delivery'?(fd.get('deliveryDue')||''):'',status:fd.get('status'),paid:fd.get('paid')==='on',note:fd.get('note'),items,supplierId,supplierName,workerIds:isInstall?fd.getAll('workerIds').filter(w=>db.workers.some(x=>x.id===w)):[],installStatus:isInstall?String(fd.get('installStatus')||'Chưa bắt đầu'):'Chưa bắt đầu',installAddress:isInstall?String(fd.get('installAddress')||'').trim():'',installNote:isInstall?String(fd.get('installNote')||'').trim():''};
+    const supplierSync=id?syncOrderPurchases(o,data):{updated:0,locked:0};
     if(id)Object.assign(o,data);else db.orders.push({id:uid(),code:'DH'+String(++db.seq).padStart(4,'0'),...data});
+    if(supplierSync.locked)toast('Có '+supplierSync.locked+' phiếu đã tạm ứng/thanh toán giữ NCC cũ. Hãy đối soát trước khi lập phiếu cho NCC mới.','err');
     save();render();refreshAlerts();
   });
   m.querySelector('form').classList.add('order-editor');
@@ -1341,6 +1343,7 @@ function orderCard(o){
       <button class="btn gh sm" data-a="previewOrder" data-id="${o.id}">${ic('eye')} Xem</button>
       <button class="btn gh sm" data-a="previewWorkSlip" data-id="${o.id}">${ic('filetext')} ${isInstall?'Đơn thi công':'Phiếu giao hàng'}</button>
       <button class="btn gh sm" data-a="editOrder" data-id="${o.id}">${ic('pencil')} Sửa</button>
+      ${isMgr()?`<button class="btn gh sm" data-a="orderPurchase" data-id="${o.id}">${ic('cart')} ${(db.purchases||[]).some(p=>p.orderId===o.id)?'Phiếu mua ('+db.purchases.filter(p=>p.orderId===o.id).length+')':'Tạo phiếu mua hàng'}</button>`:''}
       <details class="mm"><summary class="btn gh sm" aria-label="Thêm thao tác">${ic('more')}</summary><div class="mm-pop">
         ${done?`<button type="button" data-a="archiveOrder" data-id="${o.id}">${ic('archive')} Lưu trữ</button>`:''}
         ${isMgr()?`<button type="button" class="dg" data-a="delOrder" data-id="${o.id}">${ic('trash')} Xoá đơn</button>`:''}
@@ -2250,9 +2253,37 @@ function purchaseAdvanceDelete(id){
  if(!p||!confirm('Xóa khoản tạm ứng NCC này?'))return;
  p.advances=(p.advances||[]).filter(a=>a.id!==aid);save();render();
 }
+function syncOrderPurchases(order,next){
+  const oldName=orderSupplierName(order),newName=next.supplierName||'';
+  const changed=(order.supplierId||'')!==(next.supplierId||'')||oldName!==newName;
+  const result={updated:0,locked:0};if(!changed)return result;
+  for(const p of db.purchases||[]){
+    if(p.orderId!==order.id)continue;
+    const same=order.supplierId&&p.supplierId?p.supplierId===order.supplierId:(p.supplier||'')===oldName;
+    if(!same)continue;
+    if(p.paid||purchaseAdvTotal(p)>0){result.locked++;continue}
+    const supplier=(db.suppliers||[]).find(s=>s.id===next.supplierId);
+    Object.assign(p,{supplierId:next.supplierId||'',supplier:newName,sourceType:'supplier',supplierInfo:supplier?{name:supplier.name,address:supplier.address||'',phone:supplier.phone||'',email:supplier.email||'',taxCode:supplier.taxCode||'',contact:supplier.contact||''}:null});
+    result.updated++;
+  }
+  return result;
+}
+function orderPurchase(id){
+  if(!isMgr())return;
+  const order=db.orders.find(o=>o.id===id);if(!order)return;
+  const linked=(db.purchases||[]).filter(p=>p.orderId===id);
+  if(linked.length){
+    const m=modal('Phiếu mua · '+esc(order.code),`<div class="mut">Các phiếu mua liên kết với đơn hàng này.</div>${linked.map(p=>`<div class="card"><b>${esc(p.code)} · ${esc(p.supplier||'Chưa chọn NCC')}</b><div>${vnd(ptotal(p))} · ${p.paid?'Đã trả':'Chưa trả'}</div><button type="button" class="btn gh sm" data-linked-purchase="${esc(p.id)}">Xem / sửa phiếu</button></div>`).join('')}<button type="button" class="btn gh" data-extra-purchase>＋ Thêm phiếu mua cho đơn</button>`,()=>true);
+    m.querySelector('button:not([type])')?.remove();
+    m.querySelectorAll('[data-linked-purchase]').forEach(b=>b.onclick=()=>{m.remove();purchaseForm(b.dataset.linkedPurchase)});
+    m.querySelector('[data-extra-purchase]').onclick=()=>{m.remove();purchaseForm('',id)};
+    return;
+  }
+  purchaseForm('',id);
+}
 function purchaseForm(id, presetOrderId=''){
   const presetOrder=db.orders.find(x=>x.id===presetOrderId);
-  const o=db.purchases.find(x=>x.id===id)||{date:today(),paid:false,items:[{}],supplier:presetOrder?orderSupplierName(presetOrder):'',supplierId:presetOrder?.supplierId||'',orderId:presetOrderId};
+  const o=db.purchases.find(x=>x.id===id)||{date:today(),paid:false,items:presetOrder?(presetOrder.items||[]).map(i=>({pid:i.pid||'',name:i.name,qty:i.qty,cost:Number(i.cost)||0,unit:i.unit||''})):[{}],supplier:presetOrder?orderSupplierName(presetOrder):'',supplierId:presetOrder?.supplierId||'',orderId:presetOrderId};
   db.suppliers=db.suppliers||[];
   const sups=supplierChoices();
   const retail=['Khách vãng lai','Khách l\u1ebb'].includes(o.supplier)||o.sourceType==='retail';
@@ -2294,7 +2325,7 @@ function purchaseForm(id, presetOrderId=''){
     ${fld('Ghi chú','note',o.note||'')}
     <div class="tot">Tổng: <b id="tot">0đ</b></div>`,
   (fd,m)=>{
-    const items=readItems(m).map(i=>({pid:i.pid,name:i.name,qty:i.qty,cost:i.price}));
+    const items=readItems(m).map(i=>({pid:i.pid,name:i.name,qty:i.qty,cost:i.price,unit:i.unit||''}));
     if(!items.length){alert('Cần ít nhất 1 dòng hàng hợp lệ');return false}
     const sourceType=fd.get('sourceType')||'supplier';
     let supplier='Khách vãng lai',supplierId='',supplierInfo=null;
@@ -2332,7 +2363,7 @@ function purchaseForm(id, presetOrderId=''){
       const registered=(db.suppliers||[]).find(x=>x.id===supplierId||x.name.toLocaleLowerCase('vi')===supplier.toLocaleLowerCase('vi'));
       linkedOrder.supplierId=registered?.id||'';linkedOrder.supplierName=supplier;
     }
-    save();render();
+    save();if(presetOrderId){view='purchases';moduleSearch='';}render();
   });
   const sourceTypeEl=m.querySelector('#sourceType'),supplierSelectEl=m.querySelector('#supplierSelect'),supplierFields=m.querySelector('#supplierFields'),newSupplierWrap=m.querySelector('#newSupplierWrap');
   const syncSupplierFields=()=>{const retail=sourceTypeEl.value==='retail';supplierFields.style.display=retail?'none':'';if(!retail)newSupplierWrap.style.display=supplierSelectEl.value==='__new__'?'':'none'};
@@ -2875,7 +2906,7 @@ const acts={
   closeNav:()=>setNav(false),
   toOrder:id=>convertQuote(db.quotes.find(x=>x.id===id)),viewOrder:()=>{filter='Tất cả';view='orders';setNav(false);render();scrollTo(0,0)},
   supplierFiles:id=>supplierFilesDialog(id),newSupplierQuote:()=>supplierQuoteForm(),editSupplierQuote:id=>supplierQuoteForm(id),downloadSupplierQuote:id=>downloadSupplierQuote(id),deleteSupplierQuote:id=>deleteSupplierQuote(id),supplierQuotePurchase:id=>supplierQuoteToPurchase(id),
-  newPurchase:()=>purchaseForm(),editPurchase:id=>purchaseForm(id),newPurchaseForOrder:id=>purchaseForm('',id),newExpForOrder:id=>expForm(id),newSupplier:()=>supplierForm(),editSupplier:id=>supplierForm(id),
+  newPurchase:()=>purchaseForm(),editPurchase:id=>purchaseForm(id),newPurchaseForOrder:id=>orderPurchase(id),orderPurchase:id=>orderPurchase(id),newExpForOrder:id=>expForm(id),newSupplier:()=>supplierForm(),editSupplier:id=>supplierForm(id),
   delSupplier:id=>{const supplier=(db.suppliers||[]).find(x=>x.id===id);if(!supplier)return;const linked=(db.orders||[]).filter(o=>o.supplierId===id).length;if(!confirm('Xóa nhà cung cấp “'+supplier.name+'” khỏi danh bạ?'+(linked?' '+linked+' đơn hàng đang liên kết sẽ được bỏ liên kết NCC.':'')+' Phiếu mua hàng cũ vẫn được giữ nguyên.'))return;db.suppliers=db.suppliers.filter(x=>x.id!==id);db.orders.forEach(o=>{if(o.supplierId===id)o.supplierId=''});save();render()},
   purchaseAdvance:id=>purchaseAdvanceForm(id),delPurchaseAdvance:id=>purchaseAdvanceDelete(id),
   ppay:id=>{const p=db.purchases.find(x=>x.id===id);if(!p)return;p.paid=!p.paid;save();render()},
