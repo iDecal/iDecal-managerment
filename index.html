@@ -1288,7 +1288,6 @@ function orderCard(o){
         <small>Process / tiến độ</small>
         <select class="st" data-id="${o.id}">${STATUS.map(s=>`<option value="${esc(s)}" ${s===normOrderStatus(o.status)?'selected':''}>${STATUS_ICONS[s]||'•'} ${esc(s)}</option>`).join('')}</select>
       </div>
-      ${dep(o)?`<div class="oc-mid-sec"><small>Đã tạm ứng</small><div class="oc-mid-badges"><span class="badge">${ic('banknote')} ${vnd(dep(o))}</span></div></div>`:''}
       <div class="oc-mid-sec">
         <small>NCC / đơn vị thực hiện</small>
         <div class="oc-mid-badges">
@@ -1300,7 +1299,6 @@ function orderCard(o){
       <button class="btn gh sm" data-a="previewOrder" data-id="${o.id}">${ic('eye')} Xem</button>
       <button class="btn gh sm" data-a="previewWorkSlip" data-id="${o.id}">${ic('filetext')} ${isInstall?'Đơn thi công':'Phiếu giao hàng'}</button>
       <button class="btn gh sm" data-a="editOrder" data-id="${o.id}">${ic('pencil')} Sửa</button>
-      ${o.paid?'':`<button class="btn gh sm" data-a="depositOrder" data-id="${o.id}">${ic('banknote')} Tạm ứng</button>`}
       <details class="mm"><summary class="btn gh sm" aria-label="Thêm thao tác">${ic('more')}</summary><div class="mm-pop">
         ${done?`<button type="button" data-a="archiveOrder" data-id="${o.id}">${ic('archive')} Lưu trữ</button>`:''}
         ${isMgr()?`<button type="button" class="dg" data-a="delOrder" data-id="${o.id}">${ic('trash')} Xoá đơn</button>`:''}
