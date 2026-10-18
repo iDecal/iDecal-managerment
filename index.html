@@ -2456,7 +2456,7 @@ function buys(){
   ${fbar('purchases',all)}
   ${list.length?list.map(p=>`<div class="card purchase-card purchase-compact">
     <div class="row sp" style="gap:8px;flex-wrap:wrap"><div><small class="mut">PHIẾU MUA · ${esc(p.date||'')}</small><div class="purchase-title">${esc(p.code)} · ${esc(p.supplier)}</div></div><b class="purchase-amount">${vnd(ptotal(p))}</b></div>
-    ${p.orderId?`<div class="mut"><span class="badge ok">Gắn với ${(db.orders.find(o=>o.id===p.orderId)||{}).code||'đơn đã xoá'}</span></div>`:'<div class="mut">Phiếu mua chưa gắn đơn hàng</div>'}
+    ${p.orderId?`<div class="mut"><span class="badge ok">Gắn với ${(()=>{const order=db.orders.find(o=>o.id===p.orderId);return order?esc(order.code)+' · '+esc(orderCustomerName(order)):'đơn đã xoá'})()}</span></div>`:'<div class="mut">Phiếu mua chưa gắn đơn hàng</div>'}
     <div class="purchase-money"><div><small>Đã tạm ứng / thanh toán</small><b>${vnd(purchaseAdvTotal(p))}</b></div><div><small>Còn công nợ NCC</small><b class="${purchaseOutstanding(p)?'neg':''}">${vnd(purchaseOutstanding(p))}</b></div></div>
     <div class="row purchase-actions" style="margin-top:8px">
       <button class="btn sm" data-a="previewPurchase" data-id="${p.id}">${ic('eye')} Xem phiếu</button>
