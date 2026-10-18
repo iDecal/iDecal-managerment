@@ -1726,7 +1726,7 @@ function quoteHTML(q,t){
 }
 function purchaseHTML(p,t){
   t=t||tplOf();
-  const rows=p.items.map((i,n)=>`<tr><td>${n+1}</td><td>${esc(i.name)}</td><td class="r">${fq(i.qty)}</td><td class="r">${vnd(i.cost)}</td><td class="r">${vnd(lineCost(i))}</td></tr>`).join('');
+  const rows=p.items.map((i,n)=>isVatItem(i)?`<tr class="vat-line"><td colspan="4">${esc(i.name)}</td><td class="r">${vnd(lineCost(i))}</td></tr>`:`<tr><td>${n+1}</td><td>${esc(i.name)}</td><td class="r">${fq(i.qty)}</td><td class="r">${vnd(i.cost)}</td><td class="r">${vnd(lineCost(i))}</td></tr>`).join('');
   return`${shopHead(t)}
   <h2>PHIẾU MUA HÀNG</h2><div class="c">Số: ${p.code} · Ngày ${p.date}</div>
   <p><b>Nhà cung cấp:</b> ${esc(p.supplier)}</p>
@@ -1896,9 +1896,10 @@ function previewQuote(id){
   m.querySelector('[data-preview-pdf]').onclick=()=>pdfQuote(id);
   m.querySelector('[data-preview-print]').onclick=()=>printQuote(id);
 }
+const isVatItem=i=>/^VAT(?:\s|$)/i.test(String(i?.name||'').trim());
 function orderHTML(o,t){
   t=t||tplOf();
-  const rows=(o.items||[]).map((i,n)=>`<tr><td>${n+1}</td><td>${esc(i.name||'—')}</td><td>${esc(i.unit||(prod(i.pid)||{}).unit||'—')}</td><td class="r">${fq(i.qty)}</td><td class="r">${vnd(i.price)}</td><td class="r"><b>${vnd(lineAmt(i))}</b></td></tr>`).join('');
+  const rows=(o.items||[]).map((i,n)=>isVatItem(i)?`<tr class="vat-line"><td colspan="5">${esc(i.name)}</td><td class="r"><b>${vnd(lineAmt(i))}</b></td></tr>`:`<tr><td>${n+1}</td><td>${esc(i.name||'—')}</td><td>${esc(i.unit||(prod(i.pid)||{}).unit||'—')}</td><td class="r">${fq(i.qty)}</td><td class="r">${vnd(i.price)}</td><td class="r"><b>${vnd(lineAmt(i))}</b></td></tr>`).join('');
   return `${shopHead(t)}<h2>CHI TIẾT ĐƠN HÀNG</h2><div class="c">MÃ ĐƠN · ${esc(o.code)}</div>
   <div class="meta"><div><small>Khách hàng</small><b>${esc(orderCustomerName(o))}</b></div><div><small>Ngày tạo</small><b>${esc(o.date||'—')}</b></div><div><small>Tiến độ</small><b>${esc(normOrderStatus(o.status))}</b></div></div>
   <div class="terms"><b>${orderFulfillment(o)==='installation'?'🛠️ THI CÔNG':'🚚 GIAO HÀNG'}</b>
@@ -1920,7 +1921,7 @@ function workSlipHTML(o){
   const address=isInstall?(o.installAddress||c?.deliveryAddress||c?.addr||''):(c?.deliveryAddress||c?.addr||o.installAddress||'');
   const due=isInstall?o.installDue:o.deliveryDue;
   const kind=isInstall?'ĐƠN THI CÔNG':'PHIẾU GIAO HÀNG';
-  const rows=(o.items||[]).map((i,n)=>`<tr><td>${n+1}</td><td><b>${esc(i.name||'—')}</b>${i.description?`<div class="mut">${nl(esc(i.description))}</div>`:''}</td><td>${esc(i.unit||(prod(i.pid)||{}).unit||'—')}</td><td class="r">${fq(i.qty)}</td></tr>`).join('');
+  const rows=(o.items||[]).filter(i=>!isVatItem(i)).map((i,n)=>`<tr><td>${n+1}</td><td><b>${esc(i.name||'—')}</b>${i.description?`<div class="mut">${nl(esc(i.description))}</div>`:''}</td><td>${esc(i.unit||(prod(i.pid)||{}).unit||'—')}</td><td class="r">${fq(i.qty)}</td></tr>`).join('');
   const workerSection=isInstall?`<div class="terms"><b>THÔNG TIN THỢ / ĐỘI THI CÔNG</b>${work.length?work.map((w,n)=>`<div style="margin-top:6px">${n+1}. <b>${esc(w.name)}</b>${w.phone?' · SĐT: '+esc(w.phone):''}${w.skill?' · '+esc(w.skill):''}${w.area?' · '+esc(normWorkerArea(w.area))+(w.district?' / '+esc(w.district):''):''}</div>`).join(''):'<div style="margin-top:5px">Chưa phân công thợ</div>'}${o.installStatus?`<div style="margin-top:5px">Tiến độ: ${esc(o.installStatus)}</div>`:''}</div>`:'';
   const instr=isInstall?(o.installNote||''):(o.deliveryNote||o.note||'');
   return `${shopHead(t)}<h2>${kind}</h2><div class="c">LIÊN KẾT ĐƠN HÀNG: ${esc(o.code)}</div>
@@ -2312,7 +2313,7 @@ function orderPurchase(id){
   const order=db.orders.find(o=>o.id===id);if(!order)return;
   const linked=(db.purchases||[]).filter(p=>p.orderId===id);
   if(linked.length){
-    const m=modal('Phiếu mua · '+esc(order.code),`<div class="mut">Các phiếu mua liên kết với đơn hàng này.</div>${linked.map(p=>`<div class="card"><b>${esc(p.code)} · ${esc(p.supplier||'Chưa chọn NCC')}</b><div>${vnd(ptotal(p))} · ${p.paid?'Đã trả':'Chưa trả'}</div><button type="button" class="btn gh sm" data-linked-purchase="${esc(p.id)}">Xem / sửa phiếu</button></div>`).join('')}<button type="button" class="btn gh" data-extra-purchase>＋ Thêm phiếu mua cho đơn</button>`,()=>true);
+    const m=modal('Phiếu mua · '+esc(order.code),`<div class="mut">Các phiếu mua liên kết với đơn hàng này.</div>${linked.map(p=>`<div class="card"><b>${esc(p.code)} · ${esc(p.supplier||'Chưa chọn NCC')}</b><div>${vnd(ptotal(p))} · ${p.paid?'Đã trả':'Chưa trả'}</div><button type="button" class="btn sm" data-a="previewPurchase" data-id="${esc(p.id)}">${ic('eye')} Xem phiếu mua</button> <button type="button" class="btn gh sm" data-linked-purchase="${esc(p.id)}">Sửa phiếu</button></div>`).join('')}<button type="button" class="btn gh" data-extra-purchase>＋ Thêm phiếu mua cho đơn</button>`,()=>true);
     m.querySelector('button:not([type])')?.remove();
     m.querySelectorAll('[data-linked-purchase]').forEach(b=>b.onclick=()=>{m.remove();purchaseForm(b.dataset.linkedPurchase)});
     m.querySelector('[data-extra-purchase]').onclick=()=>{m.remove();purchaseForm('',id)};
@@ -2765,7 +2766,7 @@ function fbar(v,list){
   const options=v==='orders'&&cur!=='delivery'&&cur!=='delivered'?d.filter(x=>x[0]!=='delivered'):d;
   return`<div class="fbar" role="group" aria-label="Bộ lọc">${ic('filter')}${options.map(x=>`<button type="button" class="fchip${x[0]===cur?' on':''}" data-a="vf" data-id="${esc(v+'|'+x[0])}" aria-pressed="${x[0]===cur}">${esc(x[1])}<i>${list.filter(x[2]).length}</i></button>`).join('')}</div>`;
 }
-const itemsDet=(items,pre)=>`<div class="mut">${pre}</div><details class="itd"><summary>${items.length} mặt hàng · bấm để xem</summary><ul>${items.map(i=>`<li>${esc(i.name)} <b>×${fq(i.qty)}</b></li>`).join('')}</ul></details>`;
+const itemsDet=(items,pre)=>`<div class="mut">${pre}</div><details class="itd"><summary>${items.length} mặt hàng · bấm để xem</summary><ul>${items.map(i=>`<li>${esc(i.name)} ${isVatItem(i)?'':`<b>×${fq(i.qty)}</b>`}</li>`).join('')}</ul></details>`;
 const emp=(n,txt)=>`<div class="empty">${n?'Không có mục nào khớp bộ lọc':txt}</div>`;
 const views={gemini:()=>`<div class="gemini-menu-placeholder" aria-hidden="true"></div>`,workers:workersView,tasks:tasksView,chat:chatView,archive:archiveView,home,deposits:depositsView,orders,quote:quotes,cust:custs,prod:prods,purchases:buys,suppliers:suppliersView,supplierQuotes:supplierQuotesView,exp:expensesView,profit:profitView,more,team};
 function whoHTML(){
