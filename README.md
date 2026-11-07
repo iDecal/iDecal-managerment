@@ -6,6 +6,7 @@ Web app tĩnh, deploy lên Vercel không cần build. Các tệp chính:
 |---|---|
 | `index.html` | Giao diện và nghiệp vụ ứng dụng |
 | `app-theme.css` | Màu sắc, bố cục và giao diện responsive |
+| `assets/decal-pattern.svg` | Họa tiết nền decal dạng vector |
 | `config.js` | Cấu hình đăng nhập (điền theo hướng dẫn bên dưới) |
 | `firestore.rules` | Quy tắc bảo mật dán vào Firebase |
 
@@ -44,7 +45,7 @@ Thành viên mới đăng nhập Gmail lần đầu sẽ ở trạng thái **Ch�
 3. **Build → Authentication → Get started → Sign-in method → Google → Enable** (chọn email hỗ trợ) → Save.
 4. **Build → Firestore Database → Create database** → chọn **Production mode** → vị trí `asia-southeast1` (Singapore).
 5. Tab **Rules** của Firestore: mở file `firestore.rules`, **sửa dòng `ownerEmail()` thành Gmail của bạn** (cùng giá trị ở bước 2), dán toàn bộ vào ô Rules → **Publish**.
-6. Deploy lên Vercel (thư mục chứa 3 file trên). Sau khi có link (ví dụ `ten-app.vercel.app`): **Authentication → Settings → Authorized domains → Add domain** → thêm tên miền đó (không có `https://`).
+6. Deploy toàn bộ thư mục dự án lên Vercel (bao gồm `app-theme.css` và `assets/`). Sau khi có link (ví dụ `ten-app.vercel.app`): **Authentication → Settings → Authorized domains → Add domain** → thêm tên miền đó (không có `https://`).
 7. Mở app, bấm **Đăng nhập bằng Google** bằng đúng Gmail chủ → bạn tự thành **Chủ**.
 8. Có dữ liệu cũ trong chế độ một máy? Mở app trên đúng máy/trình duyệt đó, vào **Khác → Đưa dữ liệu cũ trên máy lên đám mây**.
 9. Gửi link cho nhân viên → họ đăng nhập Gmail → bạn vào **Thành viên** chọn cấp.

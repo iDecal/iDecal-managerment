@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="520" viewBox="0 0 720 520" fill="none">
+  <g stroke="#657f9e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".19">
+    <!-- A die-cut sticker with a peeled corner. -->
+    <g transform="translate(64 54) rotate(-13 34 36)">
+      <path d="M12 0h45a12 12 0 0 1 12 12v32L43 70H12A12 12 0 0 1 0 58V12A12 12 0 0 1 12 0Z"/>
+      <path d="M69 44H54a11 11 0 0 0-11 11v15M15 18h35M15 26h24"/>
+      <path d="m16 42 7 7 14-15"/>
+    </g>
+    <!-- A roll of adhesive vinyl on its backing sheet. -->
+    <g transform="translate(365 42) rotate(10 43 40)">
+      <ellipse cx="17" cy="35" rx="16" ry="29"/><ellipse cx="17" cy="35" rx="6" ry="13"/>
+      <path d="M17 6h48c18 0 26 13 26 29v33H17M33 35h58M65 6c17 0 22 14 22 29"/>
+      <path d="M33 68v16h58V68"/>
+    </g>
+    <!-- A vinyl application squeegee. -->
+    <g transform="translate(583 180) rotate(-18 35 26)">
+      <rect width="74" height="47" rx="7"/><path d="M0 34h74M11 12h52M11 20h38"/>
+    </g>
+    <!-- A sheet of rounded labels ready for cutting. -->
+    <g transform="translate(91 327) rotate(12 41 42)">
+      <rect width="83" height="92" rx="9"/>
+      <rect x="12" y="12" width="24" height="25" rx="7"/><rect x="47" y="12" width="24" height="25" rx="7"/>
+      <rect x="12" y="49" width="24" height="25" rx="7"/><path d="M54 49h10a7 7 0 0 1 7 7v8L61 74h-7a7 7 0 0 1-7-7V56a7 7 0 0 1 7-7ZM71 64H61v10"/>
+    </g>
+    <!-- A precision cutter, with the blade retracted. -->
+    <g transform="translate(362 322) rotate(35 14 49)">
+      <path d="M5 15h19v74a8 8 0 0 1-8 8h-3a8 8 0 0 1-8-8V15ZM5 15 14 1l10 14M10 1h4"/>
+      <rect x="10" y="30" width="9" height="28" rx="4"/><path d="M5 75h19M9 82h11"/>
+    </g>
+    <!-- A circular seal with a lifted edge. -->
+    <g transform="translate(572 390) rotate(-8 31 31)">
+      <path d="M61 29A30 30 0 1 0 29 61l32-32Z"/><path d="M61 29H43a14 14 0 0 0-14 14v18"/>
+      <path d="m16 25 6 6 12-13"/>
+    </g>
+    <g opacity=".6"><path d="M245 175v12m-6-6h12M507 291v12m-6-6h12M264 462v10m-5-5h10M659 60v10m-5-5h10"/>
+      <circle cx="246" cy="70" r="3"/><circle cx="281" cy="295" r="3"/><circle cx="533" cy="477" r="3"/>
+      <path d="m19 219 3 3 3-3-3-3-3 3ZM464 167l3 3 3-3-3-3-3 3Z"/>
+    </g>
+  </g>
+  <g fill="#467ba2" opacity=".07"><path d="M105 98H90a11 11 0 0 0-11 11v15Z"/><circle cx="623" cy="435" r="12"/></g>
+</svg>
