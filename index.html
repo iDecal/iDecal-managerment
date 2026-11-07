@@ -1440,13 +1440,14 @@ function orderCard(o){
     </div>
     <div class="oc-a">
       <button class="btn gh sm" data-a="previewOrder" data-id="${o.id}">${ic('eye')} Xem</button>
-      <button class="btn gh sm" data-a="previewWorkSlip" data-id="${o.id}">${ic('filetext')} ${isInstall?'Đơn thi công':'Phiếu giao hàng'}</button>
+
       <button class="btn gh sm" data-a="editOrder" data-id="${o.id}">${ic('pencil')} Sửa</button>
-      ${isMgr()?`<button class="btn gh sm" data-a="orderPurchase" data-id="${o.id}">${ic('cart')} ${(db.purchases||[]).some(p=>p.orderId===o.id)?'Phiếu mua ('+db.purchases.filter(p=>p.orderId===o.id).length+')':'Tạo phiếu mua hàng'}</button>`:''}
+
       <details class="mm"><summary class="btn gh sm" aria-label="Thêm thao tác">${ic('more')}</summary><div class="mm-pop">
+        <button type="button" data-a="previewWorkSlip" data-id="${o.id}">${ic('filetext')} ${isInstall?'Đơn thi công':'Phiếu giao hàng'}</button>
+        ${isMgr()?`<button type="button" data-a="orderPurchase" data-id="${o.id}">${ic('cart')} Phiếu mua hàng${db.purchases.filter(p=>p.orderId===o.id).length?' ('+db.purchases.filter(p=>p.orderId===o.id).length+')':''}</button>`:''}
         ${done?`<button type="button" data-a="archiveOrder" data-id="${o.id}">${ic('archive')} Lưu trữ</button>`:''}
         ${isMgr()?`<button type="button" class="dg" data-a="delOrder" data-id="${o.id}">${ic('trash')} Xoá đơn</button>`:''}
-        ${!done&&!isMgr()?'<span class="mut" style="padding:8px 10px;display:block">Không có thao tác khác</span>':''}
       </div></details>
     </div>
   </div>`;
@@ -1459,28 +1460,32 @@ function orders(){
   ${fbar('orders',base)}
   ${list.length?`<div class="orders-alt">${list.map(o=>orderCard(o)).join('')}</div>`:emp(base.length,'Chưa có đơn nào')}`;
 }
+// Shared compact rows: presentation only; actions use the existing handlers.
+const recordButton=(label,action,id,icon='',kind='gh')=>`<button type="button" class="btn ${kind} sm" data-a="${esc(action)}" data-id="${esc(id||'')}">${icon?ic(icon):''} ${esc(label)}</button>`;
+const recordMenu=buttons=>`<details class="mm record-more"><summary class="btn gh sm" aria-label="Thêm thao tác" title="Thêm thao tác">${ic('more')}</summary><div class="mm-pop">${buttons}</div></details>`;
+const recordMetric=(label,value,tone='')=>`<div class="record-metric"><span>${esc(label)}</span><b class="${tone}">${esc(value)}</b></div>`;
+const recordDetail=(label,body)=>body?`<details class="record-detail"><summary>${esc(label)}</summary><div>${body}</div></details>`:'';
+const recordRow=({title,code='',avatar='',meta='',detail='',money='',actions='',kind=''})=>`<article class="card record-row ${kind}"><div class="record-main">${avatar?`<div class="record-avatar">${avatar}</div>`:''}<div class="record-identity">${code?`<small class="record-code">${esc(code)}</small>`:''}<h3>${esc(title)}</h3>${meta?`<div class="record-meta">${meta}</div>`:''}${detail}</div></div>${money?`<div class="record-values">${money}</div>`:''}<div class="record-actions">${actions}</div></article>`;
 function custs(){
-  const all=db.customers,list=fapply('cust',all);
-  return`<div class="row sp"><h2>Khách hàng</h2><button class="btn" data-a="newCust">${ic('plus')} Khách mới</button></div>
-  ${fbar('cust',all)}
-  ${list.length?list.map(c=>{const os=db.orders.filter(o=>o.cid===c.id&&valid(o));const sp=os.reduce((s,o)=>s+total(o),0),db_=os.reduce((s,o)=>s+orderDue(o),0);return`<div class="card customer-card">
-    <div class="row sp customer-heading"><div class="customer-identity"><span class="customer-avatar">${ic(c.customerType==='company'?'building':'users')}</span><div><b>${esc(c.name)}</b> <span class="badge ${c.customerType==='company'?'ok':''}">${c.customerType==='company'?'Doanh nghiệp':'Cá nhân'}</span>${c.customerCode?` <span class="mut">${esc(c.customerCode)}</span>`:''}</div></div><span class="mut">${os.length} đơn · ${vnd(sp)}</span></div>
-    <div class="mut customer-contact">${c.phone?`${ic('phone')} <a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>`:''}${c.email?` <span class="customer-email">${ic('mail')} ${esc(c.email)}</span>`:''}</div>
-    ${c.contactName?`<div class="mut">${ic('users')} ${esc(c.contactName)}${c.contactPhone?' · '+esc(c.contactPhone):''}</div>`:''}
-    ${c.addr?`<div class="mut">${ic('map')} ${esc(c.addr)}</div>`:''}
-    ${db_?`<div class="customer-debt">${ic('wallet')} Còn nợ: <b>${vnd(db_)}</b></div>`:''}
-    <div class="row customer-actions" style="margin-top:8px"><button type="button" class="catalog-icon edit" data-a="editCust" data-id="${c.id}" title="Sửa khách hàng" aria-label="Sửa ${esc(c.name)}">${ic('pencil')}</button>${isMgr()?`<button type="button" class="catalog-icon delete" data-a="delCust" data-id="${c.id}" title="Xóa khách hàng" aria-label="Xóa ${esc(c.name)}">${ic('trash')}</button>`:''}</div></div>`}).join(''):emp(all.length,'Chưa có khách hàng')}`;
+ const all=db.customers,list=fapply('cust',all);
+ return`<div class="row sp"><h2>Khách hàng</h2>${recordButton('Khách mới','newCust','','plus','')}</div>${fbar('cust',all)}
+ ${list.length?list.map(c=>{
+ const os=db.orders.filter(o=>o.cid===c.id&&valid(o)),spent=os.reduce((n,o)=>n+total(o),0),due=os.reduce((n,o)=>n+orderDue(o),0);
+ return recordRow({title:c.name,code:c.customerCode||'',avatar:ic(c.customerType==='company'?'building':'users'),
+ meta:`<span class="badge ${c.customerType==='company'?'ok':''}">${c.customerType==='company'?'Doanh nghiệp':'Cá nhân'}</span>${c.phone?`<a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>`:''}${c.email?`<span>${esc(c.email)}</span>`:''}`,
+ detail:recordDetail('Thông tin liên hệ',[c.contactName&&`Người liên hệ: ${esc(c.contactName)} ${esc(c.contactPhone||'')}`,c.addr&&esc(c.addr)].filter(Boolean).join('<br>')),
+ money:recordMetric(os.length+' đơn hàng',vnd(spent))+recordMetric('Còn phải thu',vnd(due),due?'neg':''),
+ actions:recordButton('Sửa','editCust',c.id,'pencil')+(isMgr()?recordMenu(recordButton('Xóa khách hàng','delCust',c.id,'trash','dg')):'')});
+ }).join(''):emp(all.length,'Chưa có khách hàng')}`;
 }
 const imgThumb=p=>p.img?`<img class="pth" src="${esc(p.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-a="zoom" data-id="${p.id}" onerror="imgFail(this)">`:'<div class="pth noimg">'+ic('image')+'</div>';
 function prods(){
-  const all=db.products,list=fapply('prod',all);
-  const np=all.filter(p=>p.kind!=='service').length,ns=all.filter(p=>p.kind==='service').length;
-  return`<div class="row sp"><h2>Sản phẩm & dịch vụ</h2>${isMgr()?'<button class="btn" data-a="newProd">'+ic('plus')+' Thêm mới</button>':''}</div>
-  <div class="mut" style="margin-bottom:8px">${np} sản phẩm · ${ns} dịch vụ</div>
-  ${fbar('prod',all)}
-  ${list.length?`<div class="catalog-grid">${list.map(p=>`<div class="card pc pc-compact">${imgThumb(p)}<div class="pbody">
-    <div class="pc-top"><div class="pc-title"><b>${esc(p.name)}</b><div class="pc-meta"><span class="badge ${p.kind==='service'?'':'ok'}">${p.kind==='service'?'Dịch vụ':'Sản phẩm'}</span><span class="mut">${esc(p.unit||'cái')}</span></div></div><b class="pc-price">${vnd(p.price)}</b></div>
-    ${isMgr()?`<div class="pc-actions"><button type="button" class="catalog-icon edit" data-a="editProd" data-id="${p.id}" title="Sửa sản phẩm / dịch vụ" aria-label="Sửa ${esc(p.name)}">${ic('pencil')}</button><button type="button" class="catalog-icon delete" data-a="delProd" data-id="${p.id}" title="Xóa sản phẩm / dịch vụ" aria-label="Xóa ${esc(p.name)}">${ic('trash')}</button></div>`:''}</div></div>`).join('')}</div>`:emp(all.length,'Chưa có sản phẩm hoặc dịch vụ. Bấm Thêm mới để tạo danh mục.')}`;
+ const all=db.products,list=fapply('prod',all);
+ return`<div class="row sp"><div><h2>Sản phẩm & dịch vụ</h2><div class="mut">${all.filter(p=>p.kind!=='service').length} sản phẩm · ${all.filter(p=>p.kind==='service').length} dịch vụ</div></div>${isMgr()?recordButton('Thêm mới','newProd','','plus',''):''}</div>${fbar('prod',all)}
+ ${list.length?`<div class="catalog-grid">${list.map(p=>recordRow({title:p.name,avatar:imgThumb(p),kind:'product-record',
+ meta:`<span class="badge ${p.kind==='service'?'':'ok'}">${p.kind==='service'?'Dịch vụ':'Sản phẩm'}</span><span>Đơn vị: ${esc(p.unit||'cái')}</span>`,
+ money:recordMetric('Giá bán',vnd(p.price))+(isMgr()?recordMetric('Giá vốn tham khảo',vnd(p.cost)):''),
+ actions:isMgr()?recordButton('Sửa','editProd',p.id,'pencil')+recordMenu(recordButton('Xóa sản phẩm / dịch vụ','delProd',p.id,'trash','dg')):''})).join('')}</div>`:emp(all.length,'Chưa có sản phẩm hoặc dịch vụ. Bấm Thêm mới để tạo danh mục.')}`;
 }
 function more(){
   const acct=CLOUD
@@ -2293,7 +2298,13 @@ function workersView(){
    </div>
  </details>
  <div class="worker-filter-result">${ic('users')} Hiển thị <b>${shown.length}/${all.length} thợ</b>${workerAreaFilter==='Tất cả'?'':' · '+esc(workerAreaFilter)}${workerDistrictFilter==='Tất cả'?'':' · '+esc(workerDistrictFilter)}</div>
- <div class="worker-grid">${shown.length?shown.map(w=>{const jobs=db.orders.filter(o=>(o.workerIds||[]).includes(w.id));const doing=jobs.filter(o=>!o.archived&&o.installStatus!=='Hoàn thành'&&o.status!=='Huỷ');return `<div class="card worker-card"><div class="row sp"><div><b>${esc(w.name)}</b><div class="mut">${esc(w.skill||'Thợ thi công')}${w.group?' · '+esc(w.group):''}</div></div><span class="badge ${w.active===false?'wr':'ok'}">${w.active===false?'Tạm nghỉ':'Hoạt động'}</span></div><div class="worker-area-mark">${ic('map-pin')} ${esc(normWorkerArea(w.area)||'Chưa chọn khu vực')}${w.district?' · '+esc(w.district):''}${w.areaNote?`<div class="mut">${esc(w.areaNote)}</div>`:''}</div><div class="mut">${ic('phone')} ${w.phone?`<a href="tel:${esc(w.phone)}">${esc(w.phone)}</a>`:'Chưa có SĐT'}</div>${w.note?`<div class="mut">${esc(w.note)}</div>`:''}<div class="worker-jobs"><b>Đơn phụ trách: ${jobs.length}</b> · Đang xử lý: ${doing.length}${jobs.length?`<details><summary>Xem các đơn đã giao</summary>${jobs.slice().reverse().map(o=>`<div class="worker-job">${esc(o.code)} · ${esc(orderCustomerName(o))}<span class="badge">${esc(o.installStatus||'Đã phân công')}</span></div>`).join('')}</details>`:''}</div>${isMgr()?`<div class="row" style="flex-wrap:wrap"><button class="btn gh sm" data-a="editWorker" data-id="${esc(w.id)}">Sửa hồ sơ</button>${w.cccdFile?`<button class="btn gh sm" data-a="viewWorkerCccd" data-id="${esc(w.id)}">${ic('filetext')} Xem CCCD</button>`:''}<button class="btn dg sm" data-a="delWorker" data-id="${esc(w.id)}">Xóa</button></div>`:''}</div>`}).join(''):'<div class="empty">Không có thợ thuộc khu vực đang chọn.</div>'}</div>
+ <div class="worker-grid">${shown.length?shown.map(w=>{
+ const jobs=db.orders.filter(o=>(o.workerIds||[]).includes(w.id)),doing=jobs.filter(o=>!o.archived&&o.installStatus!=='Hoàn thành'&&o.status!=='Huỷ');
+ return recordRow({title:w.name,avatar:ic('users'),meta:`<span class="badge ${w.active===false?'wr':'ok'}">${w.active===false?'Tạm nghỉ':'Hoạt động'}</span><span>${esc(w.skill||'Thợ thi công')}${w.group?' · '+esc(w.group):''}</span>${w.phone?`<a href="tel:${esc(w.phone)}">${esc(w.phone)}</a>`:''}<span>${esc(normWorkerArea(w.area)||'Chưa chọn khu vực')}${w.district?' · '+esc(w.district):''}</span>`,
+ detail:recordDetail('Đơn phụ trách & ghi chú',`${w.areaNote?esc(w.areaNote)+'<br>':''}${w.note?esc(w.note)+'<br>':''}${jobs.slice().reverse().map(o=>`${esc(o.code)} · ${esc(orderCustomerName(o))} · ${esc(o.installStatus||'Đã phân công')}`).join('<br>')||'Chưa được phân công đơn hàng'}`),
+ money:recordMetric('Đơn phụ trách',jobs.length)+recordMetric('Đang xử lý',doing.length),
+ actions:isMgr()?recordButton('Sửa hồ sơ','editWorker',w.id,'pencil')+recordMenu((w.cccdFile?recordButton('Xem CCCD','viewWorkerCccd',w.id,'filetext'):'')+recordButton('Xóa hồ sơ','delWorker',w.id,'trash','dg')):''});
+ }).join(''):'<div class="empty">Không có thợ thuộc khu vực đang chọn.</div>'}</div>
  <div class="sec-h"><h3>Đơn hàng có lịch thi công</h3><button class="btn gh sm" data-a="tab" data-id="orders">Mở Đơn hàng</button></div>${linked.length?linked.sort((a,b)=>String(b.installDue||b.date).localeCompare(String(a.installDue||a.date))).map(o=>`<div class="card worker-order"><div class="row sp"><b>${esc(o.code)} · ${esc(orderCustomerName(o))}</b><span class="badge">${esc(o.installStatus||'Đã phân công')}</span></div><div class="mut">${ic('users')} ${esc(assignedWorkers(o).join(', '))} ${o.installDue?' · 📅 '+esc(o.installDue.replace('T',' ')):''}</div><div class="row"><button class="btn gh sm" data-a="editOrder" data-id="${esc(o.id)}">Phân công / Sửa lịch</button></div></div>`).join(''):'<div class="empty">Chưa có đơn được giao cho thợ.</div>'}`;
 }
 function workerIdb(){return new Promise((resolve,reject)=>{const req=indexedDB.open('idecal-private-worker-docs',1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('cccd'))req.result.createObjectStore('cccd')};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
@@ -2526,30 +2537,16 @@ function purchaseForm(id, presetOrderId=''){
   m.addEventListener('change',e=>{if(e.target.classList.contains('p')){const p=prod(e.target.value);if(p){const pr=e.target.closest('.it').querySelector('.pr');pr.value=p.cost;pr.dispatchEvent(new Event('input',{bubbles:true}))}}});
 }
 function buys(){
-  const mk=today().slice(0,7);
-  const AS=archIds();
-  const all=[...db.purchases].filter(p=>!AS.has(p.orderId)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
-  const list=fapply('purchases',all);
-  const mon=db.purchases.filter(p=>p.date.startsWith(mk)).reduce((s,p)=>s+ptotal(p),0);
-  const debt=db.purchases.reduce((sum,p)=>sum+purchaseOutstanding(p),0);
-  const adv=db.purchases.reduce((sum,p)=>sum+purchaseAdvTotal(p),0);
-  return`<div class="row sp"><div><h2>Mua hàng</h2><div class="mut">Ghi tiền xưởng in/gia công, vật tư và công nợ NCC. Chọn mã đơn để tự cộng vào báo cáo lãi lỗ.</div></div><button class="btn" data-a="newPurchase">${ic('plus')} Phiếu mua</button></div>
-  <div class="mut" style="margin:7px 0 12px">Tạm ứng và công nợ được quản lý <b>riêng theo từng phiếu mua hàng</b>. Vào <b>+ Phiếu mua</b> hoặc <b>Sửa</b> bất kỳ phiếu nào để nhập tạm ứng trực tiếp. Lọc theo tình trạng tạm ứng và công nợ ngay bên dưới.</div>
-  <div class="grid"><div class="card kpi"><small>Mua tháng này</small><b>${vnd(mon)}</b></div><div class="card kpi"><small>Nợ nhà cung cấp</small><b class="${debt?'neg':''}">${vnd(debt)}</b></div><div class="card kpi"><small>Đã tạm ứng cho NCC</small><b>${vnd(adv)}</b></div></div>
-  ${fbar('purchases',all)}
-  ${list.length?list.map(p=>`<div class="card purchase-card purchase-compact">
-    <div class="row sp" style="gap:8px;flex-wrap:wrap"><div><small class="mut">PHIẾU MUA · ${esc(p.date||'')}</small><div class="purchase-title">${ic('cart')} ${esc(p.code)} · ${esc(p.supplier)}</div></div><b class="purchase-amount">${vnd(ptotal(p))}</b></div>
-    ${p.orderId?`<div class="mut"><span class="badge ok">Gắn với ${(()=>{const order=db.orders.find(o=>o.id===p.orderId);return order?esc(order.code)+' · '+esc(orderCustomerName(order)):'đơn đã xoá'})()}</span></div>`:'<div class="mut">Phiếu mua chưa gắn đơn hàng</div>'}
-    <div class="purchase-money"><div><small>Đã tạm ứng / thanh toán</small><b>${vnd(purchaseAdvTotal(p))}</b></div><div><small>Còn công nợ NCC</small><b class="${purchaseOutstanding(p)?'neg':''}">${vnd(purchaseOutstanding(p))}</b></div></div>
-    <div class="row purchase-actions" style="margin-top:8px">
-      <button type="button" class="catalog-icon edit" data-a="previewPurchase" data-id="${p.id}" title="Xem phiếu mua" aria-label="Xem phiếu mua ${esc(p.code)}">${ic('eye')}</button>
-      <span class="badge ${p.paid?'ok':'wr'}" data-a="ppay" data-id="${p.id}" style="cursor:pointer">${p.paid?'Đã trả':'Chưa trả'}</span>
-      ${!p.paid&&purchaseOutstanding(p)>0?`<button type="button" class="catalog-icon edit" data-a="purchaseAdvance" data-id="${p.id}" title="Tạm ứng / thanh toán" aria-label="Tạm ứng / thanh toán ${esc(p.code)}">${ic('banknote')}</button>`:''}
-      <div class="purchase-icon-actions"><button type="button" class="catalog-icon edit" data-a="pdfPurchase" data-id="${p.id}" title="Tải PDF" aria-label="Tải PDF ${esc(p.code)}">${ic('pdf')}</button>
-      <button type="button" class="catalog-icon edit" data-a="printPurchase" data-id="${p.id}" title="In phiếu mua" aria-label="In phiếu mua ${esc(p.code)}">${ic('printer')}</button>
-      <button type="button" class="catalog-icon edit" data-a="editPurchase" data-id="${p.id}" title="Sửa phiếu mua" aria-label="Sửa phiếu mua ${esc(p.code)}">${ic('pencil')}</button>
-      <button type="button" class="catalog-icon delete" data-a="delPurchase" data-id="${p.id}" title="Xóa phiếu mua" aria-label="Xóa phiếu mua ${esc(p.code)}">${ic('trash')}</button></div>
-    </div></div>`).join(''):emp(all.length,'Chưa có phiếu mua hàng')}`;
+ const AS=archIds(),all=[...db.purchases].filter(p=>!AS.has(p.orderId)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code)),list=fapply('purchases',all);
+ return`<div class="row sp"><h2>Mua hàng</h2>${recordButton('Phiếu mua','newPurchase','','plus','')}</div>
+ <div class="grid"><div class="card kpi"><small>Mua tháng này</small><b>${vnd(db.purchases.filter(p=>p.date.startsWith(today().slice(0,7))).reduce((n,p)=>n+ptotal(p),0))}</b></div><div class="card kpi"><small>Nợ nhà cung cấp</small><b class="neg">${vnd(db.purchases.reduce((n,p)=>n+purchaseOutstanding(p),0))}</b></div><div class="card kpi"><small>Đã tạm ứng NCC</small><b>${vnd(db.purchases.reduce((n,p)=>n+purchaseAdvTotal(p),0))}</b></div></div>${fbar('purchases',all)}
+ ${list.length?list.map(p=>{const order=db.orders.find(o=>o.id===p.orderId),due=purchaseOutstanding(p);
+ return recordRow({title:p.supplier||'Khách vãng lai',code:p.code,avatar:ic('cart'),
+ meta:`<span>${esc(p.date)}</span><span class="badge ${due?'wr':'ok'}">${due?'Còn công nợ':'Đã thanh toán'}</span><span>${order?esc(order.code)+' · '+esc(orderCustomerName(order)):'Chưa gắn đơn'}</span>`,
+ detail:recordDetail(p.items.length+' hạng mục',p.items.map(i=>`${esc(i.name)} ×${fq(i.qty)}`).join('<br>')),
+ money:recordMetric('Tổng phiếu',vnd(ptotal(p)))+recordMetric('Đã tạm ứng',vnd(purchaseAdvTotal(p)))+recordMetric('Còn phải trả',vnd(due),due?'neg':''),
+ actions:recordButton('Xem','previewPurchase',p.id,'eye')+recordButton('Sửa','editPurchase',p.id,'pencil')+recordMenu((!p.paid&&due>0?recordButton('Tạm ứng / thanh toán','purchaseAdvance',p.id,'banknote'):'')+recordButton(p.paid?'Chuyển chưa trả':'Đánh dấu đã trả','ppay',p.id,'check')+recordButton('Tải PDF','pdfPurchase',p.id,'pdf')+recordButton('In phiếu mua','printPurchase',p.id,'printer')+recordButton('Xóa phiếu mua','delPurchase',p.id,'trash','dg'))});
+ }).join(''):emp(all.length,'Chưa có phiếu mua hàng')}`;
 }
 
 
@@ -2747,21 +2744,21 @@ function supplierFilesDialog(sid){
  };
 }
 function suppliersView(){
-  const supAll=[...(db.suppliers||[])].sort((a,b)=>String(a.name).localeCompare(String(b.name),'vi'));
-  const sup=fapply('suppliers',supAll);
-  return`<div class="row sp"><div><h2>Nhà cung cấp</h2><div class="mut">Danh bạ và thông tin liên hệ nhà cung cấp.</div></div><button class="btn" data-a="newSupplier">${ic('plus')} Thêm NCC</button></div>
-    <div class="grid"><div class="card kpi"><small>Tổng nhà cung cấp</small><b>${supAll.length}</b></div></div>
-    ${fbar('suppliers',supAll)}
-    ${sup.length?sup.map(s=>`<div class="card supplier-refined"><div class="row sp"><div class="supplier-card-profile"><div class="supplier-logo-thumb">${s.logo?`<img src="${esc(s.logo)}" alt="Logo ${esc(s.name)}">`:ic('store')}</div><div><b>${esc(s.name)}</b><div class="mut">${esc(s.phone||'Chưa có SĐT')}${s.contact?' · '+esc(s.contact):''}</div><div class="mut">${esc(s.address||'Chưa có địa chỉ')}${s.email?' · '+esc(s.email):''}</div><div style="margin:5px 0"><span class="badge">${ic('store')} ${esc(({ 'in-an':'In ấn','shop-decal':'Shop Decal','film-noi-that':'Film nội thất','film-cach-nhiet':'Film cách nhiệt' })[s.category]||'In ấn')}</span></div>${s.taxCode?`<div class="mut">MST: ${esc(s.taxCode)}</div>`:''}${s.note?`<div class="mut">${esc(s.note)}</div>`:''}</div></div><div class="row" style="flex-wrap:wrap;gap:6px"><button class="btn gh sm" data-a="supplierFiles" data-id="${s.id}">${ic('filetext')} Xem báo giá${(db.supplierQuotes||[]).filter(q=>q.supplierId===s.id&&q.attachment).length?' ('+(db.supplierQuotes||[]).filter(q=>q.supplierId===s.id&&q.attachment).length+')':''}</button><button type="button" class="catalog-icon edit" data-a="editSupplier" data-id="${s.id}" title="Sửa nhà cung cấp" aria-label="Sửa nhà cung cấp ${esc(s.name)}">${ic('pencil')}</button><button type="button" class="catalog-icon delete" data-a="delSupplier" data-id="${s.id}" title="Xóa nhà cung cấp" aria-label="Xóa nhà cung cấp ${esc(s.name)}">${ic('trash')}</button></div></div></div>`).join(''):emp(supAll.length,'Chưa có nhà cung cấp. Bấm “Thêm NCC” để nhập thông tin.')}`;
+ const all=[...(db.suppliers||[])].sort((a,b)=>String(a.name).localeCompare(String(b.name),'vi')),list=fapply('suppliers',all);
+ return`<div class="row sp"><div><h2>Nhà cung cấp</h2><div class="mut">${all.length} nhà cung cấp · Danh bạ và báo giá</div></div>${recordButton('Thêm NCC','newSupplier','','plus','')}</div>${fbar('suppliers',all)}
+ ${list.length?list.map(sup=>{const count=(db.supplierQuotes||[]).filter(q=>q.supplierId===sup.id&&q.attachment).length;
+ return recordRow({title:sup.name,avatar:sup.logo?`<img src="${esc(sup.logo)}" alt="">`:ic('store'),
+ meta:`<span class="badge">${esc(SUP_CAT[sup.category]||'In ấn')}</span><span>${esc(sup.phone||'Chưa có số điện thoại')}</span>${sup.contact?`<span>${esc(sup.contact)}</span>`:''}`,
+ detail:recordDetail('Thông tin nhà cung cấp',[sup.address&&esc(sup.address),sup.email&&esc(sup.email),sup.taxCode&&'MST: '+esc(sup.taxCode),sup.note&&esc(sup.note)].filter(Boolean).join('<br>')),
+ money:recordMetric('File báo giá',count),actions:recordButton('Báo giá','supplierFiles',sup.id,'filetext')+recordButton('Sửa','editSupplier',sup.id,'pencil')+recordMenu(recordButton('Xóa nhà cung cấp','delSupplier',sup.id,'trash','dg'))});
+ }).join(''):emp(all.length,'Chưa có nhà cung cấp')}`;
 }
 function expensesView(){
-  const mk=today().slice(0,7),expenses=[...db.expenses].sort((a,b)=>b.date.localeCompare(a.date));
-  const AS=archIds(),vis=expenses.filter(e=>!AS.has(e.orderId));
-  const expMon=expenses.filter(e=>e.date.startsWith(mk)).reduce((s,e)=>s+(+e.amount||0),0);
-  return`<div class="row sp"><div><h2>Chi phí</h2><div class="mut">Ghi nhận chi phí phát sinh và gắn vào đơn hàng để tính lãi lỗ.</div></div><button class="btn" data-a="newExp">${ic('plus')} Chi phí mới</button></div>
-    <div class="grid"><div class="card kpi"><small>Chi phí tháng này</small><b>${vnd(expMon)}</b></div><div class="card kpi"><small>Tổng chi phí</small><b>${vnd(expenses.reduce((s,e)=>s+(+e.amount||0),0))}</b></div></div>
-    ${fbar('exp',vis)}
-    ${fapply('exp',vis).length?fapply('exp',vis).map(e=>`<div class="card row sp"><div><b>${esc(e.cat)}</b> <span class="mut">${e.date}</span><div class="mut">${esc(e.note||'')} ${e.orderId?`<span class="badge ok">${esc((db.orders.find(o=>o.id===e.orderId)||{}).code||'Đơn đã xoá')}</span>`:'<span class="badge">Chưa gắn đơn</span>'}</div></div><div class="row"><b>${vnd(e.amount)}</b><button class="btn dg sm" data-a="delExp" data-id="${e.id}">×</button></div></div>`).join(''):emp(vis.length,'Chưa có chi phí')}`;
+ const all=[...db.expenses].sort((a,b)=>b.date.localeCompare(a.date)),AS=archIds(),visible=all.filter(e=>!AS.has(e.orderId)),list=fapply('exp',visible);
+ return`<div class="row sp"><h2>Chi phí</h2>${recordButton('Chi phí mới','newExp','','plus','')}</div>
+ <div class="grid"><div class="card kpi"><small>Chi phí tháng này</small><b>${vnd(all.filter(e=>e.date.startsWith(today().slice(0,7))).reduce((n,e)=>n+(+e.amount||0),0))}</b></div><div class="card kpi"><small>Tổng chi phí</small><b>${vnd(all.reduce((n,e)=>n+(+e.amount||0),0))}</b></div></div>${fbar('exp',visible)}
+ ${list.length?list.map(e=>recordRow({title:e.cat,code:e.date,avatar:ic('wallet'),meta:`<span class="badge ${e.orderId?'ok':''}">${esc(e.orderId?(db.orders.find(o=>o.id===e.orderId)||{}).code||'Đơn đã xóa':'Chi phí chung')}</span>${e.note?`<span>${esc(e.note)}</span>`:''}`,
+ money:recordMetric('Số tiền',vnd(e.amount)),actions:recordMenu(recordButton('Xóa chi phí','delExp',e.id,'trash','dg'))})).join(''):emp(visible.length,'Chưa có chi phí')}`;
 }
 function orderRevenue(o){
   // VAT is a pass-through amount, not operating revenue; the quote conversion stores it as a line item.
@@ -2778,12 +2775,16 @@ function orderCostBreakdown(o){
   return {buys:purchases.reduce((s,p)=>s+ptotal(p),0),exp:expenses.reduce((s,e)=>s+(+e.amount||0),0),count:purchases.length+expenses.length};
 }
 function profitView(){
-  const active=db.orders.filter(o=>valid(o)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
-  const shown=active.filter(o=>!o.archived);
-  return `<div class="row sp"><h2>Lãi lỗ theo đơn hàng</h2></div>
-  ${fbar('profit',shown)}
-  ${fapply('profit',shown).length?fapply('profit',shown).map(o=>{const rev=orderRevenue(o),bd=orderCostBreakdown(o),profit=rev-bd.buys-bd.exp,est=cogs(o),custName=orderCustomerName(o),supplierName=orderSupplierName(o);return `<div class="card"><div class="row sp"><div><b>${esc(o.code)} · ${esc(custName)}</b><div class="mut">${esc(o.date)} · ${esc(o.status||'Mới')}</div><div style="margin-top:5px">${supplierName?`<span class="badge vendor-badge">${ic('store')} NCC chính: ${esc(supplierName)}</span>`:'<span class="badge vendor-missing">Chưa gắn NCC chính</span>'}</div></div><span class="badge ${profit<0?'bd':bd.count?'ok':'wr'}">${bd.count?'Đã ghi '+bd.count+' khoản':'Chưa ghi chi phí'}</span></div><div class="grid" style="margin-top:10px"><div><small class="mut">Doanh thu trước VAT</small><div><b>${vnd(rev)}</b></div></div><div><small class="mut">Mua hàng / xưởng</small><div><b>${vnd(bd.buys)}</b></div></div><div><small class="mut">Chi phí khác</small><div><b>${vnd(bd.exp)}</b></div></div><div><small class="mut">Lãi theo khoản đã ghi</small><div><b class="${bd.count===0?'mut':profit<0?'neg':'pos'}">${bd.count===0?'Chưa đủ dữ liệu':vnd(profit)}</b></div></div></div><div class="mut" style="margin-top:8px">Giá vốn tham khảo trong danh mục: ${vnd(est)} · ${bd.count?'Đã ghi '+bd.count+' giao dịch liên quan':'Chưa có giao dịch mua hàng/chi phí gắn với đơn này'}.</div><div class="row" style="margin-top:8px"><button class="btn gh sm" data-a="newPurchaseForOrder" data-id="${o.id}">＋ Ghi tiền xưởng</button><button class="btn gh sm" data-a="newExpForOrder" data-id="${o.id}">＋ Ghi chi phí</button><button class="btn gh sm" data-a="editOrder" data-id="${o.id}">Xem / sửa đơn</button></div></div>`}).join(''):'<div class="empty">Chưa có đơn hàng để tính lãi lỗ.</div>'}`;
+ const all=db.orders.filter(o=>valid(o)&&!o.archived).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code)),list=fapply('profit',all);
+ return`<div class="row sp"><h2>Lãi lỗ theo đơn hàng</h2></div>${fbar('profit',all)}
+ ${list.length?list.map(o=>{const bd=orderCostBreakdown(o),rev=orderRevenue(o),profit=rev-bd.buys-bd.exp;
+ return recordRow({title:orderCustomerName(o),code:o.code,meta:`<span>${esc(o.date)} · ${esc(o.status)}</span><span class="badge ${bd.count?profit<0?'bd':'ok':'wr'}">${bd.count?bd.count+' khoản chi':'Chưa ghi chi phí'}</span>`,
+ detail:recordDetail('Chi tiết chi phí',`Mua hàng / xưởng: ${vnd(bd.buys)}<br>Chi phí khác: ${vnd(bd.exp)}<br>Giá vốn tham khảo: ${vnd(cogs(o))}<br>NCC: ${esc(orderSupplierName(o)||'Chưa gắn NCC')}`),
+ money:recordMetric('Doanh thu trước VAT',vnd(rev))+recordMetric('Chi phí đã ghi',vnd(bd.buys+bd.exp))+recordMetric('Lãi theo khoản đã ghi',bd.count?vnd(profit):'Chưa đủ dữ liệu',bd.count?profit<0?'neg':'pos':''),
+ actions:recordButton('Xem đơn','editOrder',o.id,'eye')+recordMenu(recordButton('Ghi tiền xưởng','newPurchaseForOrder',o.id,'cart')+recordButton('Ghi chi phí','newExpForOrder',o.id,'wallet'))});
+ }).join(''):'<div class="empty">Chưa có đơn hàng để tính lãi lỗ.</div>'}`;
 }
+
 
 /* ---------- Lưu trữ đơn hàng ---------- */
 const DONE_ST=['Hoàn thành','Đã giao'];
@@ -2811,19 +2812,14 @@ function archiveData(){
   return{AR,list:fapply('archive',AR)};
 }
 function archiveView(){
-  const{AR,list}=archiveData();
-  const revenue=AR.reduce((s,o)=>s+orderRevenue(o),0);
-  return`<div class="row sp"><div><h2>Lưu trữ</h2><div class="mut">Đơn đã hoàn tất được cất khỏi danh sách chính cho gọn. Doanh thu, công nợ và báo cáo vẫn tính cả đơn lưu trữ. Khi xoá vĩnh viễn, tạm ứng, báo giá, phiếu mua hàng và chi phí gắn với đơn cũng bị xoá theo.</div></div>${isMgr()&&list.length?`<button class="btn dg" data-a="purgeArchive">${ic('trash')} Xoá ${list.length} đơn</button>`:''}</div>
-  <div class="grid"><div class="card kpi"><small>Đơn đã lưu trữ</small><b>${AR.length}</b></div><div class="card kpi"><small>Doanh thu trước VAT</small><b>${vnd(revenue)}</b></div></div>
-  ${fbar('archive',AR)}
-  ${list.length?list.map(o=>{const k=orderLinks([o.id]);return`<div class="card">
-    <div class="row sp"><b>${esc(o.code)} · ${esc(orderCustomerName(o))}</b><b>${vnd(total(o))}</b></div>
-    <div class="mut">${esc(o.date||'')} · ${esc(o.status||'')}${o.archivedAt?' · lưu trữ '+esc(o.archivedAt):''}</div>
-    <div class="row" style="gap:6px;margin-top:6px"><span class="badge ${o.paid?'ok':'wr'}">${o.paid?'Đã thu':'Chưa thu'}</span><span class="mut">${k.d} tạm ứng · ${k.q} báo giá · ${k.p} phiếu mua · ${k.e} chi phí</span></div>
-    <div class="row" style="margin-top:8px"><button class="btn gh sm" data-a="previewOrder" data-id="${o.id}">👁 Xem</button><button class="btn gh sm" data-a="unarchiveOrder" data-id="${o.id}">${ic('undo')} Khôi phục</button>${isMgr()?`<button class="btn dg sm" data-a="delOrder" data-id="${o.id}">${ic('trash')} Xoá vĩnh viễn</button>`:''}</div></div>`}).join(''):emp(AR.length,'Chưa có đơn nào trong lưu trữ')}`;
+ const {AR,list}=archiveData();
+ return`<div class="row sp"><div><h2>Lưu trữ</h2><div class="mut">Đơn hoàn tất vẫn được tính trong doanh thu và báo cáo.</div></div>${isMgr()&&list.length?recordButton('Xóa '+list.length+' đơn','purgeArchive','','trash','dg'):''}</div>
+ <div class="grid"><div class="card kpi"><small>Đơn đã lưu trữ</small><b>${AR.length}</b></div><div class="card kpi"><small>Doanh thu trước VAT</small><b>${vnd(AR.reduce((n,o)=>n+orderRevenue(o),0))}</b></div></div>${fbar('archive',AR)}
+ ${list.length?list.map(o=>{const k=orderLinks([o.id]);return recordRow({title:orderCustomerName(o),code:o.code,meta:`<span>${esc(o.date)} · ${esc(o.status)}</span><span class="badge ${o.paid?'ok':'wr'}">${o.paid?'Đã thu':'Chưa thu'}</span>${o.archivedAt?`<span>Lưu ${esc(o.archivedAt)}</span>`:''}`,
+ detail:recordDetail('Dữ liệu liên quan',`${k.d} tạm ứng · ${k.q} báo giá · ${k.p} phiếu mua · ${k.e} chi phí`),money:recordMetric('Giá trị đơn',vnd(total(o))),
+ actions:recordButton('Xem','previewOrder',o.id,'eye')+recordButton('Khôi phục','unarchiveOrder',o.id,'undo')+(isMgr()?recordMenu(recordButton('Xóa vĩnh viễn và dữ liệu liên quan','delOrder',o.id,'trash','dg')):'')});}).join(''):emp(AR.length,'Chưa có đơn nào trong lưu trữ')}`;
 }
 
-/* ---------- Bộ lọc dùng chung cho các module ---------- */
 const VF={};
 const thisMonth=d=>String(d||'').startsWith(today().slice(0,7));
 const custDue=c=>db.orders.filter(o=>o.cid===c.id&&valid(o)).reduce((t,o)=>t+orderDue(o),0);
@@ -2886,14 +2882,24 @@ function navHTML(tabs){
   return html;
 }
 function layoutTwoColumnModules(){
- const supported=['quote','cust','archive','prod','purchases','suppliers','exp'];
+ const supported=['quote','cust','archive','prod','purchases','suppliers','exp','profit'];
  if(!supported.includes(view))return;
  const app=document.getElementById('app');
- if(view==='prod'){app.querySelector('.catalog-grid')?.classList.add('module-card-grid');return}
+ if(view==='prod'){app.querySelector('.catalog-grid')?.classList.add('module-card-grid','workspace-list');return}
  const cards=[...app.children].filter(el=>el.classList.contains('card'));
  if(!cards.length)return;
- const grid=document.createElement('div');grid.className='module-card-grid';
+ const grid=document.createElement('div');grid.className='module-card-grid workspace-list';
  cards[0].before(grid);cards.forEach(card=>grid.appendChild(card));
+}
+function compactWorkspaceLayout(){
+ if(['home','quote','more'].includes(view))return;
+ const app=document.getElementById('app'),search=app.querySelector(':scope > .module-search');
+ let heading=app.querySelector(':scope > .row.sp');
+ if(!heading){const h=app.querySelector(':scope > h2');if(h){heading=document.createElement('div');heading.className='row sp';h.before(heading);heading.append(h)}}
+ if(!heading||!search)return;
+ heading.classList.add('workspace-heading');app.prepend(heading);
+ const tools=document.createElement('div');tools.className='workspace-tools';heading.after(tools);tools.append(search);
+ const filters=app.querySelector(':scope > .fbar');if(filters)tools.append(filters);
 }
 function render(){if(['deposits','tasks','chat'].includes(view))view='orders';
   $('#who').innerHTML=whoHTML();
@@ -2909,6 +2915,7 @@ function render(){if(['deposits','tasks','chat'].includes(view))view='orders';
   const content=views[view]();
   $('#app').innerHTML=(!CLOUD&&!LS?WARN:'')+(view==='quote'?content.replace('<!-- quote-search -->',searchBar):searchBar+content)+`<div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả phù hợp.</div>`;
   layoutTwoColumnModules();
+  compactWorkspaceLayout();
   applyModuleSearch();
   updateStatusSelectUI();
   refreshOpenOrderPreviews();

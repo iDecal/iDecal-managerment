@@ -3,7 +3,7 @@
   "short_name": "iDecal",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f4f6fa",
+  "background_color": "#e5eaf2",
   "theme_color": "#16243b",
   "icons": [
     {
