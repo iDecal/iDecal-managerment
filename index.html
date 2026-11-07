@@ -960,43 +960,64 @@ function startSync(){
   if(unsubs.length)return;
   need=0;loaded={};synced={counters:JSON.stringify({seq:0,qseq:0,pseq:0}),shop:'{}',suppliers:'[]',workers:'[]'};
   COLS.filter(c=>isMgr()||!MGR_COLS.includes(c)).forEach(c=>sub(fs.collection(c),s=>{
-    db[c]=s.docs.map(d=>d.data());
-    synced[c]=Object.fromEntries(db[c].map(x=>[x.id,JSON.stringify(x)]));
+    if(s.metadata?.hasPendingWrites)return;
+    mergeCloudCollection(c,s.docs.map(d=>d.data()));
   },c));
-  sub(fs.collection('meta'),s=>{s.docs.forEach(d=>{
-    if(d.id==='counters'){const v=d.data();db.seq=v.seq||0;db.qseq=v.qseq||0;db.pseq=v.pseq||0;synced.counters=JSON.stringify(cntObj())}
-    if(d.id==='shop'){db.shop=d.data();synced.shop=JSON.stringify(db.shop)}
-    if(d.id==='suppliers'){db.suppliers=d.data().items||[];synced.suppliers=JSON.stringify(db.suppliers)}
-    if(d.id==='workers'){db.workers=d.data().items||[];synced.workers=JSON.stringify(db.workers)}
+  sub(fs.collection('meta'),s=>{if(s.metadata?.hasPendingWrites)return;s.docs.forEach(d=>{
+    if(d.id==='counters'){const v=d.data(),clean=JSON.stringify(cntObj())===synced.counters;if(clean){db.seq=v.seq||0;db.qseq=v.qseq||0;db.pseq=v.pseq||0}synced.counters=JSON.stringify({seq:v.seq||0,qseq:v.qseq||0,pseq:v.pseq||0})}
+    if(d.id==='shop'){const value=d.data();if(JSON.stringify(db.shop)===synced.shop)db.shop=value;synced.shop=JSON.stringify(value)}
+    if(d.id==='suppliers'){const value=d.data().items||[];if(JSON.stringify(db.suppliers)===synced.suppliers)db.suppliers=value;synced.suppliers=JSON.stringify(value)}
+    if(d.id==='workers'){const value=d.data().items||[];if(JSON.stringify(db.workers)===synced.workers)db.workers=value;synced.workers=JSON.stringify(value)}
   })},'meta');
   if(isOwner())sub(fs.collection('users'),s=>{usersList=s.docs.map(d=>({uid:d.id,...d.data()}))},'users');
   startCollab();
 }
 function stopSync(){stopCollab();unsubs.forEach(f=>f());unsubs=[];loaded={};need=0;ready=false;synced={};db=blank()}
 function checkReady(){if(!ready&&Object.keys(loaded).length>=need){ready=true;session='ready'}render()}
-function cloudSave(){
+let cloudSaveState=null;
+async function cloudSave(){
   if(!ready)return;
-  const ops=[],strip=x=>JSON.parse(JSON.stringify(x));
+  if(!cloudSaveState||cloudSaveState.baseline!==synced)cloudSaveState={baseline:synced,running:false,again:false};
+  const state=cloudSaveState;
+  if(state.running){state.again=true;return}
+  state.running=true;
+  const ops=[],strip=x=>JSON.parse(JSON.stringify(x)),baseline=state.baseline;
+  const add=(kind,ref,data,ack)=>ops.push({kind,ref,data,ack});
   for(const c of COLS){
     if(!loaded[c])continue;
-    const old=synced[c]||(synced[c]={}),cur=new Set();
-    for(const x of db[c]){cur.add(x.id);const j=JSON.stringify(x);if(old[x.id]!==j){old[x.id]=j;ops.push(['set',fs.collection(c).doc(x.id),strip(x)])}}
-    for(const id of Object.keys(old))if(!cur.has(id)){delete old[id];ops.push(['del',fs.collection(c).doc(id)])}
+    const old=baseline[c]||(baseline[c]={}),cur=new Set();
+    for(const x of db[c]){cur.add(x.id);const j=JSON.stringify(x);if(old[x.id]!==j)add('set',fs.collection(c).doc(x.id),strip(x),()=>{(baseline[c]||(baseline[c]={}))[x.id]=j})}
+    for(const id of Object.keys(old))if(!cur.has(id))add('del',fs.collection(c).doc(id),null,()=>{delete (baseline[c]||{})[id]});
   }
-  const cj=JSON.stringify(cntObj());
-  if(synced.counters!==cj){synced.counters=cj;ops.push(['set',fs.collection('meta').doc('counters'),cntObj()])}
-  const sj=JSON.stringify(db.shop||{});
-  if(isMgr()&&synced.shop!==sj){synced.shop=sj;ops.push(['set',fs.collection('meta').doc('shop'),strip(db.shop||{})])}
-  const suj=JSON.stringify(db.suppliers||[]);
-  if(isMgr()&&synced.suppliers!==suj){synced.suppliers=suj;ops.push(['set',fs.collection('meta').doc('suppliers'),{items:strip(db.suppliers||[])}])}
-  const wj=JSON.stringify(db.workers||[]);
-  if(isMgr()&&synced.workers!==wj){synced.workers=wj;ops.push(['set',fs.collection('meta').doc('workers'),{items:strip(db.workers||[])}])}
-  for(let i=0;i<ops.length;i+=400){
-    const b=fs.batch();
-    ops.slice(i,i+400).forEach(o=>o[0]==='set'?b.set(o[1],o[2]):b.delete(o[1]));
-    b.commit().catch(e=>toast(e.code==='permission-denied'?'Bạn không có quyền thực hiện thao tác này':'Không lưu được: '+e.message,'err'));
+  const meta=(key,doc,value,data=value)=>{const j=JSON.stringify(value);if(baseline[key]!==j)add('set',fs.collection('meta').doc(doc),strip(data),()=>{baseline[key]=j})};
+  meta('counters','counters',cntObj());
+  if(isMgr()){meta('shop','shop',db.shop||{});meta('suppliers','suppliers',db.suppliers||[],{items:db.suppliers||[]});meta('workers','workers',db.workers||[],{items:db.workers||[]})}
+  try{
+    for(let i=0;i<ops.length;i+=400){
+      if(!ready||synced!==baseline)return;
+      const chunk=ops.slice(i,i+400),batch=fs.batch();
+      chunk.forEach(o=>o.kind==='set'?batch.set(o.ref,o.data):batch.delete(o.ref));
+      await batch.commit();
+      if(synced!==baseline)return;
+      chunk.forEach(o=>o.ack());
+    }
+  }catch(e){toast(e.code==='permission-denied'?'Bạn không có quyền thực hiện thao tác này. Dữ liệu chưa được lưu.':'Chưa lưu được dữ liệu: '+e.message+'. Hãy kiểm tra kết nối rồi thử lưu lại.','err')}
+  finally{
+    state.running=false;
+    if(state.again&&ready&&synced===baseline){state.again=false;void cloudSave()}
   }
 }
+// Preserve unsaved local edits when Firestore emits cached, pending or remote snapshots.
+function mergeCloudCollection(c,docs){
+  const old=synced[c]||{},local=new Map((db[c]||[]).map(x=>[x.id,x])),remote=new Map(docs.map(x=>[x.id,x])),merged=[];
+  for(const id of new Set([...local.keys(),...remote.keys(),...Object.keys(old)])){
+    const value=local.get(id),dirty=value?JSON.stringify(value)!==old[id]:Object.hasOwn(old,id);
+    const next=dirty?value:remote.get(id);if(next)merged.push(next);
+  }
+  db[c]=merged;
+  synced[c]=Object.fromEntries(docs.map(x=>[x.id,JSON.stringify(x)]));
+}
+
 const hasLocal=()=>{try{const d=JSON.parse(LS.getItem(KEY));return !!d&&COLS.some(k=>(d[k]||[]).length)}catch(e){return false}};
 const STATUS=['Mới','Đang thiết kế','Đang in','Hoàn thành','Huỷ'];
 const STATUS_ICONS={'Mới':'🆕','Đang thiết kế':'🎨','Đang in':'🖨️','Hoàn thành':'✅','Huỷ':'⛔'};
@@ -1863,7 +1884,7 @@ function depositForm(orderId){
     <div id="depList"></div>`,
   (fd)=>{
     const o=db.orders.find(x=>x.id===fd.get('oid')),amount=+fd.get('amount')||0;
-    if(!o||amount<=0){alert('Nhập số tiền tạm ứng lớn hơn 0');return false}
+    if(!o||!Number.isSafeInteger(amount)||amount<=0||amount>orderDue(o)){alert('Tạm ứng phải là số tiền nguyên lớn hơn 0 và không vượt số tiền còn phải thu.');return false}
     (o.deposits=o.deposits||[]).push({id:uid(),date:fd.get('date'),amount,method:fd.get('method'),note:String(fd.get('note')||'').trim()});
     let msg='Đã ghi nhận tạm ứng '+vnd(amount);
     if(!o.paid&&dep(o)>=total(o)){o.paid=true;msg+=' · đơn đã thu đủ'}
@@ -1873,6 +1894,7 @@ function depositForm(orderId){
   const upd=()=>{
     const o=db.orders.find(x=>x.id===sel.value);if(!o)return;
     m.querySelector('#depInfo').innerHTML=`<div class="row sp"><span>Tổng đơn</span><b>${vnd(total(o))}</b></div><div class="row sp"><span>Đã tạm ứng</span><b>${vnd(dep(o))}</b></div><div class="row sp"><span>Còn phải thu</span><b class="${orderDue(o)?'neg':'pos'}">${vnd(orderDue(o))}</b></div>`;
+    amt.max=String(orderDue(o));amt.step='1';
     amt.placeholder=orderDue(o)?String(orderDue(o)):'';
     m.querySelector('#depList').innerHTML=(o.deposits||[]).length?'<label>Các lần đã thu</label>'+o.deposits.map(d=>`<div class="row sp" style="padding:6px 0;border-top:1px solid var(--bd)"><span>${esc(d.date)} · ${esc(d.method||'')}${d.note?' · '+esc(d.note):''}</span><span><b>${vnd(d.amount)}</b> <button type="button" class="btn dg sm" data-del="${d.id}">Xoá</button></span></div>`).join(''):'';
   };
@@ -3114,7 +3136,48 @@ document.addEventListener('change',e=>{
     save();render();return}
   if(e.target.matches('select[name="status"]')){updateStatusSelectUI(document);return}
 });
-$('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.orders)throw 0;if(confirm('Ghi đè dữ liệu hiện tại bằng file sao lưu?')){db=Object.assign(blank(),d);save();render()}}catch(_){alert('File không hợp lệ')}};r.readAsText(f);e.target.value=''};
+function validateBackup(value){
+  const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
+  const fail=()=>{throw Error('File sao lưu không đúng cấu trúc hoặc có giá trị không hợp lệ.')};
+  const walk=(x,depth=0)=>{if(depth>40)fail();if(typeof x==='number'&&!Number.isFinite(x))fail();if(x&&typeof x==='object')for(const [k,v]of Object.entries(x)){if(['__proto__','prototype','constructor'].includes(k))fail();walk(v,depth+1)}};
+  if(!object(value)||!Array.isArray(value.orders))fail();walk(value);
+  const result=blank();
+  const arrays=['orders','customers','products','expenses','quotes','purchases','suppliers','workers','supplierQuotes'];
+  const strings=['name','code','date','status','cid','cname','supplier','supplierId','orderId','quoteId','note','phone','email','unit','kind','description','until','completionDate','depositTerms','paymentTerms','warranty','by','byEmail','img','address','addr','taxCode','contact','contactName','contactPhone','contactEmail','contactTitle','installDue','deliveryDue','fulfillmentType','installStatus','installAddress','installNote','orderArea','orderDistrict','archivedAt','method','recipient','cat','skill','group','area','district','areaNote','logo','sourceType'];
+  const numbers=['amount','qty','price','cost','stock','discount','vatRate','advanceAmount','priority'];
+  const record=x=>{if(!object(x))fail();for(const k of strings)if(k in x&&typeof x[k]!=='string')fail();for(const k of numbers)if(k in x&&(typeof x[k]!=='number'||!Number.isFinite(x[k])))fail();for(const k of ['paid','archived','active'])if(k in x&&typeof x[k]!=='boolean')fail()};
+  for(const key of arrays){
+    if(!(key in value))continue;if(!Array.isArray(value[key]))fail();const ids=new Set();
+    for(const row of value[key]){
+      record(row);if(typeof row.id!=='string'||!row.id||ids.has(row.id))fail();ids.add(row.id);
+      if(['customers','products','suppliers','workers'].includes(key)&&typeof row.name!=='string')fail();
+      if(key==='expenses'&&(typeof row.amount!=='number'||row.amount<0||typeof row.date!=='string'))fail();
+      if(key==='products'&&(['price','cost'].some(k=>typeof row[k]!=='number'||row[k]<0)))fail();
+      if(['orders','quotes','purchases','supplierQuotes'].includes(key)){
+        if(typeof row.code!=='string'||typeof row.date!=='string'||!Array.isArray(row.items))fail();
+        for(const item of row.items){record(item);if(typeof item.name!=='string'||typeof item.qty!=='number'||!Number.isFinite(item.qty))fail();const money=key==='purchases'?'cost':'price';if(typeof item[money]!=='number'||!Number.isFinite(item[money]))fail()}
+      }
+      for(const list of ['deposits','advances','outAdvances'])if(list in row){if(!Array.isArray(row[list]))fail();for(const entry of row[list]){record(entry);if(typeof entry.amount!=='number'||!Number.isFinite(entry.amount)||entry.amount<=0)fail()}}
+      for(const k of ['attachment','cccdFile','supplierInfo'])if(row[k]!=null){if(!object(row[k]))fail();for(const [field,v]of Object.entries(row[k]))if(v!==null&&!['string','number','boolean'].includes(typeof v))fail()}
+      if('workerIds'in row&&(!Array.isArray(row.workerIds)||row.workerIds.some(id=>typeof id!=='string')))fail();
+    }
+    result[key]=value[key];
+  }
+  for(const key of ['seq','qseq','pseq'])if(key in value){if(!Number.isSafeInteger(value[key])||value[key]<0)fail();result[key]=value[key]}
+  if('shop'in value){if(!object(value.shop))fail();for(const [key,v]of Object.entries(value.shop)){if(key==='tpl'){if(!object(v)||Object.values(v).some(x=>x!==null&&!['string','number','boolean'].includes(typeof x)))fail()}else if(v!==null&&!['string','number','boolean'].includes(typeof v))fail()}result.shop=value.shop}
+  return result;
+}
+$('#file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;const reader=new FileReader();
+  reader.onload=()=>{try{
+    if(CLOUD&&!isOwner())throw Error('Chỉ chủ cửa hàng được nhập sao lưu.');
+    const next=validateBackup(JSON.parse(reader.result));
+    if(!confirm('Ghi đè dữ liệu hiện tại bằng file sao lưu?'))return;
+    if(!CLOUD){if(!LS)throw Error('Trình duyệt không cho phép lưu dữ liệu.');LS.setItem(KEY,JSON.stringify(next))}
+    db=next;if(CLOUD)save();render();toast('Đã nhập sao lưu'+(CLOUD?' · đang lưu lên đám mây':''),'ok');
+  }catch(err){alert('Không nhập sao lưu: '+(err.message||'File không hợp lệ'))}};
+  reader.onerror=()=>alert('Không đọc được file sao lưu.');reader.readAsText(f);e.target.value='';
+};
 if(CLOUD)initCloud();else render();
 /* Mobile browser Back: screens, dialogs and navigation drawer. */
 (()=>{

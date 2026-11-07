@@ -55,3 +55,38 @@ Thành viên mới đăng nhập Gmail lần đầu sẽ ở trạng thái **Ch�
 - Zalo/Facebook mở link bằng trình duyệt riêng, Google chặn đăng nhập ở đó. Hãy mở link bằng Chrome hoặc Safari.
 - Gói miễn phí Firebase (Spark) đủ cho cửa hàng nhỏ. Nếu vượt hạn mức, Firebase sẽ báo.
 - Không đăng xuất được hay quên đăng nhập: bấm **Thoát** ở góc phải trên cùng.
+
+## Kiểm thử các luồng dữ liệu
+
+- Kiểm thử hồi quy lưu đám mây và xác thực sao lưu (không cần cài thêm):
+  `node --test tests/flow-regressions.test.cjs`
+- Kiểm thử giao diện bằng Playwright/Chromium: chạy máy chủ tĩnh tại repository với
+  `python3 -m http.server 8010 --bind 127.0.0.1`, rồi chạy
+  `IDECAL_TEST_URL=http://127.0.0.1:8010 node tests/browser-regressions.cjs`.
+  Cần module `playwright` và Chromium (`CHROMIUM_PATH` nếu không ở `/usr/bin/chromium`).
+  Bài kiểm thử thay cấu hình Firebase trong browser bằng chế độ offline, không ghi dữ liệu thật.
+- Kiểm thử Firestore Rules: cài công cụ vào thư mục riêng, ví dụ
+  `npm install --prefix /tmp/idecal-test-tools --no-save firebase-tools @firebase/rules-unit-testing firebase`;
+  chạy emulator với
+  `/tmp/idecal-test-tools/node_modules/.bin/firebase emulators:start --only firestore --project demo-idecal`;
+  sau đó chạy
+  `NODE_PATH=/tmp/idecal-test-tools/node_modules node tests/firestore-rules.cjs`.
+  Cần Java 21 trở lên. Chỉ dùng project demo này cho kiểm thử; không nối bài kiểm thử vào Firebase thật.
+
+### Áp dụng Firestore Rules
+
+Deploy website trên Vercel **không cập nhật** Firestore Rules. File `firestore.rules`
+đã cấu hình email chủ theo `config.js`, quyền báo giá NCC, danh sách thành viên,
+công việc và tin nhắn nội bộ. Không đưa dữ liệu riêng tư mới vào hồ sơ `users`:
+thành viên đã duyệt được đọc danh sách hồ sơ để phục vụ phân công và chat.
+
+Sau khi kiểm tra Rules hiện tại và giữ lại các quyền bổ sung cần thiết của dự án,
+đăng nhập Firebase bằng tài khoản có quyền quản lý project rồi chạy:
+
+```sh
+firebase deploy --only firestore:rules --project register-app-3c0ec
+```
+
+Hoặc mở Firebase Console → project `register-app-3c0ec` → Firestore Database →
+Rules, đối chiếu bản hiện tại với `firestore.rules`, cập nhật và Publish.
+Không cần gửi mật khẩu, token hoặc khóa tài khoản dịch vụ qua chat.
