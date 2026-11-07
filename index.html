@@ -2170,22 +2170,27 @@ function quotes(){
   const AS=archIds();
   const all=[...db.quotes].filter(q=>!AS.has(q.orderId)).sort((a,b)=>b.date.localeCompare(a.date)||b.code.localeCompare(a.code));
   const list=fapply('quote',all);
-  return`<div class="row sp"><h2>Báo giá</h2><div class="row">${isMgr()?`<button class="btn gh" data-a="tpl">${ic('sliders')} Mẫu</button>`:''}<button class="btn" data-a="newQuote">${ic('plus')} Báo giá</button></div></div>
-  ${fbar('quote',all)}
-  ${list.length?list.map(q=>`<div class="card quote-card quote-refined">
-    <div class="quote-card-head"><div class="quote-identity"><span class="quote-avatar">${ic('filetext')}</span><div><small>${esc(q.code)}</small><b>${esc(qname(q))}</b></div></div><b class="quote-card-total">${vnd(qtotal(q))}</b></div>
-    ${itemsDet(q.items,q.date+(q.until?' · HL đến '+q.until:'')+(q.completionDate?' · Hoàn thành dự kiến: '+q.completionDate:''))}
-    ${q.by?`<div class="mut">${ic('users')} Người báo giá: <b>${esc(q.by)}</b></div>`:''}
-    <div class="row sp quote-remaining"><span>Tạm ứng: <b>${vnd(qadvance(q))}</b></span><span>Còn lại: <b>${vnd(qremaining(q))}</b></span></div>
-    <div class="quote-card-actions">
-      <select class="qs" data-id="${q.id}" style="width:auto" ${db.orders.some(o=>o.id===q.orderId)?'disabled':''}>${QST.map(s=>`<option ${s===q.status?'selected':''}>${s}</option>`).join('')}</select>
-      ${db.orders.some(o=>o.id===q.orderId)?`<span class="badge ok quote-converted">Đã chuyển thành đơn ${esc((db.orders.find(o=>o.id===q.orderId)||{}).code)}</span><button class="btn gh sm" data-a="viewOrder">Xem đơn</button>`:(q.status==='Từ chối'?'':`<button class="btn sm" data-a="toOrder" data-id="${q.id}">${ic('check')} Khách chấp nhận</button>`)}
-      <button type="button" class="catalog-icon edit" data-a="previewQuote" data-id="${q.id}" title="Xem báo giá" aria-label="Xem báo giá ${esc(q.code)}">${ic('eye')}</button>
-      <button type="button" class="catalog-icon edit" data-a="pdfQuote" data-id="${q.id}" title="Tải PDF" aria-label="Tải PDF ${esc(q.code)}">${ic('pdf')}</button>
-      <button type="button" class="catalog-icon edit" data-a="printQuote" data-id="${q.id}" title="In báo giá" aria-label="In báo giá ${esc(q.code)}">${ic('printer')}</button>
-      <button type="button" class="catalog-icon edit" data-a="editQuote" data-id="${q.id}" title="Sửa báo giá và tạm ứng" aria-label="Sửa báo giá ${esc(q.code)}">${ic('pencil')}</button><button type="button" class="btn gh sm" data-a="editQuote" data-id="${q.id}">${ic('banknote')} Tạm ứng</button>
-      ${isMgr()?`<button type="button" class="catalog-icon delete" data-a="delQuote" data-id="${q.id}" title="Xóa báo giá" aria-label="Xóa báo giá ${esc(q.code)}">${ic('trash')}</button>`:''}
-    </div></div>`).join(''):emp(all.length,'Chưa có báo giá')}`;
+  const dateLabel=value=>esc(String(value||'').replace(/^(\d{4})-(\d{2})-(\d{2})$/,'$3/$2/$1'));
+  return`<div class="quotes-header"><div><h2>Báo giá</h2><p>Theo dõi báo giá, tạm ứng và tiến độ chốt đơn.</p></div><div class="row">${isMgr()?`<button class="btn gh" data-a="tpl">${ic('sliders')} Mẫu báo giá</button>`:''}<button class="btn" data-a="newQuote">${ic('plus')} Tạo báo giá</button></div></div>
+  <div class="quotes-tools"><!-- quote-search -->${fbar('quote',all)}</div>
+  <div class="quote-list-caption"><span data-quote-count>${list.length} báo giá</span><span>Giá trị đã gồm VAT</span></div>
+  <div class="quotes-list">${list.length?list.map(q=>{
+    const order=db.orders.find(o=>o.id===q.orderId);
+    return`<article class="card quote-card quote-row">
+      <div class="quote-row-info">
+        <div class="quote-row-reference"><span class="quote-code">${esc(q.code)}</span><select class="qs" data-id="${esc(q.id)}" aria-label="Trạng thái báo giá ${esc(q.code)}" ${order?'disabled':''}>${QST.map(status=>`<option ${status===q.status?'selected':''}>${status}</option>`).join('')}</select>${order?`<button type="button" class="quote-order-link" data-a="viewOrder">${ic('check')} ${esc(order.code)}</button>`:''}</div>
+        <h3>${esc(qname(q))}</h3>
+        <div class="quote-row-meta"><span>${dateLabel(q.date)}</span>${q.until?`<span>Hiệu lực ${dateLabel(q.until)}</span>`:''}${q.by?`<span>${ic('users')} ${esc(q.by)}</span>`:''}${q.completionDate?`<span>Dự kiến xong ${dateLabel(q.completionDate)}</span>`:''}</div>
+        <details class="quote-row-items"><summary>${q.items.length} hạng mục</summary><ul>${q.items.map(i=>`<li>${esc(i.name)} <b>×${fq(i.qty)}</b></li>`).join('')}</ul></details>
+      </div>
+      <div class="quote-row-money"><span class="quote-total-label">Tổng báo giá</span><b class="quote-card-total">${vnd(qtotal(q))}</b><div class="quote-remaining"><button type="button" class="quote-advance-link" data-a="editQuote" data-id="${esc(q.id)}" aria-label="Sửa tạm ứng ${esc(q.code)}"><span>Tạm ứng ${ic('pencil')}</span><b>${vnd(qadvance(q))}</b></button><div><span>Còn lại</span><b>${vnd(qremaining(q))}</b></div></div></div>
+      <div class="quote-row-actions"><button type="button" class="btn gh sm" data-a="previewQuote" data-id="${esc(q.id)}">${ic('eye')} Xem</button><button type="button" class="btn gh sm" data-a="editQuote" data-id="${esc(q.id)}">${ic('pencil')} Sửa</button><details class="mm quote-more"><summary class="btn gh sm" aria-label="Thêm thao tác ${esc(q.code)}" title="Thêm thao tác">${ic('more')}</summary><div class="mm-pop">
+      ${order?`<button type="button" data-a="viewOrder">${ic('clipboard')} Xem đơn ${esc(order.code)}</button>`:q.status==='Từ chối'?'':`<button type="button" data-a="toOrder" data-id="${esc(q.id)}">${ic('check')} Khách chấp nhận</button>`}
+      <button type="button" data-a="editQuote" data-id="${esc(q.id)}">${ic('banknote')} Sửa tạm ứng</button>
+      <button type="button" data-a="pdfQuote" data-id="${esc(q.id)}">${ic('pdf')} Tải PDF</button><button type="button" data-a="printQuote" data-id="${esc(q.id)}">${ic('printer')} In báo giá</button>
+      ${isMgr()?`<button type="button" class="dg" data-a="delQuote" data-id="${esc(q.id)}">${ic('trash')} Xóa báo giá</button>`:''}</div></details></div>
+    </article>`;
+  }).join(''):emp(all.length,'Chưa có báo giá')}</div>`;
 }
 
 /* Logo NCC: thu nhỏ PNG và giữ nền trong suốt, tránh tệp lớn khi đồng bộ. */
@@ -2866,6 +2871,7 @@ function searchNorm(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u
 function applyModuleSearch(){
   const q=searchNorm(moduleSearch);let shown=0;
   document.querySelectorAll('#app .card').forEach(card=>{const match=!q||searchNorm(card.textContent).includes(q);card.style.display=match?'':'none';if(match)shown++});
+  const quoteCount=document.querySelector('[data-quote-count]');if(quoteCount)quoteCount.textContent=shown+' báo giá'+(q?' phù hợp':'');
   const empty=document.querySelector('#searchNoResults');if(empty)empty.style.display=q&&shown===0?'block':'none';
   document.querySelectorAll('#app .empty').forEach(el=>{el.style.display=q?'none':''});
 }
@@ -2900,7 +2906,8 @@ function render(){if(['deposits','tasks','chat'].includes(view))view='orders';
   const TB=[['home','Tổng quan','home'],['orders','Đơn hàng','clipboard'],['quote','Báo giá','filetext'],['cust','Khách hàng','users']].filter(x=>tabs.some(t=>t.id===x[0]));
   $('#tabbar').innerHTML=TB.map(x=>`<button type="button" class="${view===x[0]?'on':''}" data-a="tab" data-id="${x[0]}"${view===x[0]?' aria-current="page"':''}>${ic(x[2])}<span>${x[1]}</span></button>`).join('')+`<button type="button" class="${TB.some(x=>x[0]===view)?'':'on'}" data-a="toggleNav" aria-label="Mở menu">${ic('menu')}<span>Menu</span></button>`;
   const searchBar=`<div class="module-search"><span class="search-ic">${ic('search',20)}</span><input id="moduleSearch" type="search" value="${esc(moduleSearch)}" placeholder="Tìm kiếm trong ${esc((tabs.find(t=>t.id===view)||{}).label||'module này')}…" aria-label="Tìm kiếm trong module hiện tại"><button type="button" data-a="clearSearch" title="Xoá tìm kiếm">×</button><div class="search-help">Tìm theo tên, mã, số điện thoại, nội dung hoặc thông tin hiển thị trong module này.</div></div>`;
-  $('#app').innerHTML=searchBar+(!CLOUD&&!LS?WARN:'')+views[view]()+`<div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả phù hợp.</div>`;
+  const content=views[view]();
+  $('#app').innerHTML=(!CLOUD&&!LS?WARN:'')+(view==='quote'?content.replace('<!-- quote-search -->',searchBar):searchBar+content)+`<div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả phù hợp.</div>`;
   layoutTwoColumnModules();
   applyModuleSearch();
   updateStatusSelectUI();
