@@ -141,7 +141,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid #8ca7ff;outline-offset
 .oc-mid-sec{background:#fafbfd;border-color:#e6ebf3;border-radius:11px}.oc-mid-sec small{font-size:10px;font-weight:650}
 .oc-a .btn.sm{font-size:11px;white-space:normal;line-height:1.4}
 @media(min-width:1200px){.kgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(min-width:701px){body>header .logo{width:186px;flex:none}.ov .md:not(.pv-md){width:min(960px,85vw)!important;max-width:960px!important;border-radius:18px;padding:26px 30px 28px}body[data-view=gemini] #gem-panel{left:236px}}
+@media(min-width:701px){body>header .logo{width:186px;flex:none}.ov .md:not(.pv-md){width:min(960px,85vw)!important;max-width:960px!important;border-radius:18px;padding:26px 30px 28px}}
 @media(min-width:701px) and (max-width:1100px){main#app{padding:26px 24px}.home-feed{grid-template-columns:1fr}.workspace-welcome h1{font-size:26px!important}.workspace-date{display:none}#app .kcard .kval,#app .kcard .kval.kval-money{font-size:22px}}
 @media(max-width:700px){
  :root{--hh:66px}

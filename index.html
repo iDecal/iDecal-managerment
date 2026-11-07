@@ -580,50 +580,6 @@ nav#nav{width:236px;gap:1px;padding:10px 8px calc(12px + env(safe-area-inset-bot
 .ncc-item-row input{width:100%;min-width:0;padding:9px 7px}
 @media(max-width:630px){.ncc-item-row{grid-template-columns:minmax(0,1fr) 75px 35px}.ncc-item-row input[name=itemName]{grid-column:1/3}.ncc-item-row input[name=itemQty]{grid-column:3}.ncc-item-row input[name=itemUnit]{grid-column:1}.ncc-item-row input[name=itemPrice]{grid-column:2}.ncc-item-row button{grid-column:3}}
 
-/* Gemini side assistant - scoped styles */
-#gem-launch{position:fixed;right:18px;bottom:22px;z-index:85;background:linear-gradient(135deg,#f0e8ff,#dbeafe);border:1px solid #c9b6ef;color:#49378d;border-radius:999px;padding:11px 17px;font:700 13px Inter,Arial,sans-serif;box-shadow:0 9px 25px #342a6440;cursor:pointer;display:flex;gap:9px;align-items:center}
-#gem-launch:hover{background:#e8ddff}
-#gem-panel{position:fixed;right:0;top:0;height:100dvh;width:min(410px,100vw);z-index:90;background:var(--card,#fff);color:var(--tx,#172b45);box-shadow:-8px 0 36px #10213b30;transform:translateX(105%);transition:transform .23s ease;display:flex;flex-direction:column;border-left:1px solid var(--bd,#dde5ef)}
-#gem-panel.open{transform:translateX(0)}
-#gem-panel *{box-sizing:border-box}
-#gem-panel button{cursor:pointer;font-family:inherit}
-#gem-panel .gm-head{padding:15px 16px;background:linear-gradient(115deg,#f1ecff,#eaf4ff);color:#29234e;border-bottom:1px solid #dce1f5;display:flex;justify-content:space-between;align-items:center}
-#gem-panel .gm-head strong{font-size:17px}
-#gem-panel .gm-sub{font-size:11px;color:#665e82}
-#gem-panel .gm-iconbtn{border:1px solid #d9d8eb;background:#fff;color:#42366d;border-radius:9px;padding:7px 9px;font-size:13px}
-#gem-panel .gm-config{padding:10px 13px;border-bottom:1px solid var(--bd,#dde5ef);display:grid;gap:7px}
-#gem-panel .gm-config label{font-size:11px;color:var(--mut,#64748b)}
-#gem-panel .gm-keyrow{display:flex;gap:6px}
-#gem-panel .gm-keyrow input{width:100%;min-width:0;border:1px solid var(--bd,#dde5ef);background:var(--card,#fff);color:var(--tx,#172b45);padding:9px;border-radius:9px;font-size:12px}
-#gem-panel .gm-info{color:var(--mut,#64748b);font-size:11px;line-height:1.5}
-#gem-panel .gm-stream{flex:1;overflow-y:auto;padding:15px 13px;display:flex;flex-direction:column;gap:12px}
-#gem-panel .gm-bubble{padding:11px 12px;border-radius:13px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5;font-size:13px;max-width:96%}
-#gem-panel .gm-bubble.user{background:#e9f2ff;color:#193c64;align-self:flex-end}
-#gem-panel .gm-bubble.ai{background:var(--bg,#f4f7fb);border:1px solid var(--bd,#dde5ef);align-self:flex-start}
-#gem-panel .gm-bubble img{display:block;max-width:180px;max-height:120px;object-fit:contain;border-radius:7px;margin-top:6px}
-#gem-panel .gm-compose{padding:11px;border-top:1px solid var(--bd,#dde5ef);display:grid;gap:9px;background:var(--card,#fff)}
-#gem-panel .gm-preview{display:flex;align-items:center;gap:8px;min-width:0;font-size:11px;color:var(--mut,#64748b)}
-#gem-panel .gm-preview img{width:46px;height:46px;object-fit:cover;border:1px solid #dde5ef;border-radius:8px}
-#gem-panel .gm-compose textarea{width:100%;resize:vertical;min-height:66px;max-height:140px;border:1px solid var(--bd,#dde5ef);background:var(--card,#fff);color:var(--tx,#172b45);border-radius:11px;padding:10px;font:13px/1.45 Inter,Arial,sans-serif}
-#gem-panel .gm-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-#gem-panel .gm-actions button{border:1px solid #dce1f3;border-radius:8px;background:#eef3fc;color:#394a72;padding:8px 10px;font-size:12px}
-#gem-panel .gm-actions .gm-send{margin-left:auto;background:#dedbfa;color:#302676;font-weight:700}
-#gem-panel .gm-actions button:disabled{opacity:.5;cursor:wait}
-#gem-panel .gm-status{font-size:11px;min-height:14px;color:var(--mut,#64748b)}
-@media(max-width:560px){#gem-launch{bottom:82px;right:12px}#gem-panel{width:100vw;border-left:0}#gem-panel .gm-compose{padding-bottom:calc(11px + env(safe-area-inset-bottom))}}
-@media(prefers-reduced-motion:reduce){#gem-panel{transition:none}}
-
-/* Gemini as full workspace under the left navigation, not a right overlay */
-#gem-launch{display:none!important}
-#gem-panel{visibility:hidden;pointer-events:none}
-body[data-view="gemini"] #gem-panel{visibility:visible;pointer-events:auto;position:fixed;left:236px;right:0;top:var(--hh);bottom:0;width:auto;height:auto;max-width:none;transform:none;transition:none;z-index:8;box-shadow:none;border:0;background:var(--bg,#f4f7fb);padding:14px max(18px,calc((100vw - 1250px)/2));gap:0}
-body[data-view="gemini"] #gem-panel .gm-head{border-radius:14px 14px 0 0;padding:16px 20px}
-body[data-view="gemini"] #gem-panel .gm-stream{background:var(--card,#fff);padding:20px 24px;gap:14px}
-body[data-view="gemini"] #gem-panel .gm-bubble{max-width:min(82%,780px);font-size:14px}
-body[data-view="gemini"] #gem-panel .gm-config{background:var(--card,#fff);padding:12px 20px}
-body[data-view="gemini"] #gem-panel .gm-compose{border-radius:0 0 14px 14px;padding:13px 20px}
-body[data-view="gemini"] #gem-panel .gm-compose textarea{min-height:84px}
-@media(max-width:560px){body[data-view="gemini"] #gem-panel{top:94px;left:0;bottom:calc(68px + env(safe-area-inset-bottom));padding:0 9px 5px;width:100%;border:0}body[data-view="gemini"] #gem-panel .gm-bubble{max-width:96%}body[data-view="gemini"] #gem-panel .gm-stream{padding:12px}body[data-view="gemini"] #gem-panel .gm-head{padding:10px}body[data-view="gemini"] #gem-panel .gm-config{padding:8px}body[data-view="gemini"] #gem-panel .gm-compose{padding:9px}body[data-view="gemini"] #gem-panel .gm-info{display:none}}
 .quote-advance{margin:16px 0;padding:14px 16px;border:1px solid var(--bd,#dce8f1);border-radius:12px;background:var(--bg,#f4f7fb)}.quote-advance legend{font-weight:700;padding:0 7px}.quote-advance .mut{font-size:12px;line-height:1.6;margin:8px 0 0}.quote-remaining{margin-top:10px;padding-top:10px;border-top:1px solid var(--bd,#dce8f1);gap:12px;flex-wrap:wrap}
 </style>
 <style id="customer-form-upgrade">.cust-section{border:1px solid var(--bd,#e5e7eb);padding:12px;border-radius:12px;margin:11px 0;background:rgba(125,155,190,.035)}.cust-section>strong{display:block;margin-bottom:10px}.cust-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 12px}.cust-form-grid label{min-width:0;margin:0}.customer-type-bar{margin-bottom:12px}@media(max-width:620px){.cust-form-grid{grid-template-columns:1fr}.cust-section{padding:10px}}.cust-more-details{background:#f8fbff;border-color:#d7e5f4}.cust-more-details summary{cursor:pointer;font-weight:700;color:#23628c;list-style:revert}.cust-more-details[open] summary{margin-bottom:13px}.cust-more-details .cust-extra-company{margin:12px 0;padding:12px;border-top:1px solid #dfe8ef}.cust-more-details .cust-extra-company>strong{display:block;margin-bottom:9px}.cust-more-details>.cust-form-grid{margin-top:10px}
@@ -1043,7 +999,6 @@ const TABS=[
   {id:'exp',icon:'wallet',label:'Chi phí',group:'Mua hàng & Chi phí',req:'mgr',color:'rose'},
   {id:'profit',icon:'chart',label:'Lãi lỗ đơn hàng',group:'Mua hàng & Chi phí',req:'mgr',color:'green'},
   {id:'workers',icon:'users',label:'Thợ thi công',group:'Nhân sự thi công',req:'all',color:'teal'},
-  {id:'gemini',icon:'image',label:'✦ Gemini AI',group:'Trợ lý AI',req:'all',color:'purple'},
   {id:'team',icon:'shield',label:'Thành viên',group:'Cài đặt',req:'owner',color:'indigo'},
   {id:'more',icon:'sliders',label:'Khác',group:'Cài đặt',req:'all',color:'slate'},
 ];
@@ -2891,7 +2846,7 @@ function fbar(v,list){
 }
 const itemsDet=(items,pre)=>`<div class="mut">${pre}</div><details class="itd"><summary>${items.length} mặt hàng · bấm để xem</summary><ul>${items.map(i=>`<li>${esc(i.name)} ${isVatItem(i)?'':`<b>×${fq(i.qty)}</b>`}</li>`).join('')}</ul></details>`;
 const emp=(n,txt)=>`<div class="empty">${n?'Không có mục nào khớp bộ lọc':txt}</div>`;
-const views={gemini:()=>`<div class="gemini-menu-placeholder" aria-hidden="true"></div>`,workers:workersView,tasks:tasksView,chat:chatView,archive:archiveView,home,deposits:depositsView,orders,quote:quotes,cust:custs,prod:prods,purchases:buys,suppliers:suppliersView,supplierQuotes:supplierQuotesView,exp:expensesView,profit:profitView,more,team};
+const views={workers:workersView,tasks:tasksView,chat:chatView,archive:archiveView,home,deposits:depositsView,orders,quote:quotes,cust:custs,prod:prods,purchases:buys,suppliers:suppliersView,supplierQuotes:supplierQuotesView,exp:expensesView,profit:profitView,more,team};
 function whoHTML(){
   if(!CLOUD||!me||session==='out')return'';
   return`<span class="who-txt">${esc(me.name||me.email)} · ${ROLE_NAME[me.role]||''}</span> <button class="btn" data-a="logout">Thoát</button>`;
@@ -2945,9 +2900,8 @@ function render(){if(['deposits','tasks','chat'].includes(view))view='orders';
   const TB=[['home','Tổng quan','home'],['orders','Đơn hàng','clipboard'],['quote','Báo giá','filetext'],['cust','Khách hàng','users']].filter(x=>tabs.some(t=>t.id===x[0]));
   $('#tabbar').innerHTML=TB.map(x=>`<button type="button" class="${view===x[0]?'on':''}" data-a="tab" data-id="${x[0]}"${view===x[0]?' aria-current="page"':''}>${ic(x[2])}<span>${x[1]}</span></button>`).join('')+`<button type="button" class="${TB.some(x=>x[0]===view)?'':'on'}" data-a="toggleNav" aria-label="Mở menu">${ic('menu')}<span>Menu</span></button>`;
   const searchBar=`<div class="module-search"><span class="search-ic">${ic('search',20)}</span><input id="moduleSearch" type="search" value="${esc(moduleSearch)}" placeholder="Tìm kiếm trong ${esc((tabs.find(t=>t.id===view)||{}).label||'module này')}…" aria-label="Tìm kiếm trong module hiện tại"><button type="button" data-a="clearSearch" title="Xoá tìm kiếm">×</button><div class="search-help">Tìm theo tên, mã, số điện thoại, nội dung hoặc thông tin hiển thị trong module này.</div></div>`;
-  $('#app').innerHTML=(view==='gemini'?'':searchBar+(!CLOUD&&!LS?WARN:''))+views[view]()+`<div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả phù hợp.</div>`;
+  $('#app').innerHTML=searchBar+(!CLOUD&&!LS?WARN:'')+views[view]()+`<div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả phù hợp.</div>`;
   layoutTwoColumnModules();
-  if(window.setGeminiMenuMode)window.setGeminiMenuMode(view==='gemini');
   applyModuleSearch();
   updateStatusSelectUI();
   refreshOpenOrderPreviews();
@@ -3229,75 +3183,5 @@ if(CLOUD)initCloud();else render();
 
 </script>
 
-<button type="button" id="gem-launch" aria-controls="gem-panel" aria-expanded="false" hidden>✦ Gemini AI</button>
-<aside id="gem-panel" role="dialog" aria-label="Trợ lý Gemini AI" aria-modal="false" inert>
-  <div class="gm-head"><div><strong>✦ Gemini AI</strong><div class="gm-sub">Hỏi đáp · Chụp màn hình · Phân tích ảnh</div></div><div style="display:flex;gap:6px"><button type="button" id="gm-clear" class="gm-iconbtn" title="Xóa hội thoại">Xóa chat</button><button type="button" id="gm-close" class="gm-iconbtn" aria-label="Về tổng quan">← Quay lại</button></div></div>
-  <div class="gm-config"><label for="gm-key">Gemini API key (chỉ dùng trong phiên, không lưu vào iDecal)</label><div class="gm-keyrow"><input id="gm-key" type="password" autocomplete="off" placeholder="Nhập API key của bạn…"><button class="gm-iconbtn" type="button" id="gm-keyshow">Hiện</button></div><div class="gm-info">Khóa API được gửi trực tiếp từ trình duyệt đến Google khi bạn bấm Gửi. Không sử dụng khóa nhạy cảm trên thiết bị dùng chung; để dùng trong doanh nghiệp, nên triển khai API qua máy chủ bảo mật. Không tự động đọc hay sửa đơn hàng iDecal.</div></div>
-  <div class="gm-stream" id="gm-stream" aria-live="polite"><div class="gm-bubble ai">Xin chào! Bạn có thể nhập yêu cầu, chụp màn hình ứng dụng, chụp ảnh từ điện thoại hoặc tải ảnh lên để nhờ Gemini phân tích.</div></div>
-  <div class="gm-compose"><div id="gm-preview" class="gm-preview" hidden></div><textarea id="gm-input" placeholder="Ví dụ: Đọc thông tin trong ảnh và lập danh sách hạng mục cần báo giá…" aria-label="Nhập lời nhắn"></textarea><div class="gm-actions"><button type="button" id="gm-screen" title="Chụp màn hình (trình duyệt tương thích)">▣ Màn hình</button><button type="button" id="gm-camera">◎ Camera</button><button type="button" id="gm-upload">＋ Ảnh</button><button type="button" id="gm-remove" hidden>Bỏ ảnh</button><button type="button" id="gm-send" class="gm-send">Gửi ➤</button></div><div id="gm-status" class="gm-status" role="status"></div></div>
-  <input id="gm-file" type="file" accept="image/png,image/jpeg,image/webp" hidden><input id="gm-camera-file" type="file" accept="image/*" capture="environment" hidden>
-</aside>
-<script>
-(function(){
- 'use strict';
- const by=id=>document.getElementById(id);
- const panel=by('gem-panel'),openBtn=by('gem-launch'),keyEl=by('gm-key'),input=by('gm-input'),stream=by('gm-stream'),preview=by('gm-preview'),status=by('gm-status');
- let attachment=null,busy=false;let turns=[];
- const statusMsg=m=>{status.textContent=m||''};
- function setMenuMode(active){panel.classList.toggle('open',active);panel.inert=!active;openBtn.setAttribute('aria-expanded',String(active));}
- window.setGeminiMenuMode=setMenuMode;
- setMenuMode(document.body.dataset.view==='gemini');
- openBtn.addEventListener('click',()=>{view='gemini';moduleSearch='';render()});
- by('gm-close').addEventListener('click',()=>{view='home';moduleSearch='';render()});
- document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.dataset.view==='gemini'){view='home';render()}});
- by('gm-keyshow').addEventListener('click',()=>{keyEl.type=keyEl.type==='password'?'text':'password';by('gm-keyshow').textContent=keyEl.type==='password'?'Hiện':'Ẩn'});
- function bubble(who,message,img){const div=document.createElement('div');div.className='gm-bubble '+who;div.textContent=message||'';if(img){const im=document.createElement('img');im.src=img;im.alt='Ảnh đính kèm';div.appendChild(im)}stream.appendChild(div);stream.scrollTop=stream.scrollHeight;return div}
- function setAttachment(a){attachment=a;preview.replaceChildren();preview.hidden=!a;by('gm-remove').hidden=!a;if(a){const im=document.createElement('img');im.src='data:'+a.mime+';base64,'+a.data;im.alt='Ảnh đính kèm';const name=document.createElement('span');name.textContent=a.name||'Ảnh đã chọn';preview.append(im,name)}}
- by('gm-remove').addEventListener('click',()=>setAttachment(null));
- async function imageFromBlob(blob,name){
-  if(!blob||!blob.type.startsWith('image/'))throw Error('Vui lòng chọn ảnh hợp lệ.');
-  const bitmap=await createImageBitmap(blob);const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close();
-  const url=canvas.toDataURL('image/jpeg',0.79);setAttachment({mime:'image/jpeg',data:url.split(',')[1],name:name||'Ảnh'});statusMsg('Đã thêm ảnh, nhập yêu cầu và nhấn Gửi.');
- }
- function picker(id){by(id).click()}
- by('gm-upload').addEventListener('click',()=>picker('gm-file'));by('gm-camera').addEventListener('click',()=>picker('gm-camera-file'));
- for(const id of ['gm-file','gm-camera-file'])by(id).addEventListener('change',async e=>{const file=e.target.files[0];if(file){try{await imageFromBlob(file,file.name)}catch(err){statusMsg(err.message)}}e.target.value=''});
- by('gm-screen').addEventListener('click',async()=>{
-  if(!navigator.mediaDevices?.getDisplayMedia){statusMsg('Trình duyệt này không hỗ trợ chụp màn hình. Hãy dùng nút Ảnh hoặc Camera.');return}
-  let capture;
-  try{
-   capture=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
-   const video=document.createElement('video');video.srcObject=capture;video.muted=true;await video.play();
-   if(!video.videoWidth)await new Promise(res=>{video.onloadedmetadata=res});
-   const canvas=document.createElement('canvas'),scale=Math.min(1,1600/Math.max(video.videoWidth,video.videoHeight));canvas.width=Math.round(video.videoWidth*scale);canvas.height=Math.round(video.videoHeight*scale);canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
-   const url=canvas.toDataURL('image/jpeg',0.78);setAttachment({mime:'image/jpeg',data:url.split(',')[1],name:'Ảnh màn hình'});statusMsg('Đã chụp màn hình.');
-  }catch(e){statusMsg('Không chụp được màn hình: '+e.message)}finally{capture?.getTracks().forEach(t=>t.stop())}
- });
- input.addEventListener('paste',async e=>{const img=Array.from(e.clipboardData?.items||[]).find(x=>x.type.startsWith('image/'));if(img){e.preventDefault();try{await imageFromBlob(img.getAsFile(),'Ảnh dán')}catch(err){statusMsg(err.message)}}});
- async function send(){
-  if(busy)return;
-  const prompt=input.value.trim(),key=keyEl.value.trim();
-  if(!key){statusMsg('Vui lòng nhập Gemini API key trước khi gửi.');keyEl.focus();return}
-  if(!prompt&&!attachment){statusMsg('Nhập câu hỏi hoặc chọn một ảnh.');return}
-  const picture=attachment;
-  const parts=[];if(prompt)parts.push({text:prompt});if(picture)parts.push({inline_data:{mime_type:picture.mime,data:picture.data}});
-  const imageUrl=picture?'data:'+picture.mime+';base64,'+picture.data:null;
-  bubble('user',prompt||'Phân tích ảnh này',imageUrl);input.value='';setAttachment(null);
-  const pending=bubble('ai','Gemini đang trả lời…');busy=true;by('gm-send').disabled=true;statusMsg('Đang gửi yêu cầu…');
-  try{
-   const contents=[...turns,{role:'user',parts}];
-   const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',{
-    method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify({contents,generationConfig:{maxOutputTokens:4096}})
-   });
-   const data=await response.json();if(!response.ok)throw Error(data.error?.message||'HTTP '+response.status);
-   const answer=(data.candidates?.[0]?.content?.parts||[]).filter(p=>typeof p.text==='string').map(p=>p.text).join('\n').trim()||'Gemini không trả về nội dung văn bản.';
-   pending.textContent=answer;turns=contents.concat([{role:'model',parts:[{text:answer}]}]).slice(-12);statusMsg('Đã nhận phản hồi.');
-  }catch(err){pending.textContent='Không thể gọi Gemini: '+err.message;statusMsg('Kiểm tra API key, kết nối mạng hoặc quyền truy cập API.')}finally{busy=false;by('gm-send').disabled=false;stream.scrollTop=stream.scrollHeight}
- }
- by('gm-send').addEventListener('click',send);
- input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
- by('gm-clear').addEventListener('click',()=>{turns=[];stream.replaceChildren();bubble('ai','Đã xóa nội dung hội thoại trong phiên này.');statusMsg('')});
-})();
-</script>
 </body>
 </html>
