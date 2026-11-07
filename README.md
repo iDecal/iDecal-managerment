@@ -1,10 +1,11 @@
 # iDecal – Quản lý kinh doanh
 
-Web app tĩnh, deploy lên Vercel không cần build. Gồm 3 file:
+Web app tĩnh, deploy lên Vercel không cần build. Các tệp chính:
 
 | File | Việc |
 |---|---|
-| `index.html` | Toàn bộ app |
+| `index.html` | Giao diện và nghiệp vụ ứng dụng |
+| `app-theme.css` | Màu sắc, bố cục và giao diện responsive |
 | `config.js` | Cấu hình đăng nhập (điền theo hướng dẫn bên dưới) |
 | `firestore.rules` | Quy tắc bảo mật dán vào Firebase |
 
