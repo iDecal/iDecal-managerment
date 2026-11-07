@@ -624,6 +624,7 @@ body[data-view="gemini"] #gem-panel .gm-config{background:var(--card,#fff);paddi
 body[data-view="gemini"] #gem-panel .gm-compose{border-radius:0 0 14px 14px;padding:13px 20px}
 body[data-view="gemini"] #gem-panel .gm-compose textarea{min-height:84px}
 @media(max-width:560px){body[data-view="gemini"] #gem-panel{top:94px;left:0;bottom:calc(68px + env(safe-area-inset-bottom));padding:0 9px 5px;width:100%;border:0}body[data-view="gemini"] #gem-panel .gm-bubble{max-width:96%}body[data-view="gemini"] #gem-panel .gm-stream{padding:12px}body[data-view="gemini"] #gem-panel .gm-head{padding:10px}body[data-view="gemini"] #gem-panel .gm-config{padding:8px}body[data-view="gemini"] #gem-panel .gm-compose{padding:9px}body[data-view="gemini"] #gem-panel .gm-info{display:none}}
+.quote-advance{margin:16px 0;padding:14px 16px;border:1px solid var(--bd,#dce8f1);border-radius:12px;background:var(--bg,#f4f7fb)}.quote-advance legend{font-weight:700;padding:0 7px}.quote-advance .mut{font-size:12px;line-height:1.6;margin:8px 0 0}.quote-remaining{margin-top:10px;padding-top:10px;border-top:1px solid var(--bd,#dce8f1);gap:12px;flex-wrap:wrap}
 </style>
 <style id="customer-form-upgrade">.cust-section{border:1px solid var(--bd,#e5e7eb);padding:12px;border-radius:12px;margin:11px 0;background:rgba(125,155,190,.035)}.cust-section>strong{display:block;margin-bottom:10px}.cust-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 12px}.cust-form-grid label{min-width:0;margin:0}.customer-type-bar{margin-bottom:12px}@media(max-width:620px){.cust-form-grid{grid-template-columns:1fr}.cust-section{padding:10px}}.cust-more-details{background:#f8fbff;border-color:#d7e5f4}.cust-more-details summary{cursor:pointer;font-weight:700;color:#23628c;list-style:revert}.cust-more-details[open] summary{margin-bottom:13px}.cust-more-details .cust-extra-company{margin:12px 0;padding:12px;border-top:1px solid #dfe8ef}.cust-more-details .cust-extra-company>strong{display:block;margin-bottom:9px}.cust-more-details>.cust-form-grid{margin-top:10px}
 </style>
@@ -1534,6 +1535,8 @@ const addDays=(d,n)=>{const x=new Date(d+'T12:00:00');x.setDate(x.getDate()+n);r
 const qvatRate=q=>Math.max(0,+((q&&q.vatRate)??8)||0);
 const qvat=q=>Math.round(Math.max(0,total(q)-(q.discount||0))*qvatRate(q)/100);
 const qtotal=q=>Math.max(0,total(q)-(q.discount||0))+qvat(q);
+const qadvance=q=>Math.max(0,Number(q.advanceAmount)||0);
+const qremaining=q=>Math.max(0,qtotal(q)-qadvance(q));
 const qname=q=>{const c=cust(q.cid);return c?c.name:(q.cname||'Khách vãng lai')};
 
 function readItems(m){
@@ -1544,7 +1547,7 @@ function readItems(m){
 }
 function itemEditor(m,items,forQuote=false){
   const box=m.querySelector('#items');
-  const calc=()=>{let t=0;box.querySelectorAll('.it').forEach(r=>t+=Math.round((+r.querySelector('.q').value||0)*(+r.querySelector('.pr').value||0)));const d=+(m.querySelector('[name=discount]')||{}).value||0,base=Math.max(0,t-d),rate=+((m.querySelector('[name=vatRate]')||{}).value??8)||0,vat=Math.round(base*rate/100);const sub=m.querySelector('#sub'),v=m.querySelector('#vat'),vl=m.querySelector('#vatLabel');if(sub)sub.textContent=vnd(t);if(v)v.textContent=vnd(vat);if(vl)vl.textContent=rate;m.querySelector('#tot').textContent=vnd(base+vat)};
+  const calc=()=>{let t=0;box.querySelectorAll('.it').forEach(r=>t+=Math.round((+r.querySelector('.q').value||0)*(+r.querySelector('.pr').value||0)));const d=+(m.querySelector('[name=discount]')||{}).value||0,base=Math.max(0,t-d),rate=+((m.querySelector('[name=vatRate]')||{}).value??8)||0,vat=Math.round(base*rate/100);const sub=m.querySelector('#sub'),v=m.querySelector('#vat'),vl=m.querySelector('#vatLabel');if(sub)sub.textContent=vnd(t);if(v)v.textContent=vnd(vat);if(vl)vl.textContent=rate;m.querySelector('#tot').textContent=vnd(base+vat);const advance=m.querySelector('[name=advanceAmount]'),remaining=m.querySelector('#quoteRemaining');if(advance){advance.max=base+vat;if(remaining)remaining.textContent=vnd(Math.max(0,base+vat-(+advance.value||0)))}};
   const addRow=(it={})=>{
     const r=document.createElement('div');r.className='it';
     r.innerHTML=`<select class="p"><option value="">Khác (nhập tay)…</option>${db.products.map(p=>`<option value="${p.id}" ${p.id===it.pid?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
@@ -1574,6 +1577,9 @@ function quoteForm(id){
     ${fld('Ngày','date',q.date,'date','required')}
     ${fld('Hiệu lực đến','until',q.until||'','date')}
     ${fld('Thời gian hoàn thành dự kiến','completionDate',q.completionDate||'','date')}
+    <fieldset class="quote-advance"><legend>Tạm ứng & thanh toán</legend>
+    ${fld('Tạm ứng theo báo giá (đ)','advanceAmount',qadvance(q),'number','min=0 step=1 inputmode=decimal')}
+    <p class="mut">Số tiền đề nghị khách tạm ứng khi xác nhận báo giá. Tiền đã thu thực tế được ghi tại Thu tạm ứng của đơn hàng.</p></fieldset>
     <label>Hàng hoá</label><div id="items"></div>
     <button type="button" class="btn gh sm" id="addI" style="margin-top:8px">${ic('plus')} Thêm dòng</button>
     ${fld('Giảm giá (đ)','discount',q.discount||0,'number','min=0 step=any')}
@@ -1581,12 +1587,15 @@ function quoteForm(id){
     <label>Thời gian bảo hành<input name="warranty" type="text" value="${esc(q.warranty||'')}" placeholder="Ví dụ: 12 tháng kể từ ngày bàn giao"></label>
     <label>Điều khoản đặt cọc<textarea name="depositTerms" rows="2" placeholder="Ví dụ: Đặt cọc 50% khi xác nhận đơn hàng">${esc(q.depositTerms??QUOTE_DEPOSIT_DEFAULT)}</textarea></label>
     <label>Điều khoản thanh toán<textarea name="paymentTerms" rows="2" placeholder="Ví dụ: Thanh toán phần còn lại sau khi nghiệm thu / giao hàng">${esc(q.paymentTerms??QUOTE_PAYMENT_DEFAULT)}</textarea></label>
-    <div class="card quote-calc"><div class="row sp"><span>Tạm tính sản phẩm / dịch vụ</span><b id="sub">0đ</b></div><div class="row sp"><span>Thuế VAT (<span id="vatLabel">8</span>%)</span><b id="vat">0đ</b></div><div class="tot">Tổng tiền thanh toán: <b id="tot">0đ</b></div></div>
+    <div class="card quote-calc"><div class="row sp"><span>Tạm tính sản phẩm / dịch vụ</span><b id="sub">0đ</b></div><div class="row sp"><span>Thuế VAT (<span id="vatLabel">8</span>%)</span><b id="vat">0đ</b></div><div class="tot">Tổng tiền thanh toán: <b id="tot">0đ</b></div><div class="row sp quote-remaining"><span>Còn lại sau tạm ứng</span><b id="quoteRemaining">0đ</b></div></div>
     <label style="margin-top:12px">Ghi chú thêm (không bắt buộc)<textarea name="note" rows="2" placeholder="Để trống nếu chưa cần ghi chú">${esc(q.note||'')}</textarea></label>`,
   (fd,m)=>{
     const items=readItems(m);
     if(!items.length){alert('Cần ít nhất 1 dòng hàng hợp lệ');return false}
     const data={cid:fd.get('cid'),cname:fd.get('cname'),date:fd.get('date'),until:fd.get('until'),completionDate:fd.get('completionDate'),warranty:String(fd.get('warranty')||'').trim(),depositTerms:String(fd.get('depositTerms')||'').trim(),paymentTerms:String(fd.get('paymentTerms')||'').trim(),discount:+fd.get('discount')||0,vatRate:Math.max(0,+fd.get('vatRate')||0),note:fd.get('note'),items};
+    const advanceAmount=Number(fd.get('advanceAmount'));
+    if(!Number.isSafeInteger(advanceAmount)||advanceAmount<0||advanceAmount>qtotal(data)){alert('Tạm ứng phải là số tiền nguyên từ 0 đến tổng giá trị báo giá.');return false}
+    data.advanceAmount=advanceAmount;
     if(id)Object.assign(q,data);else db.quotes.push({id:uid(),code:'BG'+String(++db.qseq).padStart(4,'0'),status:'Nháp',by:meName(),byEmail:CLOUD&&me?me.email||'':'',...data});
     save();render();
   });
@@ -1807,7 +1816,7 @@ function quoteHTML(q,t){
   <table class="summary"><tbody><tr><td>Tạm tính sản phẩm / dịch vụ</td><td class="r">${vnd(sub)}</td></tr>
   ${q.discount?`<tr><td>Chiết khấu</td><td class="r">− ${vnd(q.discount)}</td></tr>`:''}
   <tr><td>Thuế VAT (${qvatRate(q)}%)</td><td class="r">${vnd(qvat(q))}</td></tr>
-  <tr class="grand"><td>TỔNG TIỀN THANH TOÁN</td><td class="r">${vnd(qtotal(q))}</td></tr><tr class="amount-words"><td colspan="2"><b>Bằng chữ:</b> ${esc(tienBangChu(qtotal(q)))}</td></tr></tbody></table>
+  <tr class="grand"><td>TỔNG TIỀN THANH TOÁN</td><td class="r">${vnd(qtotal(q))}</td></tr><tr><td>Tạm ứng theo báo giá</td><td class="r">${vnd(qadvance(q))}</td></tr><tr class="grand"><td>CÒN LẠI SAU TẠM ỨNG</td><td class="r">${vnd(qremaining(q))}</td></tr><tr class="amount-words"><td colspan="2"><b>Tổng tiền bằng chữ:</b> ${esc(tienBangChu(qtotal(q)))}</td></tr></tbody></table>
   ${(q.warranty||q.depositTerms!==''||q.paymentTerms!=='')?`<div class="terms quote-conditions"><b>ĐIỀU KHOẢN BẢO HÀNH & THANH TOÁN</b>${q.warranty?`<div><strong>Bảo hành:</strong> ${nl(esc(q.warranty))}</div>`:''}${(q.depositTerms??QUOTE_DEPOSIT_DEFAULT)?`<div><strong>Đặt cọc:</strong> ${nl(esc(q.depositTerms??QUOTE_DEPOSIT_DEFAULT))}</div>`:''}${(q.paymentTerms??QUOTE_PAYMENT_DEFAULT)?`<div><strong>Thanh toán:</strong> ${nl(esc(q.paymentTerms??QUOTE_PAYMENT_DEFAULT))}</div>`:''}</div>`:''}
   ${t.terms?`<div class="terms"><b>ĐIỀU KHOẢN & LƯU Ý</b><br>${nl(esc(t.terms))}</div>`:''}
   ${t.showSig?`<div class="sig quote-signatures"><div><b>${esc(t.sigL||'KHÁCH HÀNG')}</b><div class="signature-space"></div><i>(Ký, ghi rõ họ tên)</i></div><div><b>${esc(t.sigR||s.name||'iDecal')}</b><div class="signature-space">${t.signatureImage?`<img class="signature-stamp" src="${esc(t.signatureImage)}" alt="Chữ ký và con dấu đại diện iDecal">`:''}</div><i>(Ký, đóng dấu)</i></div></div>`:''}
@@ -2189,13 +2198,14 @@ function quotes(){
     <div class="quote-card-head"><div class="quote-identity"><span class="quote-avatar">${ic('filetext')}</span><div><small>${esc(q.code)}</small><b>${esc(qname(q))}</b></div></div><b class="quote-card-total">${vnd(qtotal(q))}</b></div>
     ${itemsDet(q.items,q.date+(q.until?' · HL đến '+q.until:'')+(q.completionDate?' · Hoàn thành dự kiến: '+q.completionDate:''))}
     ${q.by?`<div class="mut">${ic('users')} Người báo giá: <b>${esc(q.by)}</b></div>`:''}
+    <div class="row sp quote-remaining"><span>Tạm ứng: <b>${vnd(qadvance(q))}</b></span><span>Còn lại: <b>${vnd(qremaining(q))}</b></span></div>
     <div class="quote-card-actions">
       <select class="qs" data-id="${q.id}" style="width:auto" ${db.orders.some(o=>o.id===q.orderId)?'disabled':''}>${QST.map(s=>`<option ${s===q.status?'selected':''}>${s}</option>`).join('')}</select>
       ${db.orders.some(o=>o.id===q.orderId)?`<span class="badge ok quote-converted">Đã chuyển thành đơn ${esc((db.orders.find(o=>o.id===q.orderId)||{}).code)}</span><button class="btn gh sm" data-a="viewOrder">Xem đơn</button>`:(q.status==='Từ chối'?'':`<button class="btn sm" data-a="toOrder" data-id="${q.id}">${ic('check')} Khách chấp nhận</button>`)}
       <button type="button" class="catalog-icon edit" data-a="previewQuote" data-id="${q.id}" title="Xem báo giá" aria-label="Xem báo giá ${esc(q.code)}">${ic('eye')}</button>
       <button type="button" class="catalog-icon edit" data-a="pdfQuote" data-id="${q.id}" title="Tải PDF" aria-label="Tải PDF ${esc(q.code)}">${ic('pdf')}</button>
       <button type="button" class="catalog-icon edit" data-a="printQuote" data-id="${q.id}" title="In báo giá" aria-label="In báo giá ${esc(q.code)}">${ic('printer')}</button>
-      <button type="button" class="catalog-icon edit" data-a="editQuote" data-id="${q.id}" title="Sửa báo giá" aria-label="Sửa báo giá ${esc(q.code)}">${ic('pencil')}</button>
+      <button type="button" class="catalog-icon edit" data-a="editQuote" data-id="${q.id}" title="Sửa báo giá và tạm ứng" aria-label="Sửa báo giá ${esc(q.code)}">${ic('pencil')}</button><button type="button" class="btn gh sm" data-a="editQuote" data-id="${q.id}">${ic('banknote')} Tạm ứng</button>
       ${isMgr()?`<button type="button" class="catalog-icon delete" data-a="delQuote" data-id="${q.id}" title="Xóa báo giá" aria-label="Xóa báo giá ${esc(q.code)}">${ic('trash')}</button>`:''}
     </div></div>`).join(''):emp(all.length,'Chưa có báo giá')}`;
 }
