@@ -390,16 +390,11 @@ body[data-view=team] #app>.card{padding:14px 18px;border-radius:12px;margin-bott
 }
 @media print{body{background:#fff!important}}
 
-/* Decal studio backdrop: faint vector tools, with solid readable surfaces. */
-body{
- background-color:#e5eaf2!important;
- background-image:linear-gradient(125deg,#e5edf466,transparent 55%),url('assets/decal-pattern.svg')!important;
- background-size:100% 100%,720px 520px!important;
- background-repeat:no-repeat,repeat!important;
- background-attachment:fixed!important;
-}
-.pv-md{background-color:#e6edf4;background-image:url('assets/decal-pattern.svg');background-size:620px auto}
+/* Decal artwork belongs to the document letterhead; the workspace stays plain. */
+body{background:#e5eaf2!important;background-image:none!important}
+.pv-md{background:#e6edf4;background-image:none}
 .pv-head{background:#f8fbfe;border-bottom-color:#d9e3ed}
 .pv-paper{border-color:#d9e3ee;box-shadow:0 12px 40px #19365312}
-@media(max-width:700px){body{background-size:100% 100%,540px 390px!important;background-attachment:scroll!important}.pv-md{background-size:480px auto}}
-@media print{body{background:#fff!important}.pv-md{background:#fff!important}}
+.pv-paper .doc .qhead.qhead-two{grid-template-columns:minmax(145px,.85fr) minmax(0,1.5fr);gap:22px;padding:15px 17px}
+@media(max-width:700px){.pv-paper .doc .qhead.qhead-two{grid-template-columns:minmax(90px,.8fr) minmax(0,1.5fr);gap:12px;padding:12px}.pv-paper .doc .qhead-contact .qchips{grid-template-columns:1fr;gap:5px}}
+@media print{body,.pv-md{background:#fff!important}}
